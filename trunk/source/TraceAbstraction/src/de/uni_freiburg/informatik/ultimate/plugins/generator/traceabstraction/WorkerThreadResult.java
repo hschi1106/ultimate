@@ -50,6 +50,9 @@ final class WorkerThreadResult<L extends IIcfgTransition<?>, A extends IAutomato
 	private IRun<L, ?> mCounterexample;
 	PredicateFactory mPredicateFactory;
 	private final boolean mWorkerCrashed;
+	private final boolean mStaleCancelled;
+	private final StaleCancellationPoint mStaleCancellationPoint;
+	private final String mStaleCancellationReason;
 
 	/**
 	 * The object returned by an @ICegarNwaWorkerThread
@@ -61,6 +64,18 @@ final class WorkerThreadResult<L extends IIcfgTransition<?>, A extends IAutomato
 			final InterpolantAutomatonEnhancement enhanceMode, final boolean useErrorAutomaton,
 			final AutomatonType automatonType, final ManagedScript mgdScript, final IRun<L, ?> counterexample,
 			final PredicateFactory predicateFactory, final boolean workerCrashed) {
+		this(subtrahend, subtrahendBeforeEnhancement, predicateUnifier, explointSigmaStarConcatOfIA, enhanceMode,
+				useErrorAutomaton, automatonType, mgdScript, counterexample, predicateFactory, workerCrashed, false,
+				null, null);
+	}
+
+	private WorkerThreadResult(final INwaOutgoingLetterAndTransitionProvider<L, IPredicate> subtrahend,
+			final INwaOutgoingLetterAndTransitionProvider<L, IPredicate> subtrahendBeforeEnhancement,
+			final IPredicateUnifier predicateUnifier, final boolean explointSigmaStarConcatOfIA,
+			final InterpolantAutomatonEnhancement enhanceMode, final boolean useErrorAutomaton,
+			final AutomatonType automatonType, final ManagedScript mgdScript, final IRun<L, ?> counterexample,
+			final PredicateFactory predicateFactory, final boolean workerCrashed, final boolean staleCancelled,
+			final StaleCancellationPoint staleCancellationPoint, final String staleCancellationReason) {
 		mSubtrahend = subtrahend;
 		mAutomatonType = automatonType;
 		mUseErrorAutomaton = useErrorAutomaton;
@@ -71,10 +86,32 @@ final class WorkerThreadResult<L extends IIcfgTransition<?>, A extends IAutomato
 		mCounterexample = counterexample;
 		mPredicateFactory = predicateFactory;
 		mWorkerCrashed = workerCrashed;
+		mStaleCancelled = staleCancelled;
+		mStaleCancellationPoint = staleCancellationPoint;
+		mStaleCancellationReason = staleCancellationReason;
+	}
+
+	static <L extends IIcfgTransition<?>, A extends IAutomaton<L, IPredicate>> WorkerThreadResult<L, A>
+			constructStaleCancelled(final IRun<L, ?> counterexample,
+					final StaleCancellationPoint staleCancellationPoint, final String staleCancellationReason) {
+		return new WorkerThreadResult<>(null, null, null, false, null, false, AutomatonType.FLOYD_HOARE, null,
+				counterexample, null, false, true, staleCancellationPoint, staleCancellationReason);
 	}
 
 	public boolean workerCrashed() {
 		return mWorkerCrashed;
+	}
+
+	public boolean wasStaleCancelled() {
+		return mStaleCancelled;
+	}
+
+	public StaleCancellationPoint getStaleCancellationPoint() {
+		return mStaleCancellationPoint;
+	}
+
+	public String getStaleCancellationReason() {
+		return mStaleCancellationReason;
 	}
 
 	public PredicateFactory getPredicateFactory() {

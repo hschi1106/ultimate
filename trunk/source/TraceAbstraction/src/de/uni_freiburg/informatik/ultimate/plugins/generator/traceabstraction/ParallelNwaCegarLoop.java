@@ -51,7 +51,9 @@ import de.uni_freiburg.informatik.ultimate.automata.nestedword.IDoubleDeckerAuto
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.INestedWordAutomaton;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.INwaOutgoingLetterAndTransitionProvider;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedRun;
+import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedWord;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.NestedWordAutomaton;
+import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.Accepts;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.Difference;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.IsEmpty;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.IsEmptyParallel;
@@ -100,7 +102,7 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 	private int mRunningThreads = 0;
 
 	// private final CompletionService<WorkerThreadResult<L, A>> mECS;
-	BlockingQueue<IRun<L, ?>> mWorkerTaskQueue = new LinkedBlockingQueue<>();
+	BlockingQueue<WorkerTask<L>> mWorkerTaskQueue = new LinkedBlockingQueue<>();
 	BlockingQueue<WorkerThreadResult<L, A>> mWorkerResultQueue = new LinkedBlockingQueue<>();
 
 	// need global program cache, but worker need to get copy otherwise we
@@ -109,6 +111,7 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 
 	// Strategies
 	public final HashMap<Integer, NestedRun<L, ?>> mActiveCounterexamples = new HashMap<>();
+	private final Map<Integer, StaleCancellationToken> mActiveCancellationTokens = new HashMap<>();
 	private final Set<Integer> mCounterexamplesToBeRemovedFromActiveCexMap = new HashSet<>();
 	protected InterpolationTechnique mInterpolationTechnique;
 
@@ -131,6 +134,19 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 	private final int mExceptionInWorker = 0;
 
 	private long mRefinementTime = 0;
+	private long mStaleCancellationRequests = 0;
+	private long mStaleCancellationAcceptsFailures = 0;
+	private long mStaleWorkersCancelledBeforeTransfer = 0;
+	private long mStaleWorkersCancelledBeforeTraceCheck = 0;
+	private long mStaleWorkersCancelledBeforeAutomaton = 0;
+	private long mStaleWorkersCancelledBeforeWorkerDifference = 0;
+	private long mStaleWorkersCancelledBeforeReturn = 0;
+	private long mStaleWorkersCancelledByImmediateInterrupt = 0;
+	private long mStaleWorkerResultsSkippedAtCoordinator = 0;
+	private long mStaleImmediateStopRequests = 0;
+	private long mStaleThreadInterruptRequests = 0;
+	private long mStaleImmediateStopNoThread = 0;
+	private long mStaleImmediateStopFailures = 0;
 
 	/**
 	 * Based on the @NwaCegarLoop. Given a ThreadLimit, creates a ExecutionerService that will manage the worker
@@ -253,12 +269,24 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 							shutDownAndDestroy(mDestroyEverything);
 							throw new AssertionError("Worker Crashed!, Exiting CEGAR loop!");
 						}
+						if (workerResult.wasStaleCancelled()) {
+							handleStaleCancelledWorkerResult(workerResult);
+							workerResult.garbageCollect();
+							workerResult = mWorkerResultQueue.poll();
+							continue;
+						}
 						// If Error automaton terminate immediately
 						if (mPref.stopAfterFirstViolation()
 								&& workerResult.getAutomatonType().equals(AutomatonType.ERROR)) {
 							shutDownAndDestroy(mDestroyEverything);
 							updateAndPrintStatistics(true);
 							return;
+						}
+						if (shouldSkipStaleInfeasibilityResult(workerResult)) {
+							handleStaleSkippedWorkerResult(workerResult);
+							workerResult.garbageCollect();
+							workerResult = mWorkerResultQueue.poll();
+							continue;
 						}
 
 						mLogger.info("Worker Automaton Type: " + workerResult.getAutomatonType());
@@ -356,6 +384,20 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 			mLogger.info("WorkerSetUpTime: " + mWorkerSetUpTime + " s");
 			mLogger.info("ExceptionInWorker: " + mExceptionInWorker);
 			mLogger.info("mRefinementTime: " + mRefinementTime);
+			mLogger.info("StaleCancellationRequests: " + mStaleCancellationRequests);
+			mLogger.info("StaleCancellationAcceptsFailures: " + mStaleCancellationAcceptsFailures);
+			mLogger.info("StaleWorkersCancelledBeforeTransfer: " + mStaleWorkersCancelledBeforeTransfer);
+			mLogger.info("StaleWorkersCancelledBeforeTraceCheck: " + mStaleWorkersCancelledBeforeTraceCheck);
+			mLogger.info("StaleWorkersCancelledBeforeAutomaton: " + mStaleWorkersCancelledBeforeAutomaton);
+			mLogger.info("StaleWorkersCancelledBeforeWorkerDifference: "
+					+ mStaleWorkersCancelledBeforeWorkerDifference);
+			mLogger.info("StaleWorkersCancelledBeforeReturn: " + mStaleWorkersCancelledBeforeReturn);
+			mLogger.info("StaleWorkersCancelledByImmediateInterrupt: " + mStaleWorkersCancelledByImmediateInterrupt);
+			mLogger.info("StaleWorkerResultsSkippedAtCoordinator: " + mStaleWorkerResultsSkippedAtCoordinator);
+			mLogger.info("StaleImmediateStopRequests: " + mStaleImmediateStopRequests);
+			mLogger.info("StaleThreadInterruptRequests: " + mStaleThreadInterruptRequests);
+			mLogger.info("StaleImmediateStopNoThread: " + mStaleImmediateStopNoThread);
+			mLogger.info("StaleImmediateStopFailures: " + mStaleImmediateStopFailures);
 		}
 	}
 
@@ -378,7 +420,16 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 	 * When we reach this method, we will always start at least one new worker.
 	 */
 	private void startWorker() {
-		mWorkerTaskQueue.add(mCounterexample);
+		final NestedRun<L, ?> counterexample = (NestedRun<L, ?>) mCounterexample;
+		final int traceHash = counterexample.getWord().asList().hashCode();
+		final StaleCancellationToken cancellationToken =
+				mPref.isStaleWorkerCancellationEnabled() ? new StaleCancellationToken(traceHash) : null;
+		// add mCounterexample to list such that we dont get it twice in our search
+		addCounterexampleToSet(counterexample);
+		if (cancellationToken != null) {
+			mActiveCancellationTokens.put(traceHash, cancellationToken);
+		}
+		mWorkerTaskQueue.add(new WorkerTask<>(mCounterexample, cancellationToken));
 		mProgramCache.addRun(mCounterexample.getWord());
 		final long time = System.nanoTime() / 1000000000;
 		mLogger.info("Main: Starting Thread");
@@ -387,8 +438,6 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		mServices = iterationServices;
 		mRunningThreads += 1;
 		mCounterexamplesChecked += 1;
-		// add mCounterexample to list such that we dont get it twice in our search
-		addCounterexampleToSet((NestedRun<L, ?>) mCounterexample);
 		mWorkerSetUpTime += ((System.nanoTime() / 1000000000) - time);
 	}
 
@@ -436,6 +485,7 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 				computeAutomataDifference(mAbstraction, threadResult, stateFactoryForRefinement);
 
 		mAbstraction = diff.getResult();
+		cancelStaleActiveCounterexamples();
 
 		if (mPref.minimizeAbstractionPerWorker()) {
 			minimizeAbstractionIfEnabled(stateFactoryForRefinement,
@@ -443,6 +493,120 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		}
 		mRunningThreads -= 1;
 		mLogger.info("Main: Refinement done.");
+	}
+
+	private boolean hasInfeasibilityProof(final WorkerThreadResult<L, A> workerResult) {
+		return workerResult != null && !workerResult.workerCrashed() && workerResult.getSubtrahend() != null
+				&& workerResult.getCounterexample() != null
+				&& workerResult.getAutomatonType() == AutomatonType.FLOYD_HOARE && !workerResult.useErrorAutomaton();
+	}
+
+	private boolean shouldSkipStaleInfeasibilityResult(final WorkerThreadResult<L, A> workerResult) {
+		if (!mPref.isStaleWorkerCancellationEnabled() || !hasInfeasibilityProof(workerResult)) {
+			return false;
+		}
+		final IRun<L, ?> workerCounterexample = workerResult.getCounterexample();
+		final int workerTraceHash = workerCounterexample.getWord().asList().hashCode();
+		try {
+			if (!new Accepts<>(new AutomataLibraryServices(getServices()), mAbstraction,
+					(NestedWord<L>) workerCounterexample.getWord()).getResult()) {
+				mLogger.info("StaleCancellation: coordinator skips stale refinement for trace " + workerTraceHash);
+				return true;
+			}
+		} catch (final AutomataLibraryException e) {
+			mStaleCancellationAcceptsFailures += 1;
+			mLogger.warn("StaleCancellation: failed to check returned worker trace " + workerTraceHash + ": " + e);
+		}
+		return false;
+	}
+
+	private void handleStaleCancelledWorkerResult(final WorkerThreadResult<L, A> workerResult) {
+		removeCounterexampleFromSet(workerResult.getCounterexample());
+		mRunningThreads -= 1;
+		countStaleCancellationPoint(workerResult.getStaleCancellationPoint());
+		mLogger.info("StaleCancellation: worker result for trace "
+				+ workerResult.getCounterexample().getWord().asList().hashCode() + " cancelled at "
+				+ workerResult.getStaleCancellationPoint() + " because " + workerResult.getStaleCancellationReason());
+	}
+
+	private void handleStaleSkippedWorkerResult(final WorkerThreadResult<L, A> workerResult) {
+		removeCounterexampleFromSet(workerResult.getCounterexample());
+		mRunningThreads -= 1;
+		mStaleWorkerResultsSkippedAtCoordinator += 1;
+	}
+
+	private void countStaleCancellationPoint(final StaleCancellationPoint point) {
+		switch (point) {
+		case BEFORE_TRANSFER:
+			mStaleWorkersCancelledBeforeTransfer += 1;
+			break;
+		case BEFORE_TRACE_CHECK:
+			mStaleWorkersCancelledBeforeTraceCheck += 1;
+			break;
+		case BEFORE_AUTOMATON:
+			mStaleWorkersCancelledBeforeAutomaton += 1;
+			break;
+		case BEFORE_WORKER_DIFFERENCE:
+			mStaleWorkersCancelledBeforeWorkerDifference += 1;
+			break;
+		case BEFORE_RETURN:
+			mStaleWorkersCancelledBeforeReturn += 1;
+			break;
+		case IMMEDIATE_INTERRUPT:
+			mStaleWorkersCancelledByImmediateInterrupt += 1;
+			break;
+		default:
+			throw new AssertionError("Unhandled cancellation point " + point);
+		}
+	}
+
+	private void cancelStaleActiveCounterexamples() {
+		if (!mPref.isStaleWorkerCancellationEnabled()) {
+			return;
+		}
+		final AutomataLibraryServices automataServices = new AutomataLibraryServices(getServices());
+		for (final Map.Entry<Integer, NestedRun<L, ?>> activeCounterexample : mActiveCounterexamples.entrySet()) {
+			final Integer activeTraceHash = activeCounterexample.getKey();
+			final NestedRun<L, ?> activeRun = activeCounterexample.getValue();
+			if (activeRun == null) {
+				continue;
+			}
+			try {
+				if (!new Accepts<>(automataServices, mAbstraction, activeRun.getWord()).getResult()) {
+					requestStaleCancellation(activeTraceHash);
+				}
+			} catch (final AutomataLibraryException e) {
+				mStaleCancellationAcceptsFailures += 1;
+				mLogger.warn("StaleCancellation: failed to check active trace " + activeTraceHash + ": " + e);
+			}
+		}
+	}
+
+	private void requestStaleCancellation(final Integer activeTraceHash) {
+		final StaleCancellationToken cancellationToken = mActiveCancellationTokens.get(activeTraceHash);
+		if (cancellationToken != null
+				&& cancellationToken.requestCancellation("removed from updated abstraction")) {
+			mStaleCancellationRequests += 1;
+			mLogger.info("StaleCancellation: requested cancellation for active trace " + activeTraceHash);
+			if (mPref.isStaleWorkerImmediateCancellationEnabled()) {
+				mStaleImmediateStopRequests += 1;
+				try {
+					if (cancellationToken.requestImmediateInterrupt()) {
+						mStaleThreadInterruptRequests += 1;
+						mLogger.info("StaleCancellation: immediate interrupt requested for active trace "
+								+ activeTraceHash);
+					} else {
+						mStaleImmediateStopNoThread += 1;
+						mLogger.info("StaleCancellation: immediate interrupt had no attached worker for active trace "
+								+ activeTraceHash);
+					}
+				} catch (final SecurityException e) {
+					mStaleImmediateStopFailures += 1;
+					mLogger.warn("StaleCancellation: failed immediate interrupt for active trace " + activeTraceHash
+							+ ": " + e);
+				}
+			}
+		}
 	}
 
 	/*
@@ -465,6 +629,7 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		final List<L> trace = cex.getWord().asList();
 		final int traceHash = trace.hashCode();
 		mLogger.info("Subtrahend traceHash: " + traceHash);
+		mActiveCancellationTokens.remove(traceHash);
 		// Only remove after the counterexample is no longer in the abstraction
 		if (mPref.considerOnlyActiveCounterexamplesInIsEmptyParallel()) {
 			mActiveCounterexamples.remove(traceHash);

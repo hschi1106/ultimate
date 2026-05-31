@@ -535,6 +535,13 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 	public static final String LABEL_THREADLIMIT = "Threadlimit for Parallel CEGAR";
 	private static final Integer DEF_THREADLIMIT = 1;
 
+	public static final String LABEL_STALE_WORKER_CANCELLATION_MODE =
+			"Stale worker cancellation mode for Parallel CEGAR";
+	private static final StaleWorkerCancellationMode DEF_STALE_WORKER_CANCELLATION_MODE =
+			StaleWorkerCancellationMode.OFF;
+	private static final String DESC_STALE_WORKER_CANCELLATION_MODE =
+			"Controls stale worker handling after a successful refinement. COOPERATIVE requests cancellation for active worker tasks whose traces are no longer accepted by the updated abstraction. IMMEDIATE additionally interrupts the Java worker thread for the stale task.";
+
 	public static final String LABEL_MINIMIZE_ABSTRACTION_PER_WORKER =
 			"Minimize Abstraction every time a worker is done";
 	private static final boolean DEF_MINIMIZE_ABSTRACTION_PER_WORKER = true;
@@ -843,6 +850,10 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 						PreferenceType.Boolean),
 				new UltimatePreferenceItem<>(LABEL_THREADLIMIT, DEF_THREADLIMIT, PreferenceType.Integer,
 						new IUltimatePreferenceItemValidator.IntegerValidator(0, 1_0000_000)),
+				new UltimatePreferenceItem<>(LABEL_STALE_WORKER_CANCELLATION_MODE,
+						DEF_STALE_WORKER_CANCELLATION_MODE,
+						DESC_STALE_WORKER_CANCELLATION_MODE, PreferenceType.Combo,
+						StaleWorkerCancellationMode.values()),
 				new UltimatePreferenceItem<>(LABEL_SEARCH_LOOP_BOUND, DEF_SEARCH_LOOP_BOUND, DESC_SEARCH_LOOP_BOUND,
 						PreferenceType.Integer, new IUltimatePreferenceItemValidator.IntegerValidator(-1, 1_0000_000)),
 				new UltimatePreferenceItem<>(LABEL_PARALLELSEARCH_ACTIVE_CEX_ONLY, DEF_PARALLELSEARCH_ACTIVE_CEX_ONLY,
@@ -1038,6 +1049,10 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 		 * Use loop acceleration in combination with the fixed preferences
 		 */
 		ACCELERATED_TRACE_CHECK
+	}
+
+	public enum StaleWorkerCancellationMode {
+		OFF, COOPERATIVE, IMMEDIATE
 	}
 
 	/**

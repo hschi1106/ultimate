@@ -59,6 +59,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.pr
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.Minimization;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.OrderOfErrorLocations;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.RefinementStrategy;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.StaleWorkerCancellationMode;
 import de.uni_freiburg.informatik.ultimate.util.ReflectionUtil.Reflected;
 
 public final class TAPreferences {
@@ -99,6 +100,7 @@ public final class TAPreferences {
 	// Parallel Trace Abstraction Settings
 	private final int mThreadLimit;
 	private final boolean mParallelCegarLoop;
+	private final StaleWorkerCancellationMode mStaleWorkerCancellationMode;
 	private final boolean mConsiderOnlyActiveCounterexamplesInIsEmptyParallel;
 	private final boolean mMinimizeAbstractionPerWorker;
 	private final int mSearchLoopBound;
@@ -208,6 +210,9 @@ public final class TAPreferences {
 
 		mParallelCegarLoop = mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_PARALLEL_CEGAR_LOOP);
 		mThreadLimit = mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_THREADLIMIT);
+		mStaleWorkerCancellationMode =
+				mPrefs.getEnum(TraceAbstractionPreferenceInitializer.LABEL_STALE_WORKER_CANCELLATION_MODE,
+						StaleWorkerCancellationMode.class);
 		mConsiderOnlyActiveCounterexamplesInIsEmptyParallel =
 				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_PARALLELSEARCH_ACTIVE_CEX_ONLY);
 		mMinimizeAbstractionPerWorker =
@@ -596,6 +601,18 @@ public final class TAPreferences {
 
 	public boolean isParallelCegarLoop() {
 		return mParallelCegarLoop;
+	}
+
+	public boolean isStaleWorkerCancellationEnabled() {
+		return mStaleWorkerCancellationMode != StaleWorkerCancellationMode.OFF;
+	}
+
+	public boolean isStaleWorkerImmediateCancellationEnabled() {
+		return mStaleWorkerCancellationMode == StaleWorkerCancellationMode.IMMEDIATE;
+	}
+
+	public StaleWorkerCancellationMode getStaleWorkerCancellationMode() {
+		return mStaleWorkerCancellationMode;
 	}
 
 	public boolean minimizeAbstractionPerWorker() {

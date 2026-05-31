@@ -116,8 +116,10 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 	// communication with controller
 	private WorkerThreadResult<L, A> mThreadResult = null;
 	private final BlockingQueue<WorkerThreadResult<L, A>> mBlockingQueueForResults;
-	private final BlockingQueue<IRun<L, ?>> mWorkerTaskQueue;
+	private final BlockingQueue<WorkerTask<L>> mWorkerTaskQueue;
 	private final TransferBetweenMainAndWorker<L, IPredicate> mNwaCexTransferrer;
+	private IRun<L, ?> mMainThreadCounterexample;
+	private StaleCancellationToken mCancellationToken;
 
 	private final PathProgramCache<L> mProgramCache;
 
@@ -144,7 +146,7 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 			final PredicateFactoryRefinement stateFactoryForRefinement, final boolean computeHoareAnnotation,
 			final ParallelNwaCegarLoop<L, A> mainThread,
 			final BlockingQueue<WorkerThreadResult<L, A>> blockingQueueForResults,
-			final BlockingQueue<IRun<L, ?>> workerTaskQueue,
+			final BlockingQueue<WorkerTask<L>> workerTaskQueue,
 			final TransferBetweenMainAndWorker<L, IPredicate> transferWorkerUtils) throws InterruptedException {
 
 		mLogger = logger;
@@ -194,20 +196,34 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 			try {
 				mLogger.info("WorkerThread: " + Thread.currentThread() + " is Waiting for a Task");
 				mIteration += 1;
-				final IRun<L, ?> mainThreadCounterexample = mWorkerTaskQueue.take();
+				final WorkerTask<L> workerTask = mWorkerTaskQueue.take();
+				mThreadResult = null;
+				mMainThreadCounterexample = workerTask.getCounterexample();
+				mCancellationToken = workerTask.getCancellationToken();
+				if (mCancellationToken != null) {
+					mCancellationToken.attachWorkerThread(Thread.currentThread());
+				}
+				if (isCancellationRequested(StaleCancellationPoint.BEFORE_TRANSFER)) {
+					finishCurrentTask();
+					continue;
+				}
 				mProgramCache.copyProgramCache(mMainThread.getCurrentProgramCache());
 				mCounterexample =
-						mNwaCexTransferrer.transferRun((NestedRun<L, ?>) mainThreadCounterexample, Mode.MAIN2WORKER);
+						mNwaCexTransferrer.transferRun((NestedRun<L, ?>) mMainThreadCounterexample, Mode.MAIN2WORKER);
 
 				// set the programCount to x-1, because we will report it again later
 				mProgramCache.setPathProgramCount(mCounterexample.getWord(),
-						mProgramCache.getPathProgramCount(mainThreadCounterexample.getWord()) - 1);
+						mProgramCache.getPathProgramCount(mMainThreadCounterexample.getWord()) - 1);
 				final List<L> trace = mCounterexample.getWord().asList();
 				mCurrentErrorLoc = mCounterexample.getSymbol(mCounterexample.getLength() - 2).getTarget();
 				final int traceHash = trace.hashCode();
 				mLogger.info("Starting Thread: " + Thread.currentThread().getId() + "# for Trace Check: " + traceHash);
 				Thread.currentThread().setName("Worker for " + traceHash);
 				try {
+					if (isCancellationRequested(StaleCancellationPoint.BEFORE_TRACE_CHECK)) {
+						finishCurrentTask();
+						continue;
+					}
 					final var locations = getControlConfigurationsFromCounterexample(mCounterexample);
 					final Counterexample<L> counterexample = new Counterexample<>(mCounterexample.getWord(), locations);
 					final ITARefinementStrategy<L> strategy = setUpStrategy(counterexample);
@@ -215,16 +231,73 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 
 					final AbstractCegarLoop.AutomatonType automatonType = processFeasibilityCheckResult(strategy,
 							isCexResult.getFirst(), isCexResult.getSecond(), mCurrentErrorLoc);
+					if (automatonType == AbstractCegarLoop.AutomatonType.INTERPOLANT
+							&& isCancellationRequested(StaleCancellationPoint.BEFORE_AUTOMATON)) {
+						finishCurrentTask();
+						continue;
+					}
 					constructRefinementAutomaton(automatonType);
 					mThreadResult = refineAbstractionInternally();
 				} catch (AutomataLibraryException | ToolchainCanceledException | SMTLIBException e) {
+					if (wasImmediateStaleInterrupt()
+							&& isCancellationRequested(StaleCancellationPoint.IMMEDIATE_INTERRUPT)) {
+						finishCurrentTask();
+						continue;
+					}
 					throw new AssertionError("WorkerThread Failed: " + e);
 				}
-				mLogger.info("Done with Thread: " + Thread.currentThread().getId() + "#");
-				mBlockingQueueForResults.put(mThreadResult);
+				finishCurrentTask();
 			} catch (final InterruptedException e) {
-				Thread.currentThread().interrupt();
+				if (wasImmediateStaleInterrupt() && isCancellationRequested(StaleCancellationPoint.IMMEDIATE_INTERRUPT)) {
+					try {
+						finishCurrentTask();
+						continue;
+					} catch (final InterruptedException ie) {
+						Thread.currentThread().interrupt();
+					}
+				} else {
+					Thread.currentThread().interrupt();
+				}
 			}
+		}
+	}
+
+	private boolean wasImmediateStaleInterrupt() {
+		return mPref.isStaleWorkerImmediateCancellationEnabled() && mCancellationToken != null
+				&& mCancellationToken.wasImmediateInterruptRequested();
+	}
+
+	private boolean isCancellationRequested(final StaleCancellationPoint point) {
+		if (mPref.isStaleWorkerCancellationEnabled() && mCancellationToken != null
+				&& mCancellationToken.isCancellationRequested()) {
+			mLogger.info("StaleCancellation: worker " + Thread.currentThread().getId() + " for trace "
+					+ mCancellationToken.getTraceHash() + " cancelled at " + point + " because "
+					+ mCancellationToken.getReason());
+			if (mCancellationToken.wasImmediateInterruptRequested()) {
+				Thread.interrupted();
+			}
+			mThreadResult = WorkerThreadResult.constructStaleCancelled(mMainThreadCounterexample, point,
+					mCancellationToken.getReason());
+			return true;
+		}
+		return false;
+	}
+
+	private void finishCurrentTask() throws InterruptedException {
+		mLogger.info("Done with Thread: " + Thread.currentThread().getId() + "#");
+		final StaleCancellationToken cancellationToken = mCancellationToken;
+		try {
+			mBlockingQueueForResults.put(mThreadResult);
+		} finally {
+			if (cancellationToken != null) {
+				if (cancellationToken.isCancellationRequested()
+						&& cancellationToken.wasImmediateInterruptRequested()) {
+					Thread.interrupted();
+				}
+				cancellationToken.clearWorkerThread(Thread.currentThread());
+			}
+			mCancellationToken = null;
+			mMainThreadCounterexample = null;
 		}
 	}
 
@@ -413,9 +486,19 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 
 		}
 
+		if (automatonType == AutomatonType.FLOYD_HOARE
+				&& isCancellationRequested(StaleCancellationPoint.BEFORE_WORKER_DIFFERENCE)) {
+			return mThreadResult;
+		}
+
 		mLogger.info("Difference in Worker for Generalization");
 		computeAutomataDifference(mAbstraction, subtrahend, subtrahendBeforeEnhancement, predicateUnifier,
 				exploitSigmaStarConcatOfIa, htc, enhanceMode, useErrorAutomaton, automatonType);
+
+		if (automatonType == AutomatonType.FLOYD_HOARE
+				&& isCancellationRequested(StaleCancellationPoint.BEFORE_RETURN)) {
+			return mThreadResult;
+		}
 
 		final WorkerThreadResult<L, A> workerResult = new WorkerThreadResult<>(
 				mNwaCexTransferrer.transferAutomaton(subtrahend, mPredicateFactoryInterpolantAutomata,
