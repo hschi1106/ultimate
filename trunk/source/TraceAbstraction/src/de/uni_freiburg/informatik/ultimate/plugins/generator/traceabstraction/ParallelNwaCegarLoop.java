@@ -356,6 +356,11 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 			mLogger.info("WorkerSetUpTime: " + mWorkerSetUpTime + " s");
 			mLogger.info("ExceptionInWorker: " + mExceptionInWorker);
 			mLogger.info("mRefinementTime: " + mRefinementTime);
+			final var checkedPathSummary = (CheckedPathDivergenceTracker.Summary) mCegarLoopBenchmark
+					.getValue(CegarLoopStatisticsDefinitions.AvgPairwiseTreeDistance.toString());
+			mLogger.info("Checked paths: " + checkedPathSummary.getCheckedPathCount());
+			mLogger.info("Total pairwise tree distance: " + checkedPathSummary.getTotalPairwiseTreeDistance());
+			mLogger.info("Avg pairwise tree distance: " + checkedPathSummary.getAveragePairwiseTreeDistance());
 		}
 	}
 
@@ -482,6 +487,10 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 	 */
 	public INestedWordAutomaton<L, IPredicate> getAbstraction() {
 		return mAbstraction;
+	}
+
+	public void reportCheckedCounterexample(final IRun<L, ?> counterexample) {
+		mCegarLoopBenchmark.reportCheckedPath(counterexample.getStateSequence());
 	}
 
 	private IsEmpty<L, IPredicate> getSearch(final IsEmpty.SearchStrategy strategy,

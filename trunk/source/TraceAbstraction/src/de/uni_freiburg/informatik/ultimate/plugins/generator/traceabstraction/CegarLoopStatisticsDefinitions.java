@@ -47,6 +47,14 @@ public enum CegarLoopStatisticsDefinitions implements IStatisticsElement {
 
 	PathProgramHistogramMax(StatisticsType.INTEGER_MAX, StatisticsType.KEY_BEFORE_DATA),
 
+	CheckedPaths(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	TotalPairwiseTreeDistance(StatisticsType.LONG_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	AvgPairwiseTreeDistance(CheckedPathDivergenceTracker.Summary.SUMMARY_AGGREGATION,
+			key -> data -> key + ": "
+					+ ((CheckedPathDivergenceTracker.Summary) data).getAveragePairwiseTreeDistance()),
+
 	EmptinessCheckTime(StatisticsType.LONG_ADDITION, StatisticsType.KEY_BEFORE_NANOS),
 
 	AutomataDifference(StatisticsType.LONG_ADDITION, StatisticsType.KEY_BEFORE_NANOS),

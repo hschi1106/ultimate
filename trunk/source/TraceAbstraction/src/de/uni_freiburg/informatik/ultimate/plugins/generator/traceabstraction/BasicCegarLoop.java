@@ -313,6 +313,8 @@ public abstract class BasicCegarLoop<L extends IIcfgTransition<?>, A extends IAu
 				throw new TaskCanceledException(UserDefinedLimit.PATH_PROGRAM_ATTEMPTS, getClass(), taskDescription);
 			}
 
+			// Measures how dispersed the paths that actually reach the verifier are in the exploration tree.
+			mCegarLoopBenchmark.reportCheckedPath(mCounterexample.getStateSequence());
 			final TraceAbstractionRefinementEngine<L> refinementEngine =
 					new TraceAbstractionRefinementEngine<>(getServices(), mLogger, strategy);
 			mRefinementResult = refinementEngine.getResult();
@@ -422,6 +424,11 @@ public abstract class BasicCegarLoop<L extends IIcfgTransition<?>, A extends IAu
 		mLogger.info("Path program histogram: " + sortedHistogram);
 		final int max = HistogramOfIterable.getMaxOfVisualizationArray(sortedHistogram);
 		mCegarLoopBenchmark.reportPathProgramHistogramMaximum(max);
+		final var checkedPathSummary = (CheckedPathDivergenceTracker.Summary) mCegarLoopBenchmark
+				.getValue(CegarLoopStatisticsDefinitions.AvgPairwiseTreeDistance.toString());
+		mLogger.info("Checked paths: " + checkedPathSummary.getCheckedPathCount());
+		mLogger.info("Total pairwise tree distance: " + checkedPathSummary.getTotalPairwiseTreeDistance());
+		mLogger.info("Avg pairwise tree distance: " + checkedPathSummary.getAveragePairwiseTreeDistance());
 		mCegarLoopBenchmark.stop(CegarLoopStatisticsDefinitions.OverallTime.toString());
 
 	}

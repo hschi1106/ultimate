@@ -1,0 +1,17 @@
+benchmark,threads,result,runtime_ms,checked_paths,total_pairwise_tree_distance,avg_pairwise_tree_distance,refinements,stale_paths
+easy-small,1,SAFE,2063,1,0,0.0,1,0
+easy-small,2,SAFE,2155,1,0,0.0,1,0
+easy-small,4,SAFE,2139,1,0,0.0,1,0
+easy-small,8,SAFE,3024,1,0,0.0,1,0
+medium-loop,1,SAFE,1814,2,5,5.0,2,0
+medium-loop,2,SAFE,2201,3,16,5.333333333333333,2,0
+medium-loop,4,SAFE,2854,5,60,6.0,2,0
+medium-loop,8,SAFE,4493,9,264,7.333333333333333,2,0
+hidden-inequality,1,SAFE,2122,4,78,13.0,4,0
+hidden-inequality,2,SAFE,2671,7,316,15.047619047619047,6,0
+hidden-inequality,4,SAFE,3724,12,1157,17.53030303030303,9,0
+hidden-inequality,8,SAFE,4781,16,2352,19.6,10,0
+concurrent-fischer,1,SAFE,1828,9,1208,33.55555555555556,9,0
+concurrent-fischer,2,SAFE,1860,9,1208,33.55555555555556,9,0
+concurrent-fischer,4,SAFE,1754,9,1208,33.55555555555556,9,0
+concurrent-fischer,8,SAFE,1923,9,1208,33.55555555555556,9,0

@@ -118,6 +118,7 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 	private final BlockingQueue<WorkerThreadResult<L, A>> mBlockingQueueForResults;
 	private final BlockingQueue<IRun<L, ?>> mWorkerTaskQueue;
 	private final TransferBetweenMainAndWorker<L, IPredicate> mNwaCexTransferrer;
+	private IRun<L, ?> mMainThreadCounterexample;
 
 	private final PathProgramCache<L> mProgramCache;
 
@@ -194,14 +195,14 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 			try {
 				mLogger.info("WorkerThread: " + Thread.currentThread() + " is Waiting for a Task");
 				mIteration += 1;
-				final IRun<L, ?> mainThreadCounterexample = mWorkerTaskQueue.take();
+				mMainThreadCounterexample = mWorkerTaskQueue.take();
 				mProgramCache.copyProgramCache(mMainThread.getCurrentProgramCache());
 				mCounterexample =
-						mNwaCexTransferrer.transferRun((NestedRun<L, ?>) mainThreadCounterexample, Mode.MAIN2WORKER);
+						mNwaCexTransferrer.transferRun((NestedRun<L, ?>) mMainThreadCounterexample, Mode.MAIN2WORKER);
 
 				// set the programCount to x-1, because we will report it again later
 				mProgramCache.setPathProgramCount(mCounterexample.getWord(),
-						mProgramCache.getPathProgramCount(mainThreadCounterexample.getWord()) - 1);
+						mProgramCache.getPathProgramCount(mMainThreadCounterexample.getWord()) - 1);
 				final List<L> trace = mCounterexample.getWord().asList();
 				mCurrentErrorLoc = mCounterexample.getSymbol(mCounterexample.getLength() - 2).getTarget();
 				final int traceHash = trace.hashCode();
@@ -289,6 +290,8 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 				throw new TaskCanceledException(UserDefinedLimit.PATH_PROGRAM_ATTEMPTS, getClass(), taskDescription);
 			}
 
+			// Measures how dispersed the paths that actually reach the verifier are in the exploration tree.
+			mMainThread.reportCheckedCounterexample(mMainThreadCounterexample);
 			final TraceAbstractionRefinementEngine<L> refinementEngine =
 					new TraceAbstractionRefinementEngine<>(getServices(), mLogger, strategy);
 			mRefinementResult = refinementEngine.getResult();

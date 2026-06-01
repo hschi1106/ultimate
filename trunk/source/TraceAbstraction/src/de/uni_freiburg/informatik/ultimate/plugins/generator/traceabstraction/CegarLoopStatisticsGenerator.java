@@ -27,6 +27,7 @@
 package de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction;
 
 import java.util.Collection;
+import java.util.List;
 
 import de.uni_freiburg.informatik.ultimate.lib.tracecheckerutils.CoverageAnalysis.BackwardCoveringInformation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.CegarStatisticsType.SizeIterationPair;
@@ -50,6 +51,7 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 	private final StatisticsData mPathInvariantsStatistics = new StatisticsData();
 	private final StatisticsData mRefinementEngineStatistics = new StatisticsData();
 	private final StatisticsData mConComCheckerStatistics = new StatisticsData();
+	private final CheckedPathDivergenceTracker mCheckedPathDivergenceTracker = new CheckedPathDivergenceTracker();
 
 	private int mIterations = 0;
 	private SizeIterationPair mBiggestAbstraction = new SizeIterationPair(-1, -1);
@@ -130,6 +132,10 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 		}
 	}
 
+	public void reportCheckedPath(final List<?> rootToNodePath) {
+		mCheckedPathDivergenceTracker.recordCheckedPath(rootToNodePath);
+	}
+
 	public void reportInterpolantAutomatonStates(final int count) {
 		mInterpolantAutomatonStates += count;
 	}
@@ -156,6 +162,9 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 		case OverallIterations -> mIterations;
 		case TraceHistogramMax -> mTraceHistogramMaximum;
 		case PathProgramHistogramMax -> mPathProgramHistogramMaximum;
+		case CheckedPaths -> mCheckedPathDivergenceTracker.getCheckedPathCount();
+		case TotalPairwiseTreeDistance -> mCheckedPathDivergenceTracker.getTotalPairwiseTreeDistance();
+		case AvgPairwiseTreeDistance -> mCheckedPathDivergenceTracker.getSummary();
 		case BiggestAbstraction -> mBiggestAbstraction;
 		case InterpolantAutomatonStates -> mInterpolantAutomatonStates;
 		case InterpolantCoveringCapability -> mBCI;
