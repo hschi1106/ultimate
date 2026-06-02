@@ -547,6 +547,16 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 	private static final boolean DEF_MINIMIZE_ABSTRACTION_PER_WORKER = true;
 	private static final String DESC_MINIMIZE_ABSTRACTION_PER_WORKER =
 			"Minimize the abstraction everytime a worker is done, or only once per CEGAR iteration.";
+
+	public static final String LABEL_ADAPTIVE_WORKER_SCALING = "Adaptive worker scaling for Parallel CEGAR";
+	private static final boolean DEF_ADAPTIVE_WORKER_SCALING = false;
+	private static final String DESC_ADAPTIVE_WORKER_SCALING =
+			"Activate an additional worker only if the next selected trace introduces a path program that is not already being analysed by an in-flight worker. Avoids spending workers on redundant infeasibility reasons (the PAR-6 < PAR-4 regression). OFF preserves the paper's fixed-thread-pool behaviour.";
+
+	public static final String LABEL_TRACE_SELECTION_STRATEGY = "Trace selection strategy for Parallel CEGAR";
+	private static final TraceSelectionStrategy DEF_TRACE_SELECTION_STRATEGY = TraceSelectionStrategy.ALG4_PREFIX;
+	private static final String DESC_TRACE_SELECTION_STRATEGY =
+			"How the coordinator selects the next trace to dispatch. ALG4_PREFIX is the paper's diverse-prefix search (Alg. 4) and is the default. DPPI selects by path program: it skips traces whose path program is already in-flight and, among the rest, prefers the one sharing fewest edges with in-flight tasks (with a fairness fallback that preserves termination and L(A)=emptyset => SAFE).";
 	// Parallel CEGAR counterexample search stragies
 	// ========================================================================
 	public static final String LABEL_PARALLELSEARCH_ACTIVE_CEX_ONLY = "Consider only active in Search Strategy";
@@ -859,7 +869,11 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 				new UltimatePreferenceItem<>(LABEL_PARALLELSEARCH_ACTIVE_CEX_ONLY, DEF_PARALLELSEARCH_ACTIVE_CEX_ONLY,
 						DESC_PARALLELSEARCH_ACTIVE_CEX_ONLY, PreferenceType.Boolean),
 				new UltimatePreferenceItem<>(LABEL_MINIMIZE_ABSTRACTION_PER_WORKER, DEF_MINIMIZE_ABSTRACTION_PER_WORKER,
-						DESC_MINIMIZE_ABSTRACTION_PER_WORKER, PreferenceType.Boolean));
+						DESC_MINIMIZE_ABSTRACTION_PER_WORKER, PreferenceType.Boolean),
+				new UltimatePreferenceItem<>(LABEL_ADAPTIVE_WORKER_SCALING, DEF_ADAPTIVE_WORKER_SCALING,
+						DESC_ADAPTIVE_WORKER_SCALING, PreferenceType.Boolean),
+				new UltimatePreferenceItem<>(LABEL_TRACE_SELECTION_STRATEGY, DEF_TRACE_SELECTION_STRATEGY,
+						DESC_TRACE_SELECTION_STRATEGY, PreferenceType.Combo, TraceSelectionStrategy.values()));
 
 	}
 
@@ -1053,6 +1067,15 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 
 	public enum StaleWorkerCancellationMode {
 		OFF, COOPERATIVE, IMMEDIATE
+	}
+
+	/**
+	 * Trace-selection strategy for the parallel CEGAR coordinator. ALG4_PREFIX is the paper's diverse-prefix
+	 * search (Alg. 4) and stays the default so the baseline is preserved. DPPI selects by path program instead
+	 * of syntactic prefix (skip in-flight path programs, minimise edge overlap with in-flight tasks).
+	 */
+	public enum TraceSelectionStrategy {
+		ALG4_PREFIX, DPPI
 	}
 
 	/**

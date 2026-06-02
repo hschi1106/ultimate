@@ -60,6 +60,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.pr
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.OrderOfErrorLocations;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.RefinementStrategy;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.StaleWorkerCancellationMode;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.TraceSelectionStrategy;
 import de.uni_freiburg.informatik.ultimate.util.ReflectionUtil.Reflected;
 
 public final class TAPreferences {
@@ -104,6 +105,8 @@ public final class TAPreferences {
 	private final boolean mConsiderOnlyActiveCounterexamplesInIsEmptyParallel;
 	private final boolean mMinimizeAbstractionPerWorker;
 	private final int mSearchLoopBound;
+	private final boolean mAdaptiveWorkerScaling;
+	private final TraceSelectionStrategy mTraceSelectionStrategy;
 
 	public enum Artifact {
 		ABSTRACTION, INTERPOLANT_AUTOMATON, NEG_INTERPOLANT_AUTOMATON, RCFG
@@ -218,6 +221,11 @@ public final class TAPreferences {
 		mMinimizeAbstractionPerWorker =
 				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_MINIMIZE_ABSTRACTION_PER_WORKER);
 		mSearchLoopBound = mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_SEARCH_LOOP_BOUND);
+		mAdaptiveWorkerScaling =
+				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_ADAPTIVE_WORKER_SCALING);
+		mTraceSelectionStrategy =
+				mPrefs.getEnum(TraceAbstractionPreferenceInitializer.LABEL_TRACE_SELECTION_STRATEGY,
+						TraceSelectionStrategy.class);
 	}
 
 	/**
@@ -625,5 +633,13 @@ public final class TAPreferences {
 
 	public int getSearchLoopBound() {
 		return mSearchLoopBound;
+	}
+
+	public boolean isAdaptiveWorkerScalingEnabled() {
+		return mAdaptiveWorkerScaling;
+	}
+
+	public TraceSelectionStrategy getTraceSelectionStrategy() {
+		return mTraceSelectionStrategy;
 	}
 }

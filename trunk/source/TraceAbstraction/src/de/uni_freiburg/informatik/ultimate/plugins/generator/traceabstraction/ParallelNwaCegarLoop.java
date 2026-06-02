@@ -28,6 +28,7 @@
 package de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -88,6 +89,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.pr
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TAPreferences.InterpolantAutomatonEnhancement;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.Minimization;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.RelevanceAnalysisMode;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.TraceSelectionStrategy;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.tracehandling.TaCheckAndRefinementPreferences;
 
 public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutomaton<L, IPredicate>>
@@ -131,6 +133,17 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 	private long mWorkerSetUpTime = 0;
 	private int mIterationsWithMaxThreads = 0;
 	private int mIterationsWithOneThread = 0;
+	// S3: number of times an idle worker was withheld because the selected trace
+	// duplicated a path program already being analysed by an in-flight worker.
+	private int mAdaptiveScalingGated = 0;
+	// DPPI (A2) selection counters.
+	private int mDppiNovelSelected = 0; // picked a candidate whose path program is not in flight
+	private int mDppiFairnessFallback = 0; // no fresh-path-program candidate; fell back to the diverse trace
+	private int mDppiCandidatesScanned = 0;
+	// DPPI: how many diverse candidates to enumerate per selection before ranking by path-program overlap.
+	// Kept small because each candidate costs one extra emptiness search (the costly step, paper §3.4); the
+	// search also early-stops once a fully path-program-disjoint (overlap 0) candidate is found.
+	private static final int DPPI_MAX_CANDIDATES = 4;
 	private final int mExceptionInWorker = 0;
 
 	private long mRefinementTime = 0;
@@ -344,6 +357,19 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 					didntFindCexLastIteration = true;
 					break;
 				}
+				// S3 (adaptive worker scaling): do not activate an additional worker when the selected
+				// trace's path program is already being analysed by an in-flight worker. Spending a worker
+				// on a duplicate infeasibility reason is the overhead behind the PAR-6 < PAR-4 regression.
+				// The trace is only deferred (not added to the assigned set), so it is re-selected once the
+				// duplicate worker finishes; soundness/termination are preserved (the verdict still rests on
+				// L(A)=emptyset and every trace is eventually dispatched).
+				if (mPref.isAdaptiveWorkerScalingEnabled() && mRunningThreads >= 1
+						&& !addsDistinctInFlightPathProgram((NestedRun<L, ?>) mCounterexample)) {
+					mAdaptiveScalingGated += 1;
+					mLogger.info("AdaptiveScaling: withholding worker; selected trace duplicates an in-flight "
+							+ "path program (runningThreads=" + mRunningThreads + ")");
+					break;
+				}
 				if (mCounterexample != null) {
 					startWorker();
 				}
@@ -380,6 +406,10 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 			mLogger.info("ActiveExecutorsForPathPrograms: " + mActiveExecutors);
 			mLogger.info("IterationsWithMaxThreads: " + mIterationsWithMaxThreads);
 			mLogger.info("IterationsWithONEThread: " + mIterationsWithOneThread);
+			mLogger.info("AdaptiveScalingGated: " + mAdaptiveScalingGated);
+			mLogger.info("DppiNovelSelected: " + mDppiNovelSelected);
+			mLogger.info("DppiFairnessFallback: " + mDppiFairnessFallback);
+			mLogger.info("DppiCandidatesScanned: " + mDppiCandidatesScanned);
 			mLogger.info("SearchTime: " + mSearchTime + " s");
 			mLogger.info("WorkerSetUpTime: " + mWorkerSetUpTime + " s");
 			mLogger.info("ExceptionInWorker: " + mExceptionInWorker);
@@ -610,6 +640,21 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 	}
 
 	/*
+	 * S3 (adaptive worker scaling): true iff the candidate's path program (the set of its trace letters, the
+	 * same representative used by PathProgramCache) differs from every path program currently in flight. The
+	 * in-flight set is mActiveCounterexamples (at most mThreadLimit entries), so this is computed on demand.
+	 */
+	private boolean addsDistinctInFlightPathProgram(final NestedRun<L, ?> candidate) {
+		final Set<L> candidatePathProgram = new HashSet<>(candidate.getWord().asList());
+		for (final NestedRun<L, ?> active : mActiveCounterexamples.values()) {
+			if (candidatePathProgram.equals(new HashSet<>(active.getWord().asList()))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/*
 	 * Only add a counterexample if it is being checked by a thread otherwise we are unsound
 	 */
 	private void addCounterexampleToSet(final NestedRun<L, ?> counterexample) {
@@ -703,6 +748,17 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 				return search.getNestedRun();
 			}
 		}
+		// A2: route trace selection to DPPI when configured. Alg. 4 (the ALG4_PREFIX path below) is left intact.
+		if (mPref.getTraceSelectionStrategy() == TraceSelectionStrategy.DPPI) {
+			final NestedRun<L, IPredicate> dppiRun = searchForErrorTraceDppi(possibleEndPoints);
+			mSearchTime += ((System.nanoTime() / 1000000000) - time);
+			if (dppiRun != null) {
+				return dppiRun;
+			}
+			mLogger.info("Did not Find a Counterexample (DPPI)!");
+			mCountFailedToFindCex += 1;
+			return null;
+		}
 		search = getSearch(IsEmpty.SearchStrategy.PARALLEL, possibleEndPoints);
 		if (isSearchCorrectAndTraceFresh(search)) {
 			mLogger.info("Found new Counterexample via IsEmptyParallel!");
@@ -714,6 +770,100 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 
 		mSearchTime += ((System.nanoTime() / 1000000000) - time);
 		return null;
+	}
+
+	/*
+	 * A2 (DPPI): path-program-based trace selection, implemented as a SEPARATE function so the Alg. 4 code path
+	 * (ALG4_PREFIX, the default) is left fully intact. It enumerates up to DPPI_MAX_CANDIDATES diverse traces by
+	 * repeatedly running the existing diverse search (IsEmptyParallel) with an augmented avoid-set, then selects
+	 * the candidate whose path program (its edge set, the representative PathProgramCache uses) is not already in
+	 * flight and shares the fewest edges with in-flight tasks (ties broken by shorter trace = cheaper to check).
+	 *
+	 * Fairness floor: if every enumerated candidate's path program is already in flight, return the first diverse
+	 * trace found anyway. This guarantees that whenever an unanalysed trace exists DPPI returns one, preserving
+	 * progress/termination and L(A)=emptyset => SAFE (the verdict never depends on which trace is chosen).
+	 */
+	private NestedRun<L, IPredicate> searchForErrorTraceDppi(final Set<IPredicate> possibleEndPoints)
+			throws AutomataOperationCanceledException {
+		final HashMap<Integer, NestedRun<L, ?>> avoid = new HashMap<>(mActiveCounterexamples);
+		final Set<L> inFlightEdges = inFlightEdgeUnion();
+		NestedRun<L, IPredicate> firstFound = null;
+		NestedRun<L, IPredicate> best = null;
+		int bestOverlap = Integer.MAX_VALUE;
+		int bestLength = Integer.MAX_VALUE;
+		for (int k = 0; k < DPPI_MAX_CANDIDATES; k++) {
+			final IsEmpty<L, IPredicate> search = new IsEmptyParallel<>(new AutomataLibraryServices(mServices),
+					mAbstraction, mAbstraction.getInitialStates(), Collections.emptySet(), possibleEndPoints,
+					possibleEndPoints == null, IsEmpty.SearchStrategy.BFS, avoid, mPref.getSearchLoopBound());
+			if (!isSearchCorrectAndTraceFresh(search)) {
+				break;
+			}
+			final NestedRun<L, IPredicate> cand = search.getNestedRun();
+			if (cand == null) {
+				break;
+			}
+			mDppiCandidatesScanned += 1;
+			if (firstFound == null) {
+				firstFound = cand;
+			}
+			final List<L> word = cand.getWord().asList();
+			final Set<L> pathProgram = new HashSet<>(word);
+			if (!isPathProgramInFlight(pathProgram)) {
+				int overlap = 0;
+				for (final L edge : pathProgram) {
+					if (inFlightEdges.contains(edge)) {
+						overlap += 1;
+					}
+				}
+				final int length = word.size();
+				if (overlap < bestOverlap || (overlap == bestOverlap && length < bestLength)) {
+					best = cand;
+					bestOverlap = overlap;
+					bestLength = length;
+				}
+				if (overlap == 0) {
+					// Already fully path-program-disjoint from in-flight tasks; cannot do better.
+					break;
+				}
+			}
+			// Exclude this candidate so the next search returns a different diverse trace.
+			avoid.put(word.hashCode(), cand);
+		}
+		if (best == null) {
+			// Fairness floor: only in-flight path programs are currently selectable; take the diverse trace so
+			// progress/termination and L(A)=emptyset => SAFE are preserved.
+			if (firstFound != null) {
+				mDppiFairnessFallback += 1;
+				mLogger.info("DPPI: fairness fallback to diverse trace (all candidate path programs in flight)");
+			}
+			return firstFound;
+		}
+		mDppiNovelSelected += 1;
+		mLogger.info("DPPI: selected path-program-disjoint trace with in-flight edge overlap " + bestOverlap);
+		return best;
+	}
+
+	/*
+	 * DPPI helper: true iff the given path program (edge set) equals the path program of some in-flight trace.
+	 */
+	private boolean isPathProgramInFlight(final Set<L> pathProgram) {
+		for (final NestedRun<L, ?> active : mActiveCounterexamples.values()) {
+			if (pathProgram.equals(new HashSet<>(active.getWord().asList()))) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/*
+	 * DPPI helper: union of edges over all in-flight path programs (the Overlap reference set).
+	 */
+	private Set<L> inFlightEdgeUnion() {
+		final Set<L> edges = new HashSet<>();
+		for (final NestedRun<L, ?> active : mActiveCounterexamples.values()) {
+			edges.addAll(active.getWord().asList());
+		}
+		return edges;
 	}
 
 	@Override
