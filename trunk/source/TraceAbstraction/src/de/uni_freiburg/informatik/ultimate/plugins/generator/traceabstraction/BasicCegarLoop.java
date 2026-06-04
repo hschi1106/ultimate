@@ -424,11 +424,13 @@ public abstract class BasicCegarLoop<L extends IIcfgTransition<?>, A extends IAu
 		mLogger.info("Path program histogram: " + sortedHistogram);
 		final int max = HistogramOfIterable.getMaxOfVisualizationArray(sortedHistogram);
 		mCegarLoopBenchmark.reportPathProgramHistogramMaximum(max);
-		final var checkedPathSummary = (CheckedPathDivergenceTracker.Summary) mCegarLoopBenchmark
-				.getValue(CegarLoopStatisticsDefinitions.AvgPairwiseTreeDistance.toString());
+		final var checkedPathSummary = (CheckedPathPrefixLcaDivergenceTracker.Summary) mCegarLoopBenchmark
+				.getValue(CegarLoopStatisticsDefinitions.AvgPairwisePrefixLcaDivergence.toString());
 		mLogger.info("Checked paths: " + checkedPathSummary.getCheckedPathCount());
-		mLogger.info("Total pairwise tree distance: " + checkedPathSummary.getTotalPairwiseTreeDistance());
-		mLogger.info("Avg pairwise tree distance: " + checkedPathSummary.getAveragePairwiseTreeDistance());
+		mLogger.info("Total pairwise prefix-LCA divergence: "
+				+ checkedPathSummary.getTotalPairwisePrefixLcaDivergence());
+		mLogger.info("Avg pairwise prefix-LCA divergence: "
+				+ checkedPathSummary.getAveragePairwisePrefixLcaDivergence());
 		mCegarLoopBenchmark.stop(CegarLoopStatisticsDefinitions.OverallTime.toString());
 
 	}

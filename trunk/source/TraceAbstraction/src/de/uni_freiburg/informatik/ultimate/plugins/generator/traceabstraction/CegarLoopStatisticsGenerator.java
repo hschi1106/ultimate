@@ -51,7 +51,8 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 	private final StatisticsData mPathInvariantsStatistics = new StatisticsData();
 	private final StatisticsData mRefinementEngineStatistics = new StatisticsData();
 	private final StatisticsData mConComCheckerStatistics = new StatisticsData();
-	private final CheckedPathDivergenceTracker mCheckedPathDivergenceTracker = new CheckedPathDivergenceTracker();
+	private final CheckedPathPrefixLcaDivergenceTracker mCheckedPathPrefixLcaDivergenceTracker =
+			new CheckedPathPrefixLcaDivergenceTracker();
 
 	private int mIterations = 0;
 	private SizeIterationPair mBiggestAbstraction = new SizeIterationPair(-1, -1);
@@ -133,7 +134,7 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 	}
 
 	public void reportCheckedPath(final List<?> rootToNodePath) {
-		mCheckedPathDivergenceTracker.recordCheckedPath(rootToNodePath);
+		mCheckedPathPrefixLcaDivergenceTracker.recordCheckedPath(rootToNodePath);
 	}
 
 	public void reportInterpolantAutomatonStates(final int count) {
@@ -162,9 +163,10 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 		case OverallIterations -> mIterations;
 		case TraceHistogramMax -> mTraceHistogramMaximum;
 		case PathProgramHistogramMax -> mPathProgramHistogramMaximum;
-		case CheckedPaths -> mCheckedPathDivergenceTracker.getCheckedPathCount();
-		case TotalPairwiseTreeDistance -> mCheckedPathDivergenceTracker.getTotalPairwiseTreeDistance();
-		case AvgPairwiseTreeDistance -> mCheckedPathDivergenceTracker.getSummary();
+		case CheckedPaths -> mCheckedPathPrefixLcaDivergenceTracker.getCheckedPathCount();
+		case TotalPairwisePrefixLcaDivergence ->
+			mCheckedPathPrefixLcaDivergenceTracker.getTotalPairwisePrefixLcaDivergence();
+		case AvgPairwisePrefixLcaDivergence -> mCheckedPathPrefixLcaDivergenceTracker.getSummary();
 		case BiggestAbstraction -> mBiggestAbstraction;
 		case InterpolantAutomatonStates -> mInterpolantAutomatonStates;
 		case InterpolantCoveringCapability -> mBCI;

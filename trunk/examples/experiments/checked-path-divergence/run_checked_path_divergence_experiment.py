@@ -25,8 +25,8 @@ CSV_COLUMNS = [
     "result",
     "runtime_ms",
     "checked_paths",
-    "total_pairwise_tree_distance",
-    "avg_pairwise_tree_distance",
+    "total_pairwise_prefix_lca_divergence",
+    "avg_pairwise_prefix_lca_divergence",
     "refinements",
     "stale_paths",
 ]
@@ -36,13 +36,13 @@ STAT_PATTERNS = {
         re.compile(r"Checked paths:\s*([0-9]+)", re.IGNORECASE),
         re.compile(r"CheckedPaths:\s*([0-9]+)", re.IGNORECASE),
     ],
-    "total_pairwise_tree_distance": [
-        re.compile(r"Total pairwise tree distance:\s*([0-9]+)", re.IGNORECASE),
-        re.compile(r"TotalPairwiseTreeDistance:\s*([0-9]+)", re.IGNORECASE),
+    "total_pairwise_prefix_lca_divergence": [
+        re.compile(r"Total pairwise prefix-LCA divergence:\s*([0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)", re.IGNORECASE),
+        re.compile(r"TotalPairwisePrefixLcaDivergence:\s*([0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)", re.IGNORECASE),
     ],
-    "avg_pairwise_tree_distance": [
-        re.compile(r"Avg pairwise tree distance:\s*([0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)", re.IGNORECASE),
-        re.compile(r"AvgPairwiseTreeDistance:\s*([0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)", re.IGNORECASE),
+    "avg_pairwise_prefix_lca_divergence": [
+        re.compile(r"Avg pairwise prefix-LCA divergence:\s*([0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)", re.IGNORECASE),
+        re.compile(r"AvgPairwisePrefixLcaDivergence:\s*([0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)", re.IGNORECASE),
     ],
     "refinements": [
         re.compile(r"Refinements:\s*([0-9]+)", re.IGNORECASE),
@@ -207,8 +207,8 @@ def run_one(args: argparse.Namespace, benchmark: Benchmark, threads: int) -> dic
             "result": "DRY_RUN",
             "runtime_ms": "0",
             "checked_paths": "0",
-            "total_pairwise_tree_distance": "0",
-            "avg_pairwise_tree_distance": "0.0",
+            "total_pairwise_prefix_lca_divergence": "0",
+            "avg_pairwise_prefix_lca_divergence": "0.0",
             "refinements": "0",
             "stale_paths": "0",
         }
@@ -246,15 +246,17 @@ def run_one(args: argparse.Namespace, benchmark: Benchmark, threads: int) -> dic
         "result": parse_result(output, returncode, timed_out),
         "runtime_ms": str(runtime_ms),
         "checked_paths": parse_last(STAT_PATTERNS["checked_paths"], output),
-        "total_pairwise_tree_distance": parse_last(STAT_PATTERNS["total_pairwise_tree_distance"], output),
-        "avg_pairwise_tree_distance": parse_last(STAT_PATTERNS["avg_pairwise_tree_distance"], output, "0.0"),
+        "total_pairwise_prefix_lca_divergence":
+            parse_last(STAT_PATTERNS["total_pairwise_prefix_lca_divergence"], output),
+        "avg_pairwise_prefix_lca_divergence":
+            parse_last(STAT_PATTERNS["avg_pairwise_prefix_lca_divergence"], output, "0.0"),
         "refinements": parse_last(STAT_PATTERNS["refinements"], output),
         "stale_paths": parse_last(STAT_PATTERNS["stale_paths"], output),
     }
     print(
         f"{benchmark.name} threads={threads}: {row['result']}, "
         f"runtime={runtime_ms}ms, checked_paths={row['checked_paths']}, "
-        f"avg_distance={row['avg_pairwise_tree_distance']}",
+        f"avg_prefix_lca_divergence={row['avg_pairwise_prefix_lca_divergence']}",
         flush=True,
     )
     return row
@@ -263,7 +265,7 @@ def run_one(args: argparse.Namespace, benchmark: Benchmark, threads: int) -> dic
 def write_csv(output_dir: Path, rows: list[dict[str, str]]) -> Path:
     csv_path = output_dir / "checked-path-divergence-results.csv"
     with csv_path.open("w", newline="", encoding="utf-8") as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=CSV_COLUMNS)
+        writer = csv.DictWriter(csv_file, fieldnames=CSV_COLUMNS, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     return csv_path
@@ -271,13 +273,13 @@ def write_csv(output_dir: Path, rows: list[dict[str, str]]) -> Path:
 
 def table_for_rows(rows: list[dict[str, str]]) -> str:
     lines = [
-        "| threads | result | runtime_ms | checked_paths | total_pairwise_tree_distance | avg_pairwise_tree_distance | refinements | stale_paths |",
+        "| threads | result | runtime_ms | checked_paths | total_pairwise_prefix_lca_divergence | avg_pairwise_prefix_lca_divergence | refinements | stale_paths |",
         "|---:|---|---:|---:|---:|---:|---:|---:|",
     ]
     for row in sorted(rows, key=lambda item: int(item["threads"])):
         lines.append(
             "| {threads} | {result} | {runtime_ms} | {checked_paths} | "
-            "{total_pairwise_tree_distance} | {avg_pairwise_tree_distance} | "
+            "{total_pairwise_prefix_lca_divergence} | {avg_pairwise_prefix_lca_divergence} | "
             "{refinements} | {stale_paths} |".format(**row)
         )
     return "\n".join(lines)
@@ -287,8 +289,8 @@ def trend_sentence(rows: list[dict[str, str]]) -> str:
     ordered = sorted(rows, key=lambda item: int(item["threads"]))
     if len(ordered) < 2:
         return "Only one thread count was run, so no cross-thread trend can be inferred."
-    first = float(ordered[0]["avg_pairwise_tree_distance"])
-    last = float(ordered[-1]["avg_pairwise_tree_distance"])
+    first = float(ordered[0]["avg_pairwise_prefix_lca_divergence"])
+    last = float(ordered[-1]["avg_pairwise_prefix_lca_divergence"])
     if last > first:
         direction = "increased"
     elif last < first:
@@ -297,7 +299,7 @@ def trend_sentence(rows: list[dict[str, str]]) -> str:
         direction = "did not change"
     return (
         f"From {ordered[0]['threads']} to {ordered[-1]['threads']} threads, "
-        f"avgPairwiseTreeDistance {direction} ({first} -> {last})."
+        f"avgPairwisePrefixLcaDivergence {direction} ({first} -> {last})."
     )
 
 
@@ -313,6 +315,8 @@ def write_markdown(output_dir: Path, rows: list[dict[str, str]]) -> Path:
         "## Purpose",
         "",
         "This experiment compares whether higher parallelization levels lead to more dispersed paths reaching the real trace checker, and whether that correlates with runtime, refinements, or stale work.",
+        "",
+        "Each unordered pair contributes normalized prefix-LCA divergence `1 - depth(LCA(u, v)) / min(depth(u), depth(v))`. A pair contributes `0.0` when its minimum endpoint depth is zero.",
         "",
         "## Benchmark Selection",
         "",
@@ -330,8 +334,8 @@ def write_markdown(output_dir: Path, rows: list[dict[str, str]]) -> Path:
         [
             "## Interpretation Notes",
             "",
-            "- Increasing avgPairwiseTreeDistance means the actually checked paths ended farther apart in the exploration tree.",
-            "- Compare runtime and refinements against the distance columns per benchmark; positive correlation suggests path dispersion may be associated with additional useful or stale work.",
+            "- Increasing avgPairwisePrefixLcaDivergence means the checked paths share less of their shorter root-to-node prefix.",
+            "- Compare runtime and refinements against the divergence columns per benchmark; positive correlation suggests path dispersion may be associated with additional useful or stale work.",
             "- `stale_paths` is `0` when the current Ultimate log does not expose a stale/skipped-path counter.",
             "- Treat timeouts, crashes, and zero checked paths as inconclusive for the dispersion trend.",
             "",

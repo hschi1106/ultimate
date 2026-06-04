@@ -32,20 +32,20 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Tracks how far apart the actually checked root-to-node paths are in the current exploration tree.
+ * Tracks the normalized prefix-LCA divergence of actually checked root-to-node paths.
  *
  * The metric is intentionally observational: callers record a path only after it reaches the real trace-checking step.
- * Generated, stale, or skipped paths must not be recorded here. The average pairwise distance therefore measures how
- * dispersed the verifier's checked paths were, not how many paths the emptiness search happened to enumerate.
+ * Generated, stale, or skipped paths must not be recorded here. Pairwise normalized prefix-LCA divergence measures the
+ * unshared fraction of the shorter path, so pairwise divergence and its average are in [0, 1].
  */
-public final class CheckedPathDivergenceTracker {
+public final class CheckedPathPrefixLcaDivergenceTracker {
 	private final List<List<?>> mCheckedPaths = new ArrayList<>();
-	private long mTotalPairwiseTreeDistance;
+	private double mTotalPairwisePrefixLcaDivergence;
 
 	public synchronized void recordCheckedPath(final List<?> rootToNodePath) {
 		final List<?> immutablePath = Collections.unmodifiableList(new ArrayList<>(rootToNodePath));
 		for (final List<?> previousPath : mCheckedPaths) {
-			mTotalPairwiseTreeDistance += computeTreeDistance(previousPath, immutablePath);
+			mTotalPairwisePrefixLcaDivergence += computePrefixLcaDivergence(previousPath, immutablePath);
 		}
 		mCheckedPaths.add(immutablePath);
 	}
@@ -54,23 +54,24 @@ public final class CheckedPathDivergenceTracker {
 		return mCheckedPaths.size();
 	}
 
-	public synchronized long getTotalPairwiseTreeDistance() {
-		return mTotalPairwiseTreeDistance;
+	public synchronized double getTotalPairwisePrefixLcaDivergence() {
+		return mTotalPairwisePrefixLcaDivergence;
 	}
 
 	public synchronized Summary getSummary() {
-		return new Summary(getCheckedPathCount(), getTotalPairwiseTreeDistance());
+		return new Summary(getCheckedPathCount(), getTotalPairwisePrefixLcaDivergence());
 	}
 
-	static int computeTreeDistance(final List<?> firstPath, final List<?> secondPath) {
+	static double computePrefixLcaDivergence(final List<?> firstPath, final List<?> secondPath) {
 		final int firstDepth = depth(firstPath);
 		final int secondDepth = depth(secondPath);
-		final int commonPrefixLength = commonPrefixLength(firstPath, secondPath);
-		if (commonPrefixLength == 0) {
-			return firstDepth + secondDepth;
+		final int shorterDepth = Math.min(firstDepth, secondDepth);
+		if (shorterDepth == 0) {
+			return 0.0;
 		}
-		final int lcaDepth = commonPrefixLength - 1;
-		return firstDepth + secondDepth - 2 * lcaDepth;
+		final int commonPrefixLength = commonPrefixLength(firstPath, secondPath);
+		final int lcaDepth = Math.max(0, commonPrefixLength - 1);
+		return 1.0 - (double) lcaDepth / shorterDepth;
 	}
 
 	private static int depth(final List<?> path) {
@@ -92,16 +93,16 @@ public final class CheckedPathDivergenceTracker {
 				x -> y -> aggregate((Summary) x, (Summary) y);
 
 		private final int mCheckedPathCount;
-		private final long mTotalPairwiseTreeDistance;
+		private final double mTotalPairwisePrefixLcaDivergence;
 		private final long mPairCount;
 
-		public Summary(final int checkedPathCount, final long totalPairwiseTreeDistance) {
-			this(checkedPathCount, totalPairwiseTreeDistance, pairCount(checkedPathCount));
+		public Summary(final int checkedPathCount, final double totalPairwisePrefixLcaDivergence) {
+			this(checkedPathCount, totalPairwisePrefixLcaDivergence, pairCount(checkedPathCount));
 		}
 
-		private Summary(final int checkedPathCount, final long totalPairwiseTreeDistance, final long pairCount) {
+		private Summary(final int checkedPathCount, final double totalPairwisePrefixLcaDivergence, final long pairCount) {
 			mCheckedPathCount = checkedPathCount;
-			mTotalPairwiseTreeDistance = totalPairwiseTreeDistance;
+			mTotalPairwisePrefixLcaDivergence = totalPairwisePrefixLcaDivergence;
 			mPairCount = pairCount;
 		}
 
@@ -109,20 +110,20 @@ public final class CheckedPathDivergenceTracker {
 			return mCheckedPathCount;
 		}
 
-		public long getTotalPairwiseTreeDistance() {
-			return mTotalPairwiseTreeDistance;
+		public double getTotalPairwisePrefixLcaDivergence() {
+			return mTotalPairwisePrefixLcaDivergence;
 		}
 
-		public double getAveragePairwiseTreeDistance() {
+		public double getAveragePairwisePrefixLcaDivergence() {
 			if (mPairCount == 0) {
 				return 0.0;
 			}
-			return (double) mTotalPairwiseTreeDistance / mPairCount;
+			return mTotalPairwisePrefixLcaDivergence / mPairCount;
 		}
 
 		private static Summary aggregate(final Summary lhs, final Summary rhs) {
 			return new Summary(lhs.mCheckedPathCount + rhs.mCheckedPathCount,
-					lhs.mTotalPairwiseTreeDistance + rhs.mTotalPairwiseTreeDistance,
+					lhs.mTotalPairwisePrefixLcaDivergence + rhs.mTotalPairwisePrefixLcaDivergence,
 					lhs.mPairCount + rhs.mPairCount);
 		}
 
@@ -132,7 +133,7 @@ public final class CheckedPathDivergenceTracker {
 
 		@Override
 		public String toString() {
-			return Double.toString(getAveragePairwiseTreeDistance());
+			return Double.toString(getAveragePairwisePrefixLcaDivergence());
 		}
 	}
 }

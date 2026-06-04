@@ -49,11 +49,11 @@ public enum CegarLoopStatisticsDefinitions implements IStatisticsElement {
 
 	CheckedPaths(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
 
-	TotalPairwiseTreeDistance(StatisticsType.LONG_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+	TotalPairwisePrefixLcaDivergence(StatisticsType.DOUBLE_ADDITION, StatisticsType.KEY_BEFORE_DATA),
 
-	AvgPairwiseTreeDistance(CheckedPathDivergenceTracker.Summary.SUMMARY_AGGREGATION,
+	AvgPairwisePrefixLcaDivergence(CheckedPathPrefixLcaDivergenceTracker.Summary.SUMMARY_AGGREGATION,
 			key -> data -> key + ": "
-					+ ((CheckedPathDivergenceTracker.Summary) data).getAveragePairwiseTreeDistance()),
+					+ ((CheckedPathPrefixLcaDivergenceTracker.Summary) data).getAveragePairwisePrefixLcaDivergence()),
 
 	EmptinessCheckTime(StatisticsType.LONG_ADDITION, StatisticsType.KEY_BEFORE_NANOS),
 
