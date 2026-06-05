@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Run a small checked-path divergence experiment for Ultimate TraceAbstraction."""
+"""Run checked-path divergence experiments for Ultimate TraceAbstraction."""
 
 import argparse
 import csv
-import signal
 import os
 import re
 import shlex
+import signal
 import subprocess
 import time
 from dataclasses import dataclass
@@ -18,17 +18,23 @@ DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parent / "results"
 DEFAULT_ULTIMATE_CMD = os.environ.get(
     "ULTIMATE_CMD", str(REPO_ROOT / "releaseScripts/default/adds/run-ultimate.sh")
 )
+DEFAULT_MODES = ["PAPER", "LCPS"]
+BASIC_MODES = ["BFS", "DFS"]
+ALL_MODES = BASIC_MODES + DEFAULT_MODES
 
 CSV_COLUMNS = [
     "benchmark",
+    "mode",
     "threads",
     "result",
     "runtime_ms",
     "checked_paths",
+    "stale_paths",
+    "duplicate_freshness_failures",
     "total_pairwise_prefix_lca_divergence",
     "avg_pairwise_prefix_lca_divergence",
     "refinements",
-    "stale_paths",
+    "search_failed",
 ]
 
 STAT_PATTERNS = {
@@ -36,23 +42,43 @@ STAT_PATTERNS = {
         re.compile(r"Checked paths:\s*([0-9]+)", re.IGNORECASE),
         re.compile(r"CheckedPaths:\s*([0-9]+)", re.IGNORECASE),
     ],
+    "stale_paths": [
+        re.compile(r"Stale paths:\s*([0-9]+)", re.IGNORECASE),
+        re.compile(r"StalePaths:\s*([0-9]+)", re.IGNORECASE),
+        re.compile(r"Skipped paths:\s*([0-9]+)", re.IGNORECASE),
+    ],
+    "duplicate_freshness_failures": [
+        re.compile(r"Duplicate freshness failures:\s*([0-9]+)", re.IGNORECASE),
+        re.compile(r"DuplicateFreshnessFailures:\s*([0-9]+)", re.IGNORECASE),
+    ],
     "total_pairwise_prefix_lca_divergence": [
-        re.compile(r"Total pairwise prefix-LCA divergence:\s*([0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)", re.IGNORECASE),
-        re.compile(r"TotalPairwisePrefixLcaDivergence:\s*([0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)", re.IGNORECASE),
+        re.compile(
+            r"Total pairwise prefix-LCA divergence:\s*([0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)",
+            re.IGNORECASE,
+        ),
+        re.compile(
+            r"TotalPairwisePrefixLcaDivergence:\s*([0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)",
+            re.IGNORECASE,
+        ),
     ],
     "avg_pairwise_prefix_lca_divergence": [
-        re.compile(r"Avg pairwise prefix-LCA divergence:\s*([0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)", re.IGNORECASE),
-        re.compile(r"AvgPairwisePrefixLcaDivergence:\s*([0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)", re.IGNORECASE),
+        re.compile(
+            r"Avg pairwise prefix-LCA divergence:\s*([0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)",
+            re.IGNORECASE,
+        ),
+        re.compile(
+            r"AvgPairwisePrefixLcaDivergence:\s*([0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)",
+            re.IGNORECASE,
+        ),
     ],
     "refinements": [
         re.compile(r"Refinements:\s*([0-9]+)", re.IGNORECASE),
         re.compile(r"Overall iterations:\s*([0-9]+)", re.IGNORECASE),
         re.compile(r"OverallIterations:\s*([0-9]+)", re.IGNORECASE),
     ],
-    "stale_paths": [
-        re.compile(r"Stale paths:\s*([0-9]+)", re.IGNORECASE),
-        re.compile(r"Skipped paths:\s*([0-9]+)", re.IGNORECASE),
-        re.compile(r"StalePaths:\s*([0-9]+)", re.IGNORECASE),
+    "search_failed": [
+        re.compile(r"SearchFailed:\s*([0-9]+)", re.IGNORECASE),
+        re.compile(r"FailedToFindCounterexamples:\s*([0-9]+)", re.IGNORECASE),
     ],
 }
 
@@ -86,14 +112,14 @@ BENCHMARKS = [
         REPO_ROOT / "trunk/examples/programs/toy/tooDifficultLoopInvariant/HiddenInequality.bpl",
         REPO_ROOT / "trunk/examples/toolchains/AutomizerBpl.xml",
         REPO_ROOT / "trunk/examples/Interactive/settings/ResetSettingsCamel.epf",
-        "Harder loop-invariant testcase with substantially more checked paths than the baseline cases, while still completing in a practical experiment run.",
+        "Harder loop-invariant testcase with substantially more checked paths than the baseline cases.",
     ),
     Benchmark(
         "concurrent-fischer",
         REPO_ROOT / "trunk/examples/concurrent/bpl/regression/showcase/Fischer.bpl",
         REPO_ROOT / "trunk/examples/concurrent/bpl/regression/ReachSafety.xml",
         REPO_ROOT / "trunk/examples/concurrent/bpl/regression/ReachSafety-32bit-Automizer.epf",
-        "Concurrent showcase testcase that completes quickly but still produces several dispersed checked paths under parallel CEGAR.",
+        "Concurrent showcase testcase for parallel trace-abstraction behavior.",
     ),
 ]
 
@@ -111,8 +137,10 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_OUTPUT_DIR,
         help="Directory for CSV, Markdown report, and raw logs.",
     )
-    parser.add_argument("--threads", default="1,2,4,8", help="Comma-separated thread counts.")
-    parser.add_argument("--include-16", action="store_true", help="Also run with 16 workers.")
+    parser.add_argument("--threads", default="1,2,4,8,16", help="Comma-separated thread counts.")
+    parser.add_argument("--include-16", action="store_true", help="Compatibility flag; 16 is included by default.")
+    parser.add_argument("--modes", default=",".join(DEFAULT_MODES), help="Comma-separated modes: BFS,DFS,PAPER,LCPS.")
+    parser.add_argument("--include-basic", action="store_true", help="Also run BFS and DFS baselines.")
     parser.add_argument("--timeout", type=int, default=900, help="Per-run timeout in seconds.")
     parser.add_argument(
         "--benchmark",
@@ -137,6 +165,19 @@ def selected_threads(args: argparse.Namespace) -> list[int]:
     return threads
 
 
+def selected_modes(args: argparse.Namespace) -> list[str]:
+    modes = [mode.strip().upper() for mode in args.modes.split(",") if mode.strip()]
+    if args.include_basic:
+        modes = BASIC_MODES + modes
+    result = []
+    for mode in modes:
+        if mode not in ALL_MODES:
+            raise ValueError(f"Unsupported mode {mode!r}; expected one of {','.join(ALL_MODES)}")
+        if mode not in result:
+            result.append(mode)
+    return result
+
+
 def selected_benchmarks(args: argparse.Namespace) -> list[Benchmark]:
     if not args.benchmark:
         return BENCHMARKS
@@ -144,7 +185,7 @@ def selected_benchmarks(args: argparse.Namespace) -> list[Benchmark]:
     return [benchmark for benchmark in BENCHMARKS if benchmark.name in selected]
 
 
-def ultimate_command(args: argparse.Namespace, benchmark: Benchmark, threads: int) -> list[str]:
+def ultimate_command(args: argparse.Namespace, benchmark: Benchmark, mode: str, threads: int) -> list[str]:
     command = shlex.split(args.ultimate_cmd)
     command.extend(
         [
@@ -158,6 +199,8 @@ def ultimate_command(args: argparse.Namespace, benchmark: Benchmark, threads: in
             "true",
             "--traceabstraction.threadlimit.for.parallel.cegar",
             str(threads),
+            "--traceabstraction.parallel.trace.search.selection.mode",
+            mode,
         ]
     )
     command.extend(args.extra_arg)
@@ -184,34 +227,46 @@ def parse_last(patterns: list[re.Pattern], text: str, default: str = "0") -> str
 def parse_result(output: str, returncode: int, timed_out: bool) -> str:
     if timed_out:
         return "TIMEOUT"
+    result_matches = re.findall(
+        r"(?:^|\])\s*Result:\s*(SAFE|UNSAFE|TIMEOUT|UNKNOWN|USER_LIMIT_[A-Z_]+)", output, re.MULTILINE
+    )
+    if result_matches:
+        return result_matches[-1]
     if "Ultimate proved your program to be correct" in output or "AllSpecificationsHoldResult" in output:
         return "SAFE"
     if "Ultimate proved your program to be incorrect" in output:
         return "UNSAFE"
-    if "ExceptionOrErrorResult" in output or returncode != 0:
-        return f"ERROR_{returncode}"
     if "TimeoutResult" in output:
         return "TIMEOUT"
     if "UnknownResult" in output:
         return "UNKNOWN"
+    if "ExceptionOrErrorResult" in output or returncode != 0:
+        return f"ERROR_{returncode}"
     return "UNKNOWN"
 
 
-def run_one(args: argparse.Namespace, benchmark: Benchmark, threads: int) -> dict[str, str]:
-    command = ultimate_command(args, benchmark, threads)
+def empty_row(benchmark: Benchmark, mode: str, threads: int, result: str) -> dict[str, str]:
+    return {
+        "benchmark": benchmark.name,
+        "mode": mode,
+        "threads": str(threads),
+        "result": result,
+        "runtime_ms": "0",
+        "checked_paths": "0",
+        "stale_paths": "0",
+        "duplicate_freshness_failures": "0",
+        "total_pairwise_prefix_lca_divergence": "0",
+        "avg_pairwise_prefix_lca_divergence": "0.0",
+        "refinements": "0",
+        "search_failed": "0",
+    }
+
+
+def run_one(args: argparse.Namespace, benchmark: Benchmark, mode: str, threads: int) -> dict[str, str]:
+    command = ultimate_command(args, benchmark, mode, threads)
     if args.dry_run:
         print(shlex.join(command))
-        return {
-            "benchmark": benchmark.name,
-            "threads": str(threads),
-            "result": "DRY_RUN",
-            "runtime_ms": "0",
-            "checked_paths": "0",
-            "total_pairwise_prefix_lca_divergence": "0",
-            "avg_pairwise_prefix_lca_divergence": "0.0",
-            "refinements": "0",
-            "stale_paths": "0",
-        }
+        return empty_row(benchmark, mode, threads, "DRY_RUN")
 
     start = time.monotonic()
     timed_out = False
@@ -237,25 +292,28 @@ def run_one(args: argparse.Namespace, benchmark: Benchmark, threads: int) -> dic
         returncode = 124
     runtime_ms = int((time.monotonic() - start) * 1000)
 
-    log_path = args.output_dir / f"{benchmark.name}-threads-{threads}.log"
+    log_path = args.output_dir / f"{benchmark.name}-{mode}-threads-{threads}.log"
     log_path.write_text(output, encoding="utf-8")
 
     row = {
         "benchmark": benchmark.name,
+        "mode": mode,
         "threads": str(threads),
         "result": parse_result(output, returncode, timed_out),
         "runtime_ms": str(runtime_ms),
         "checked_paths": parse_last(STAT_PATTERNS["checked_paths"], output),
+        "stale_paths": parse_last(STAT_PATTERNS["stale_paths"], output),
+        "duplicate_freshness_failures": parse_last(STAT_PATTERNS["duplicate_freshness_failures"], output),
         "total_pairwise_prefix_lca_divergence":
             parse_last(STAT_PATTERNS["total_pairwise_prefix_lca_divergence"], output),
         "avg_pairwise_prefix_lca_divergence":
             parse_last(STAT_PATTERNS["avg_pairwise_prefix_lca_divergence"], output, "0.0"),
         "refinements": parse_last(STAT_PATTERNS["refinements"], output),
-        "stale_paths": parse_last(STAT_PATTERNS["stale_paths"], output),
+        "search_failed": parse_last(STAT_PATTERNS["search_failed"], output),
     }
     print(
-        f"{benchmark.name} threads={threads}: {row['result']}, "
-        f"runtime={runtime_ms}ms, checked_paths={row['checked_paths']}, "
+        f"{benchmark.name} mode={mode} threads={threads}: {row['result']}, "
+        f"runtime={runtime_ms}ms, checked_paths={row['checked_paths']}, stale_paths={row['stale_paths']}, "
         f"avg_prefix_lca_divergence={row['avg_pairwise_prefix_lca_divergence']}",
         flush=True,
     )
@@ -265,7 +323,7 @@ def run_one(args: argparse.Namespace, benchmark: Benchmark, threads: int) -> dic
 def write_csv(output_dir: Path, rows: list[dict[str, str]]) -> Path:
     csv_path = output_dir / "checked-path-divergence-results.csv"
     with csv_path.open("w", newline="", encoding="utf-8") as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=CSV_COLUMNS, lineterminator="\n")
+        writer = csv.DictWriter(csv_file, fieldnames=CSV_COLUMNS, lineterminator="\n", extrasaction="ignore")
         writer.writeheader()
         writer.writerows(rows)
     return csv_path
@@ -273,34 +331,47 @@ def write_csv(output_dir: Path, rows: list[dict[str, str]]) -> Path:
 
 def table_for_rows(rows: list[dict[str, str]]) -> str:
     lines = [
-        "| threads | result | runtime_ms | checked_paths | total_pairwise_prefix_lca_divergence | avg_pairwise_prefix_lca_divergence | refinements | stale_paths |",
-        "|---:|---|---:|---:|---:|---:|---:|---:|",
+        "| mode | threads | result | runtime_ms | checked_paths | stale_paths | duplicate_freshness_failures | total_pairwise_prefix_lca_divergence | avg_pairwise_prefix_lca_divergence | refinements | search_failed |",
+        "|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
-    for row in sorted(rows, key=lambda item: int(item["threads"])):
+    for row in sorted(rows, key=lambda item: (item["mode"], int(item["threads"]))):
         lines.append(
-            "| {threads} | {result} | {runtime_ms} | {checked_paths} | "
-            "{total_pairwise_prefix_lca_divergence} | {avg_pairwise_prefix_lca_divergence} | "
-            "{refinements} | {stale_paths} |".format(**row)
+            "| {mode} | {threads} | {result} | {runtime_ms} | {checked_paths} | {stale_paths} | "
+            "{duplicate_freshness_failures} | {total_pairwise_prefix_lca_divergence} | "
+            "{avg_pairwise_prefix_lca_divergence} | {refinements} | {search_failed} |".format(**row)
         )
     return "\n".join(lines)
 
 
-def trend_sentence(rows: list[dict[str, str]]) -> str:
-    ordered = sorted(rows, key=lambda item: int(item["threads"]))
-    if len(ordered) < 2:
-        return "Only one thread count was run, so no cross-thread trend can be inferred."
-    first = float(ordered[0]["avg_pairwise_prefix_lca_divergence"])
-    last = float(ordered[-1]["avg_pairwise_prefix_lca_divergence"])
-    if last > first:
-        direction = "increased"
-    elif last < first:
-        direction = "decreased"
-    else:
-        direction = "did not change"
-    return (
-        f"From {ordered[0]['threads']} to {ordered[-1]['threads']} threads, "
-        f"avgPairwisePrefixLcaDivergence {direction} ({first} -> {last})."
-    )
+def numeric(row: dict[str, str], key: str) -> float:
+    try:
+        return float(row[key])
+    except ValueError:
+        return 0.0
+
+
+def compare_paper_lcps(rows: list[dict[str, str]], key: str, label: str) -> str:
+    by_thread_mode = {(row["threads"], row["mode"]): row for row in rows}
+    comparisons = []
+    for thread in sorted({row["threads"] for row in rows}, key=int):
+        paper = by_thread_mode.get((thread, "PAPER"))
+        lcps = by_thread_mode.get((thread, "LCPS"))
+        if paper is None or lcps is None:
+            continue
+        delta = numeric(lcps, key) - numeric(paper, key)
+        comparisons.append(f"{thread}t: {delta:+g}")
+    if not comparisons:
+        return f"- PAPER vs LCPS {label}: not available for the selected modes."
+    return f"- PAPER vs LCPS {label}: " + ", ".join(comparisons) + " (LCPS - PAPER)."
+
+
+def interpretation(rows: list[dict[str, str]]) -> list[str]:
+    return [
+        compare_paper_lcps(rows, "runtime_ms", "runtime_ms"),
+        compare_paper_lcps(rows, "checked_paths", "checked_paths"),
+        compare_paper_lcps(rows, "stale_paths", "stale_paths"),
+        compare_paper_lcps(rows, "avg_pairwise_prefix_lca_divergence", "avg divergence"),
+    ]
 
 
 def write_markdown(output_dir: Path, rows: list[dict[str, str]]) -> Path:
@@ -314,9 +385,10 @@ def write_markdown(output_dir: Path, rows: list[dict[str, str]]) -> Path:
         "",
         "## Purpose",
         "",
-        "This experiment compares whether higher parallelization levels lead to more dispersed paths reaching the real trace checker, and whether that correlates with runtime, refinements, or stale work.",
+        "This experiment compares PAPER, LCPS, and optional BFS/DFS path selection under parallel TraceAbstraction.",
         "",
-        "Each unordered pair contributes normalized prefix-LCA divergence `1 - depth(LCA(u, v)) / min(depth(u), depth(v))`. A pair contributes `0.0` when its minimum endpoint depth is zero.",
+        "Each unordered checked-path pair contributes normalized prefix-LCA divergence "
+        "`1 - depth(LCA(u, v)) / min(depth(u), depth(v))`. A pair contributes `0.0` when its minimum endpoint depth is zero.",
         "",
         "## Benchmark Selection",
         "",
@@ -328,20 +400,21 @@ def write_markdown(output_dir: Path, rows: list[dict[str, str]]) -> Path:
     for benchmark_name, benchmark_rows in rows_by_benchmark.items():
         if not benchmark_rows:
             continue
-        lines.extend([f"### {benchmark_name}", "", table_for_rows(benchmark_rows), "", trend_sentence(benchmark_rows), ""])
+        lines.extend([f"### {benchmark_name}", "", table_for_rows(benchmark_rows), "", "#### Interpretation", ""])
+        lines.extend(interpretation(benchmark_rows))
+        lines.append("")
 
     lines.extend(
         [
             "## Interpretation Notes",
             "",
-            "- Increasing avgPairwisePrefixLcaDivergence means the checked paths share less of their shorter root-to-node prefix.",
-            "- Compare runtime and refinements against the divergence columns per benchmark; positive correlation suggests path dispersion may be associated with additional useful or stale work.",
-            "- `stale_paths` is `0` when the current Ultimate log does not expose a stale/skipped-path counter.",
-            "- Treat timeouts, crashes, and zero checked paths as inconclusive for the dispersion trend.",
+            "- Negative LCPS - PAPER runtime, checked_paths, or stale_paths deltas are improvements for that metric.",
+            "- LCPS does not need the highest avg divergence to be useful; compare runtime, stale_paths, checked_paths, and result consistency.",
+            "- Treat timeouts, crashes, and zero checked paths as inconclusive for the corresponding row.",
             "",
             "## Raw Data",
             "",
-            "See `checked-path-divergence-results.csv` in this directory. Raw Ultimate logs are stored as `*-threads-*.log`.",
+            "See `checked-path-divergence-results.csv` in this directory. Raw Ultimate logs are stored as `*-<mode>-threads-*.log`.",
             "",
         ]
     )
@@ -354,9 +427,11 @@ def main() -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     rows = []
+    modes = selected_modes(args)
     for benchmark in selected_benchmarks(args):
-        for threads in selected_threads(args):
-            rows.append(run_one(args, benchmark, threads))
+        for mode in modes:
+            for threads in selected_threads(args):
+                rows.append(run_one(args, benchmark, mode, threads))
 
     csv_path = write_csv(args.output_dir, rows)
     report_path = write_markdown(args.output_dir, rows)

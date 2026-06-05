@@ -31,6 +31,7 @@ import java.util.Map;
 
 import de.uni_freiburg.informatik.ultimate.automata.AutomatonDefinitionPrinter.Format;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.IsEmptyHeuristic.AStarHeuristic;
+import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.TraceSearchSelectionMode;
 import de.uni_freiburg.informatik.ultimate.automata.petrinet.unfolding.PetriNetUnfolder.EventOrderEnum;
 import de.uni_freiburg.informatik.ultimate.core.lib.preferences.UltimatePreferenceInitializer;
 import de.uni_freiburg.informatik.ultimate.core.model.preferences.BaseUltimatePreferenceItem;
@@ -546,6 +547,21 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 	private static final boolean DEF_PARALLELSEARCH_ACTIVE_CEX_ONLY = true;
 	private static final String DESC_PARALLELSEARCH_ACTIVE_CEX_ONLY =
 			"IsEmptyParallel must diverge from any previous counterexample (false) or only from counterexamples activley analysed by a worker. ";
+	public static final String LABEL_PARALLEL_TRACE_SEARCH_SELECTION_MODE = "Parallel trace search selection mode";
+	private static final TraceSearchSelectionMode DEF_PARALLEL_TRACE_SEARCH_SELECTION_MODE =
+			TraceSearchSelectionMode.PAPER;
+	private static final String DESC_PARALLEL_TRACE_SEARCH_SELECTION_MODE =
+			"Selects the counterexample search order in the parallel CEGAR loop.";
+	public static final String LABEL_PARALLEL_TRACE_SEARCH_USE_INITIAL_BFS =
+			"Use initial BFS in PAPER/LCPS parallel search";
+	private static final boolean DEF_PARALLEL_TRACE_SEARCH_USE_INITIAL_BFS = true;
+	private static final String DESC_PARALLEL_TRACE_SEARCH_USE_INITIAL_BFS =
+			"Try one BFS search before PAPER/LCPS for each abstraction, preserving the previous parallel behavior.";
+	public static final String LABEL_PARALLEL_TRACE_SEARCH_TRACK_STALE_PREFIXES =
+			"Track stale prefixes in parallel search";
+	private static final boolean DEF_PARALLEL_TRACE_SEARCH_TRACK_STALE_PREFIXES = true;
+	private static final String DESC_PARALLEL_TRACE_SEARCH_TRACK_STALE_PREFIXES =
+			"Check whether completed worker traces are still accepted by the current abstraction and record stale prefixes for LCPS scoring.";
 	public static final String LABEL_SEARCH_LOOP_BOUND = "search loop bound";
 	private static final String DESC_SEARCH_LOOP_BOUND =
 			"Limits how often the IsEmptyParallel search is allowed to visit the same transition letter pair. Default -1 means infinetly often";
@@ -843,6 +859,15 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 						PreferenceType.Boolean),
 				new UltimatePreferenceItem<>(LABEL_THREADLIMIT, DEF_THREADLIMIT, PreferenceType.Integer,
 						new IUltimatePreferenceItemValidator.IntegerValidator(0, 1_0000_000)),
+				new UltimatePreferenceItem<>(LABEL_PARALLEL_TRACE_SEARCH_SELECTION_MODE,
+						DEF_PARALLEL_TRACE_SEARCH_SELECTION_MODE, DESC_PARALLEL_TRACE_SEARCH_SELECTION_MODE,
+						PreferenceType.Combo, TraceSearchSelectionMode.values()),
+				new UltimatePreferenceItem<>(LABEL_PARALLEL_TRACE_SEARCH_USE_INITIAL_BFS,
+						DEF_PARALLEL_TRACE_SEARCH_USE_INITIAL_BFS, DESC_PARALLEL_TRACE_SEARCH_USE_INITIAL_BFS,
+						PreferenceType.Boolean),
+				new UltimatePreferenceItem<>(LABEL_PARALLEL_TRACE_SEARCH_TRACK_STALE_PREFIXES,
+						DEF_PARALLEL_TRACE_SEARCH_TRACK_STALE_PREFIXES, DESC_PARALLEL_TRACE_SEARCH_TRACK_STALE_PREFIXES,
+						PreferenceType.Boolean),
 				new UltimatePreferenceItem<>(LABEL_SEARCH_LOOP_BOUND, DEF_SEARCH_LOOP_BOUND, DESC_SEARCH_LOOP_BOUND,
 						PreferenceType.Integer, new IUltimatePreferenceItemValidator.IntegerValidator(-1, 1_0000_000)),
 				new UltimatePreferenceItem<>(LABEL_PARALLELSEARCH_ACTIVE_CEX_ONLY, DEF_PARALLELSEARCH_ACTIVE_CEX_ONLY,

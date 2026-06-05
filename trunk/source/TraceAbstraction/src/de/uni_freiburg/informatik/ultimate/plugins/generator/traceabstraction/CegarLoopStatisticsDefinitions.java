@@ -55,6 +55,28 @@ public enum CegarLoopStatisticsDefinitions implements IStatisticsElement {
 			key -> data -> key + ": "
 					+ ((CheckedPathPrefixLcaDivergenceTracker.Summary) data).getAveragePairwisePrefixLcaDivergence()),
 
+	SearchMode(x -> y -> {
+		if (Objects.equals(x, "n/a")) {
+			return y;
+		}
+		if (Objects.equals(y, "n/a")) {
+			return x;
+		}
+		return Objects.equals(x, y) ? x : x + "," + y;
+	}, StatisticsType.KEY_BEFORE_DATA),
+
+	DuplicateFreshnessFailures(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	FailedToFindCounterexamples(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	StalePaths(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	LcpsCheckedPrefixHits(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	LcpsStalePrefixHits(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	LcpsSearchInvocations(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
 	EmptinessCheckTime(StatisticsType.LONG_ADDITION, StatisticsType.KEY_BEFORE_NANOS),
 
 	AutomataDifference(StatisticsType.LONG_ADDITION, StatisticsType.KEY_BEFORE_NANOS),

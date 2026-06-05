@@ -29,6 +29,7 @@ package de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.p
 
 import de.uni_freiburg.informatik.ultimate.automata.AutomatonDefinitionPrinter.Format;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.IsEmptyHeuristic.AStarHeuristic;
+import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.TraceSearchSelectionMode;
 import de.uni_freiburg.informatik.ultimate.automata.petrinet.unfolding.PetriNetUnfolder.EventOrderEnum;
 import de.uni_freiburg.informatik.ultimate.core.model.preferences.IPreferenceProvider;
 import de.uni_freiburg.informatik.ultimate.core.model.services.IUltimateServiceProvider;
@@ -102,6 +103,9 @@ public final class TAPreferences {
 	private final boolean mConsiderOnlyActiveCounterexamplesInIsEmptyParallel;
 	private final boolean mMinimizeAbstractionPerWorker;
 	private final int mSearchLoopBound;
+	private final TraceSearchSelectionMode mParallelTraceSearchSelectionMode;
+	private final boolean mParallelTraceSearchUseInitialBfs;
+	private final boolean mParallelTraceSearchTrackStalePrefixes;
 
 	public enum Artifact {
 		ABSTRACTION, INTERPOLANT_AUTOMATON, NEG_INTERPOLANT_AUTOMATON, RCFG
@@ -213,6 +217,13 @@ public final class TAPreferences {
 		mMinimizeAbstractionPerWorker =
 				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_MINIMIZE_ABSTRACTION_PER_WORKER);
 		mSearchLoopBound = mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_SEARCH_LOOP_BOUND);
+		mParallelTraceSearchSelectionMode = mPrefs.getEnum(
+				TraceAbstractionPreferenceInitializer.LABEL_PARALLEL_TRACE_SEARCH_SELECTION_MODE,
+				TraceSearchSelectionMode.class);
+		mParallelTraceSearchUseInitialBfs =
+				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_PARALLEL_TRACE_SEARCH_USE_INITIAL_BFS);
+		mParallelTraceSearchTrackStalePrefixes =
+				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_PARALLEL_TRACE_SEARCH_TRACK_STALE_PREFIXES);
 	}
 
 	/**
@@ -608,5 +619,17 @@ public final class TAPreferences {
 
 	public int getSearchLoopBound() {
 		return mSearchLoopBound;
+	}
+
+	public TraceSearchSelectionMode getParallelTraceSearchSelectionMode() {
+		return mParallelTraceSearchSelectionMode;
+	}
+
+	public boolean useInitialBfsInParallelTraceSearch() {
+		return mParallelTraceSearchUseInitialBfs;
+	}
+
+	public boolean trackStalePrefixesInParallelTraceSearch() {
+		return mParallelTraceSearchTrackStalePrefixes;
 	}
 }

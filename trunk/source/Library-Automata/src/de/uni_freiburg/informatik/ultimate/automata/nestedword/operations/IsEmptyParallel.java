@@ -94,6 +94,9 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 	private int mLoopBound = -1;
 	// a -> b then state is a
 	private final List<Pair<STATE, LETTER>> mCurrentPrefix = new ArrayList<>();
+	private final List<PathStepKey<LETTER, STATE>> mCurrentPrefixKeys = new ArrayList<>();
+	private final TraceSearchSelectionMode mSearchMode;
+	private final PrefixCoverageCache<LETTER, STATE> mPrefixCoverageCache;
 
 	/**
 	 * HashMap used for parallel trace abstraction Maps TraceHash to Trace, has an entry for every counterexample
@@ -117,10 +120,28 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 			final Set<STATE> forbiddenStates, final Set<STATE> goalStates, final boolean goalStateIsAcceptingState,
 			final SearchStrategy strategy, final HashMap<Integer, NestedRun<LETTER, ?>> counterexamples,
 			final int loopBound) throws AutomataOperationCanceledException {
+		this(services, operand, startStates, forbiddenStates, goalStates, goalStateIsAcceptingState, strategy,
+				counterexamples, loopBound, TraceSearchSelectionMode.PAPER, null);
+	}
+
+	/**
+	 * Constructor for parallel search with configurable successor selection.
+	 */
+	public IsEmptyParallel(final AutomataLibraryServices services,
+			final INwaOutgoingLetterAndTransitionProvider<LETTER, STATE> operand, final Set<STATE> startStates,
+			final Set<STATE> forbiddenStates, final Set<STATE> goalStates, final boolean goalStateIsAcceptingState,
+			final SearchStrategy strategy, final HashMap<Integer, NestedRun<LETTER, ?>> counterexamples,
+			final int loopBound, final TraceSearchSelectionMode searchMode,
+			final PrefixCoverageCache<LETTER, STATE> prefixCoverageCache) throws AutomataOperationCanceledException {
 		super(services, operand, startStates, forbiddenStates, goalStates, goalStateIsAcceptingState, strategy, true);
 
 		// BFS or DFS for search when we call IsEmpty at the end of parallel search
 		assert mStrategy.equals(SearchStrategy.BFS);
+		if (searchMode == TraceSearchSelectionMode.BFS || searchMode == TraceSearchSelectionMode.DFS) {
+			throw new IllegalArgumentException(searchMode + " is handled by IsEmpty, not IsEmptyParallel");
+		}
+		mSearchMode = searchMode == null ? TraceSearchSelectionMode.PAPER : searchMode;
+		mPrefixCoverageCache = prefixCoverageCache;
 		mLoopBound = loopBound;
 
 		// In case the search is non terminating
@@ -234,7 +255,7 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 
 			}
 		}
-		return new PQState(currentScore, returnPred, symbol, succ, state, activeCounterexamples, false, true);
+		return createPQState(currentScore, returnPred, symbol, succ, state, activeCounterexamples, false, true);
 	}
 
 	private boolean increaseScore(final NestedRun<LETTER, ?> counterexample, final STATE state, final STATE succ,
@@ -299,7 +320,7 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 				activeCounterexamples.add(cexHash);
 			}
 		}
-		return new PQState(currentScore, state, symbol, transition.getSucc(), stateK, activeCounterexamples, false,
+		return createPQState(currentScore, state, symbol, transition.getSucc(), stateK, activeCounterexamples, false,
 				false);
 	}
 
@@ -316,7 +337,7 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 				activeCounterexamples.add(cexHash);
 			}
 		}
-		return new PQState(currentScore, state, symbol, transition.getSucc(), stateK, activeCounterexamples, true,
+		return createPQState(currentScore, state, symbol, transition.getSucc(), stateK, activeCounterexamples, true,
 				false);
 	}
 
@@ -333,7 +354,7 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 				activeCounterexamples.add(cexHash);
 			}
 		}
-		return new PQState(currentScore, state, symbol, transition.getSucc(), stateKk, activeCounterexamples, false,
+		return createPQState(currentScore, state, symbol, transition.getSucc(), stateKk, activeCounterexamples, false,
 				true);
 	}
 
@@ -389,12 +410,45 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 		return false;
 	}
 
+	private PQState createPQState(final int activeContinuationCount, final STATE state, final LETTER symbol,
+			final STATE succ, final STATE stateK, final ArrayList<Integer> counterexamples, final boolean call,
+			final boolean ret) {
+		return new PQState(makePriorityKey(activeContinuationCount, symbol, succ), state, symbol, succ, stateK,
+				counterexamples, call, ret);
+	}
+
+	private PriorityKey makePriorityKey(final int activeContinuationCount, final LETTER symbol, final STATE succ) {
+		int checkedPrefixCount = 0;
+		int stalePrefixCount = 0;
+		if (mSearchMode == TraceSearchSelectionMode.LCPS && mPrefixCoverageCache != null && symbol != null) {
+			final List<PathStepKey<LETTER, STATE>> candidatePrefix = makeCandidatePrefix(symbol, succ);
+			checkedPrefixCount = mPrefixCoverageCache.getCheckedPrefixCount(candidatePrefix);
+			stalePrefixCount = mPrefixCoverageCache.getStalePrefixCount(candidatePrefix);
+		}
+		return makePriorityKey(mSearchMode, activeContinuationCount, checkedPrefixCount, stalePrefixCount);
+	}
+
+	static PriorityKey makePriorityKey(final TraceSearchSelectionMode searchMode, final int activeContinuationCount,
+			final int checkedPrefixCount, final int stalePrefixCount) {
+		if (searchMode == TraceSearchSelectionMode.LCPS) {
+			return new PriorityKey(activeContinuationCount, checkedPrefixCount, stalePrefixCount, 0);
+		}
+		return new PriorityKey(activeContinuationCount, 0, 0, 0);
+	}
+
+	private List<PathStepKey<LETTER, STATE>> makeCandidatePrefix(final LETTER symbol, final STATE succ) {
+		final List<PathStepKey<LETTER, STATE>> candidatePrefix = new ArrayList<>(mCurrentPrefixKeys.size() + 1);
+		candidatePrefix.addAll(mCurrentPrefixKeys);
+		candidatePrefix.add(new PathStepKey<>(symbol, succ));
+		return candidatePrefix;
+	}
+
 	/**
 	 * Sort the outgoing transitions by how many @param counterexamples cover them. The least has highest priority.
 	 */
 	private PriorityQueue<PQState> pickSuccToExplore(final int position, final STATE state, final STATE stateK,
 			final ArrayList<Integer> counterexamples) {
-		final PriorityQueue<PQState> pq = new PriorityQueue<>(Comparator.comparingInt(PQState::getScore));
+		final PriorityQueue<PQState> pq = new PriorityQueue<>(Comparator.comparing(PQState::getPriorityKey));
 
 		if (mSummaryReturnPred.containsKey(state)) {
 			if (!mSummaryReturnSymbol.containsKey(state)) {
@@ -418,7 +472,7 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 				continue;
 			}
 			if (firstIteration && !internalIterator.hasNext()) {
-				pq.add(new PQState(1, state, transition.getLetter(), transition.getSucc(), stateK, counterexamples,
+				pq.add(createPQState(1, state, transition.getLetter(), transition.getSucc(), stateK, counterexamples,
 						false, false));
 			} else {
 				pq.add(getSuccOfInternal(transition, position, state, stateK, counterexamples));
@@ -434,7 +488,7 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 				continue;
 			}
 			if (firstIteration && !callIterator.hasNext()) {
-				pq.add(new PQState(1, state, transition.getLetter(), transition.getSucc(), stateK, counterexamples,
+				pq.add(createPQState(1, state, transition.getLetter(), transition.getSucc(), stateK, counterexamples,
 						true, false));
 			} else {
 				pq.add(getSuccOfCall(transition, position, state, stateK, counterexamples));
@@ -456,8 +510,8 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 					continue;
 				}
 				if (firstIteration && !returnIterator.hasNext()) {
-					pq.add(new PQState(1, state, transition.getLetter(), transition.getSucc(), stateKk, counterexamples,
-							false, true));
+					pq.add(createPQState(1, state, transition.getLetter(), transition.getSucc(), stateKk,
+							counterexamples, false, true));
 				} else {
 					pq.add(getSuccOfReturn(transition, position, state, stateKk, counterexamples));
 				}
@@ -468,7 +522,7 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 	}
 
 	private PriorityQueue<PQState> pickStartToExplore(final Collection<STATE> states, final Set<Integer> set) {
-		final PriorityQueue<PQState> pq = new PriorityQueue<>(Comparator.comparingInt(PQState::getScore));
+		final PriorityQueue<PQState> pq = new PriorityQueue<>(Comparator.comparing(PQState::getPriorityKey));
 
 		for (final STATE state : states) {
 			final ArrayList<Integer> activeCounterexamples = new ArrayList<>();
@@ -492,7 +546,7 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 					}
 				}
 			}
-			pq.add(new PQState(currentScore, null, null, state, null, activeCounterexamples, false, false));
+			pq.add(createPQState(currentScore, null, null, state, null, activeCounterexamples, false, false));
 		}
 		return pq;
 	}
@@ -608,11 +662,14 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 
 	private void addToCurrentPrefix(final STATE state, final LETTER letter) {
 		mCurrentPrefix.add(new Pair<>(state, letter));
+		mCurrentPrefixKeys.add(new PathStepKey<>(letter, state));
 	}
 
 	private void removeFromCurrentPrefix(final STATE state, final LETTER letter) {
 		assert mCurrentPrefix.getLast().getFirst().equals(state) && mCurrentPrefix.getLast().getSecond().equals(letter);
 		mCurrentPrefix.removeLast();
+		assert mCurrentPrefixKeys.getLast().equals(new PathStepKey<>(letter, state));
+		mCurrentPrefixKeys.removeLast();
 	}
 
 	@SuppressWarnings("squid:S1698")
@@ -656,8 +713,43 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 		return mTimeSpendSearching;
 	}
 
+	/**
+	 * Lexicographic heuristic key for successor ordering only; it does not decide emptiness or suppress candidates.
+	 */
+	static final class PriorityKey implements Comparable<PriorityKey> {
+		private final int mActiveContinuationCount;
+		private final int mCheckedPrefixCount;
+		private final int mStalePrefixCount;
+		private final int mDistanceToAccepting;
+
+		PriorityKey(final int activeContinuationCount, final int checkedPrefixCount, final int stalePrefixCount,
+				final int distanceToAccepting) {
+			mActiveContinuationCount = activeContinuationCount;
+			mCheckedPrefixCount = checkedPrefixCount;
+			mStalePrefixCount = stalePrefixCount;
+			mDistanceToAccepting = distanceToAccepting;
+		}
+
+		@Override
+		public int compareTo(final PriorityKey other) {
+			int result = Integer.compare(mActiveContinuationCount, other.mActiveContinuationCount);
+			if (result != 0) {
+				return result;
+			}
+			result = Integer.compare(mCheckedPrefixCount, other.mCheckedPrefixCount);
+			if (result != 0) {
+				return result;
+			}
+			result = Integer.compare(mStalePrefixCount, other.mStalePrefixCount);
+			if (result != 0) {
+				return result;
+			}
+			return Integer.compare(mDistanceToAccepting, other.mDistanceToAccepting);
+		}
+	}
+
 	private class PQState {
-		private final Integer mScore;
+		private final PriorityKey mPriorityKey;
 		private final STATE mState;
 		private final STATE mSucc;
 		private final STATE mStateK;
@@ -666,9 +758,9 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 		private final boolean mCallTransition;
 		private final boolean mReturnTransition;
 
-		public PQState(final int score, final STATE state, final LETTER symbol, final STATE succ, final STATE stateK,
-				final ArrayList<Integer> counterexamples, final boolean call, final boolean ret) {
-			mScore = score;
+		public PQState(final PriorityKey priorityKey, final STATE state, final LETTER symbol, final STATE succ,
+				final STATE stateK, final ArrayList<Integer> counterexamples, final boolean call, final boolean ret) {
+			mPriorityKey = priorityKey;
 			mState = state;
 			mSucc = succ;
 			mStateK = stateK;
@@ -679,8 +771,8 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 			assert !mCallTransition || !mReturnTransition;
 		}
 
-		public Integer getScore() {
-			return mScore;
+		public PriorityKey getPriorityKey() {
+			return mPriorityKey;
 		}
 
 		public STATE getState() {

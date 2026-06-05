@@ -60,6 +60,13 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 	private int mTraceHistogramMaximum = 0;
 	private int mInterpolantAutomatonStates = 0;
 	private int mPathProgramHistogramMaximum = 0;
+	private String mParallelSearchMode = "n/a";
+	private int mParallelDuplicateFreshnessFailures = 0;
+	private int mParallelFailedToFindCounterexamples = 0;
+	private int mParallelStalePaths = 0;
+	private int mLcpsCheckedPrefixHits = 0;
+	private int mLcpsStalePrefixHits = 0;
+	private int mLcpsSearchInvocations = 0;
 
 	@Override
 	public Collection<String> getKeys() {
@@ -141,6 +148,18 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 		mInterpolantAutomatonStates += count;
 	}
 
+	public void reportParallelTraceSearchStatistics(final String searchMode, final int duplicateFreshnessFailures,
+			final int failedToFindCounterexamples, final int stalePaths, final int lcpsCheckedPrefixHits,
+			final int lcpsStalePrefixHits, final int lcpsSearchInvocations) {
+		mParallelSearchMode = searchMode;
+		mParallelDuplicateFreshnessFailures = duplicateFreshnessFailures;
+		mParallelFailedToFindCounterexamples = failedToFindCounterexamples;
+		mParallelStalePaths = stalePaths;
+		mLcpsCheckedPrefixHits = lcpsCheckedPrefixHits;
+		mLcpsStalePrefixHits = lcpsStalePrefixHits;
+		mLcpsSearchInvocations = lcpsSearchInvocations;
+	}
+
 	@Override
 	public Object getValue(final String key) {
 		final CegarLoopStatisticsDefinitions keyEnum = CegarLoopStatisticsDefinitions.valueOf(key);
@@ -167,6 +186,13 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 		case TotalPairwisePrefixLcaDivergence ->
 			mCheckedPathPrefixLcaDivergenceTracker.getTotalPairwisePrefixLcaDivergence();
 		case AvgPairwisePrefixLcaDivergence -> mCheckedPathPrefixLcaDivergenceTracker.getSummary();
+		case SearchMode -> mParallelSearchMode;
+		case DuplicateFreshnessFailures -> mParallelDuplicateFreshnessFailures;
+		case FailedToFindCounterexamples -> mParallelFailedToFindCounterexamples;
+		case StalePaths -> mParallelStalePaths;
+		case LcpsCheckedPrefixHits -> mLcpsCheckedPrefixHits;
+		case LcpsStalePrefixHits -> mLcpsStalePrefixHits;
+		case LcpsSearchInvocations -> mLcpsSearchInvocations;
 		case BiggestAbstraction -> mBiggestAbstraction;
 		case InterpolantAutomatonStates -> mInterpolantAutomatonStates;
 		case InterpolantCoveringCapability -> mBCI;
