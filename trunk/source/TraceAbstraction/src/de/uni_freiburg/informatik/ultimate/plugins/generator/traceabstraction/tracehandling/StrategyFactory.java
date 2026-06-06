@@ -26,6 +26,8 @@
  */
 package de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.tracehandling;
 
+import java.util.List;
+
 import de.uni_freiburg.informatik.ultimate.automata.IAutomaton;
 import de.uni_freiburg.informatik.ultimate.automata.statefactory.IEmptyStackStateFactory;
 import de.uni_freiburg.informatik.ultimate.core.model.services.ILogger;
@@ -59,6 +61,7 @@ import de.uni_freiburg.informatik.ultimate.lib.tracecheckerutils.singletracechec
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.IPostconditionProvider;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.IPreconditionProvider;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.PathProgramCache;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.SharedPredicatePool;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.PredicateFactoryForInterpolantAutomata;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TAPreferences;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.InterpolantAutomaton;
@@ -104,6 +107,9 @@ public class StrategyFactory<L extends IIcfgTransition<?>> {
 	private final ILogger mLogger;
 	private final PredicateFactory mPredicateFactory;
 	private final PredicateFactoryForInterpolantAutomata mPredicateFactoryInterpolAut;
+	/** R4: shared interpolant predicate pool (terms in the main script) and the main script, for seeding. */
+	private SharedPredicatePool mPredicatePool;
+	private ManagedScript mMainScript;
 	private final PathProgramCache<L> mPathProgramCache;
 	private final CfgSmtToolkit mCfgSmtToolkit;
 	private final Class<L> mTransitionClazz;
@@ -270,8 +276,32 @@ public class StrategyFactory<L extends IIcfgTransition<?>> {
 		if (mPrefs.usePredicateTrieBasedPredicateUnifier()) {
 			return new BPredicateUnifier(services, mLogger, managedScript, mPredicateFactory, symbolTable);
 		}
+		// R4 (cross-worker predicate sharing): pull interpolant predicates discovered by other workers from the
+		// shared pool, transfer them into this worker's script, and seed the unifier with them. Done per trace check
+		// (workers are continuous, so the pool is empty at worker creation but fills up as the run proceeds). The
+		// pool serialises its SMT-script access. Sound: these are only candidate predicates; the verdict rests on the
+		// worker's own trace check / interpolation.
+		IPredicate[] seedPredicates = new IPredicate[0];
+		if (mTaPrefs.crossWorkerPredicateSharingEnabled() && mPredicatePool != null && mMainScript != null) {
+			final List<IPredicate> seeds = mPredicatePool.seedFor(mMainScript, managedScript, mPredicateFactory,
+					mTaPrefs.crossWorkerPredicateSharingCap());
+			seedPredicates = seeds.toArray(new IPredicate[0]);
+			if (seedPredicates.length > 0) {
+				mLogger.info("CrossWorkerPredicateSharing: seeding PredicateUnifier with " + seedPredicates.length
+						+ " shared predicates");
+			}
+		}
 		return new PredicateUnifier(mLogger, services, managedScript, mPredicateFactory, symbolTable,
-				mTaPrefs.getSimplificationTechnique());
+				mTaPrefs.getSimplificationTechnique(), seedPredicates);
+	}
+
+	/**
+	 * R4: provide the shared predicate pool (whose terms live in {@code mainScript}) so each trace check can seed its
+	 * {@code PredicateUnifier} with predicates discovered by other workers. {@code null} disables seeding.
+	 */
+	public void setPredicateSharing(final SharedPredicatePool pool, final ManagedScript mainScript) {
+		mPredicatePool = pool;
+		mMainScript = mainScript;
 	}
 
 	/**

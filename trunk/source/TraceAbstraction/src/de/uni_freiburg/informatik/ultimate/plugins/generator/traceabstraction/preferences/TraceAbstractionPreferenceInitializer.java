@@ -557,6 +557,78 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 	private static final TraceSelectionStrategy DEF_TRACE_SELECTION_STRATEGY = TraceSelectionStrategy.ALG4_PREFIX;
 	private static final String DESC_TRACE_SELECTION_STRATEGY =
 			"How the coordinator selects the next trace to dispatch. ALG4_PREFIX is the paper's diverse-prefix search (Alg. 4) and is the default. DPPI selects by path program: it skips traces whose path program is already in-flight and, among the rest, prefers the one sharing fewest edges with in-flight tasks (with a fairness fallback that preserves termination and L(A)=emptyset => SAFE).";
+
+	public static final String LABEL_STALE_PREFILTER = "Path-program staleness pre-filter for Parallel CEGAR";
+	private static final boolean DEF_STALE_PREFILTER = false;
+	private static final String DESC_STALE_PREFILTER =
+			"Optimisation for stale worker cancellation (R1). After a refinement, only run the expensive Accepts membership re-check on an in-flight counterexample whose path program (its set of letters) shares at least one edge with the just-refined trace; skip the rest. Sound: not cancelling a trace only risks redundant work, never a wrong verdict. OFF re-checks every active counterexample (the original behaviour).";
+
+	public static final String LABEL_CROSS_WORKER_PRED_SHARING =
+			"Cross-worker predicate sharing for Parallel CEGAR";
+	private static final boolean DEF_CROSS_WORKER_PRED_SHARING = false;
+	private static final String DESC_CROSS_WORKER_PRED_SHARING =
+			"R4: seed each worker's PredicateUnifier with the predicates already present in the abstraction it receives (which aggregates every worker's prior refinements), so trace checks reuse known predicates across workers instead of re-deriving them. Sound: initial predicates are only declared; correctness still rests on the trace check/interpolation. OFF starts each worker with an empty unifier (the paper's behaviour).";
+	public static final String LABEL_CROSS_WORKER_PRED_SHARING_CAP =
+			"Cross-worker predicate sharing cap for Parallel CEGAR";
+	private static final int DEF_CROSS_WORKER_PRED_SHARING_CAP = 64;
+	private static final String DESC_CROSS_WORKER_PRED_SHARING_CAP =
+			"Maximum number of abstraction predicates used to seed a worker's PredicateUnifier when cross-worker predicate sharing is enabled (bounds the per-worker setup cost). 0 means no limit.";
+
+	public static final String LABEL_ACTIVE_STALE_RECHECK = "Active stale re-check for Parallel CEGAR";
+	private static final boolean DEF_ACTIVE_STALE_RECHECK = true;
+	private static final String DESC_ACTIVE_STALE_RECHECK =
+			"When stale worker cancellation is enabled, also run the active re-check that, after every refinement, tests every in-flight counterexample against the updated abstraction and cancels the now-stale ones. This re-check costs Accepts(abstraction, trace) per active counterexample per refinement and dominates on programs with long counterexamples/large abstractions (e.g. ECA). Turning it OFF keeps only the cheap passive skip (the coordinator drops a returned worker result whose trace is no longer a counterexample - one Accepts per result), which still avoids the wasted refinement/minimization without the per-refinement overhead. ON is the original S2 behaviour.";
+
+	public static final String LABEL_LOOP_AWARE_MINIMIZATION = "Loop-aware minimization for Parallel CEGAR";
+	private static final boolean DEF_LOOP_AWARE_MINIMIZATION = false;
+	private static final String DESC_LOOP_AWARE_MINIMIZATION =
+			"Win-all-categories minimization policy: skip abstraction minimization (like Minimization=NONE, for the ECA/control-flow wall win) EXCEPT on iterations where a recurring path program is refined, which indicates loop unrolling (the same loop body explored repeatedly) — precisely the regime where the un-minimized abstraction blows up and minimization is load-bearing. So diverse-trace programs (ECA) keep the no-minimization speedup while loop-heavy programs stay bounded. Requires Minimization-of-abstraction to be a real minimization (not NONE). Sound: minimization is language-preserving. OFF = no effect.";
+
+	public static final String LABEL_LOOP_AWARE_MIN_THRESHOLD = "Loop-aware minimization repeat threshold";
+	private static final int DEF_LOOP_AWARE_MIN_THRESHOLD = 2;
+	private static final String DESC_LOOP_AWARE_MIN_THRESHOLD =
+			"Used only when 'Loop-aware minimization' is on: minimize once a refined counterexample's path program has been seen at least this many times (loop-unrolling signal). 2 = minimize as soon as a path program recurs; higher = require more repetition before minimizing (more NONE-like).";
+
+	public static final String LABEL_RELATIVE_GROWTH_MINIMIZATION =
+			"Relative-growth minimization for Parallel CEGAR";
+	private static final boolean DEF_RELATIVE_GROWTH_MINIMIZATION = false;
+	private static final String DESC_RELATIVE_GROWTH_MINIMIZATION =
+			"Robust general version of Minimization=NONE: minimize the abstraction only once it has grown by at least 'Minimization growth percent' since the last minimization, instead of after every refinement. On ECA/control-flow the abstraction grows slowly so most minimizations are skipped (recovering the wall-time win of disabling minimization), while on loop-unrolling programs it grows fast so minimization still fires and keeps the abstraction bounded (avoiding both the un-minimized CPU penalty and the exponential-blowup risk that makes pure NONE unsafe). Requires the Minimization-of-abstraction setting to be a real minimization (not NONE). Sound: minimization is language-preserving, so deferring it never changes a verdict. OFF = minimize after every refinement (paper behaviour).";
+
+	public static final String LABEL_MINIMIZATION_GROWTH_PERCENT = "Minimization growth percent for Parallel CEGAR";
+	private static final int DEF_MINIMIZATION_GROWTH_PERCENT = 100;
+	private static final String DESC_MINIMIZATION_GROWTH_PERCENT =
+			"Used only when 'Relative-growth minimization' is on: minimize once the abstraction has grown by at least this percentage since the last minimization (e.g. 100 = minimize when the abstraction has doubled). Higher = fewer minimizations (closer to NONE), lower = more (closer to the paper's every-iteration minimization).";
+
+	public static final String LABEL_RACE_BOTTLENECK_TRACE = "Race bottleneck trace for Parallel CEGAR";
+	private static final boolean DEF_RACE_BOTTLENECK_TRACE = false;
+	private static final String DESC_RACE_BOTTLENECK_TRACE =
+			"Portfolio race: when the coordinator has no fresh counterexample to dispatch but workers are idle (the sequential-dependent regime, e.g. ECA where the chain stalls on one long trace-check), re-dispatch the longest in-flight counterexample to the idle workers. Combined with the worker strategy portfolio, the idle workers attack that bottleneck trace with DIFFERENT solver/interpolation strategies; the first interpolant wins and the redundant results are deduplicated. This converts idle cores into lower interpolation latency on the exact trace the coordinator is blocked on. Sound: a racer is never added to the active-counterexample set, only the first result for a trace is applied (the rest are skipped as duplicates), and dropping a duplicate never changes a verdict. Requires the worker strategy portfolio to be useful. OFF = no re-dispatch (paper baseline).";
+
+	public static final String LABEL_WORKER_STRATEGY_PORTFOLIO = "Worker strategy portfolio for Parallel CEGAR";
+	private static final boolean DEF_WORKER_STRATEGY_PORTFOLIO = false;
+	private static final String DESC_WORKER_STRATEGY_PORTFOLIO =
+			"Portfolio: instead of every parallel-CEGAR worker using the same trace-refinement strategy, assign each worker a different strategy (solver + interpolation combination) from a fixed portfolio, indexed by worker id. No single solver/interpolation strategy dominates across programs, so diversifying across the idle workers (16 cores >> 4 workers, so the extra work is free) covers more cases and, combined with re-dispatching the bottleneck trace, races multiple strategies on the counterexample the coordinator is blocked on. Sound: interpolation is sound for every strategy, so the verdict is unchanged regardless of which worker/strategy produces the refinement. OFF = all workers use the configured single strategy (the paper's behaviour).";
+
+	public static final String LABEL_ASYNC_STALE_SWEEP = "Asynchronous stale sweep for Parallel CEGAR";
+	private static final boolean DEF_ASYNC_STALE_SWEEP = false;
+	private static final String DESC_ASYNC_STALE_SWEEP =
+			"R6: run the active stale re-check off the coordinator's critical path. The re-check (Accepts(abstraction, trace) per in-flight counterexample) is a pure read-only automaton traversal and the abstraction is immutable once built, so it is executed on a background thread against a snapshot taken after each refinement+minimization, while the coordinator proceeds to search for the next counterexample. This removes the per-refinement re-check cost from the critical path (the cost that makes synchronous stale cancellation lose on programs with long counterexamples, e.g. ECA) while keeping its benefit (fewer redundant refinements). Sound regardless of timing: a cancellation only drops/defers redundant worker effort, never changes a verdict. Requires stale worker cancellation + active re-check to be enabled. OFF runs the synchronous re-check (original S2 behaviour).";
+
+	public static final String LABEL_STALE_CHECK_WORK_BUDGET = "Stale check work budget for Parallel CEGAR";
+	private static final int DEF_STALE_CHECK_WORK_BUDGET = 0;
+	private static final String DESC_STALE_CHECK_WORK_BUDGET =
+			"Caps the per-counterexample cost of the stale-worker re-check (R1b): after a refinement, skip the Accepts membership test for an in-flight counterexample when abstraction.size() * trace.length() exceeds this budget, because the test would be too expensive to be worth it (it dominates on programs with long counterexamples and large abstractions, e.g. ECA, where it outweighs the cancellation benefit). Sound: skipping a check only forgoes a possible cancellation (redundant worker effort), never a verdict. 0 means no cap (re-check every active counterexample - the original S2 behaviour).";
+
+	public static final String LABEL_LAZY_MINIMIZATION = "Lazy abstraction minimization for Parallel CEGAR";
+	private static final boolean DEF_LAZY_MINIMIZATION = false;
+	private static final String DESC_LAZY_MINIMIZATION =
+			"Improvement: skip the (often expensive) abstraction minimization after a refinement while the abstraction is still small, minimizing only once it grows to at least the threshold below. On control-flow-heavy programs minimization frequently does not reduce the number of CEGAR iterations, so skipping it is pure speedup. Sound: minimization yields a language-equivalent automaton, so skipping/deferring it never changes a verdict; the threshold bounds the abstraction growth. OFF minimizes after every refinement (the paper's behaviour).";
+	public static final String LABEL_LAZY_MINIMIZATION_THRESHOLD =
+			"Lazy minimization size threshold for Parallel CEGAR";
+	private static final int DEF_LAZY_MINIMIZATION_THRESHOLD = 200;
+	private static final String DESC_LAZY_MINIMIZATION_THRESHOLD =
+			"When lazy abstraction minimization is enabled, minimize a refined abstraction only if it has at least this many states; otherwise keep it un-minimized for this iteration. Higher values skip more minimizations (faster when minimization is wasteful) but allow larger intermediate automata.";
 	// Parallel CEGAR counterexample search stragies
 	// ========================================================================
 	public static final String LABEL_PARALLELSEARCH_ACTIVE_CEX_ONLY = "Consider only active in Search Strategy";
@@ -873,7 +945,35 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 				new UltimatePreferenceItem<>(LABEL_ADAPTIVE_WORKER_SCALING, DEF_ADAPTIVE_WORKER_SCALING,
 						DESC_ADAPTIVE_WORKER_SCALING, PreferenceType.Boolean),
 				new UltimatePreferenceItem<>(LABEL_TRACE_SELECTION_STRATEGY, DEF_TRACE_SELECTION_STRATEGY,
-						DESC_TRACE_SELECTION_STRATEGY, PreferenceType.Combo, TraceSelectionStrategy.values()));
+						DESC_TRACE_SELECTION_STRATEGY, PreferenceType.Combo, TraceSelectionStrategy.values()),
+				new UltimatePreferenceItem<>(LABEL_STALE_PREFILTER, DEF_STALE_PREFILTER, DESC_STALE_PREFILTER,
+						PreferenceType.Boolean),
+				new UltimatePreferenceItem<>(LABEL_CROSS_WORKER_PRED_SHARING, DEF_CROSS_WORKER_PRED_SHARING,
+						DESC_CROSS_WORKER_PRED_SHARING, PreferenceType.Boolean),
+				new UltimatePreferenceItem<>(LABEL_CROSS_WORKER_PRED_SHARING_CAP, DEF_CROSS_WORKER_PRED_SHARING_CAP,
+						DESC_CROSS_WORKER_PRED_SHARING_CAP, PreferenceType.Integer),
+				new UltimatePreferenceItem<>(LABEL_ACTIVE_STALE_RECHECK, DEF_ACTIVE_STALE_RECHECK,
+						DESC_ACTIVE_STALE_RECHECK, PreferenceType.Boolean),
+				new UltimatePreferenceItem<>(LABEL_ASYNC_STALE_SWEEP, DEF_ASYNC_STALE_SWEEP, DESC_ASYNC_STALE_SWEEP,
+						PreferenceType.Boolean),
+				new UltimatePreferenceItem<>(LABEL_WORKER_STRATEGY_PORTFOLIO, DEF_WORKER_STRATEGY_PORTFOLIO,
+						DESC_WORKER_STRATEGY_PORTFOLIO, PreferenceType.Boolean),
+				new UltimatePreferenceItem<>(LABEL_RACE_BOTTLENECK_TRACE, DEF_RACE_BOTTLENECK_TRACE,
+						DESC_RACE_BOTTLENECK_TRACE, PreferenceType.Boolean),
+				new UltimatePreferenceItem<>(LABEL_LOOP_AWARE_MINIMIZATION, DEF_LOOP_AWARE_MINIMIZATION,
+						DESC_LOOP_AWARE_MINIMIZATION, PreferenceType.Boolean),
+				new UltimatePreferenceItem<>(LABEL_LOOP_AWARE_MIN_THRESHOLD, DEF_LOOP_AWARE_MIN_THRESHOLD,
+						DESC_LOOP_AWARE_MIN_THRESHOLD, PreferenceType.Integer),
+				new UltimatePreferenceItem<>(LABEL_RELATIVE_GROWTH_MINIMIZATION, DEF_RELATIVE_GROWTH_MINIMIZATION,
+						DESC_RELATIVE_GROWTH_MINIMIZATION, PreferenceType.Boolean),
+				new UltimatePreferenceItem<>(LABEL_MINIMIZATION_GROWTH_PERCENT, DEF_MINIMIZATION_GROWTH_PERCENT,
+						DESC_MINIMIZATION_GROWTH_PERCENT, PreferenceType.Integer),
+				new UltimatePreferenceItem<>(LABEL_STALE_CHECK_WORK_BUDGET, DEF_STALE_CHECK_WORK_BUDGET,
+						DESC_STALE_CHECK_WORK_BUDGET, PreferenceType.Integer),
+				new UltimatePreferenceItem<>(LABEL_LAZY_MINIMIZATION, DEF_LAZY_MINIMIZATION, DESC_LAZY_MINIMIZATION,
+						PreferenceType.Boolean),
+				new UltimatePreferenceItem<>(LABEL_LAZY_MINIMIZATION_THRESHOLD, DEF_LAZY_MINIMIZATION_THRESHOLD,
+						DESC_LAZY_MINIMIZATION_THRESHOLD, PreferenceType.Integer));
 
 	}
 
@@ -1075,7 +1175,7 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 	 * of syntactic prefix (skip in-flight path programs, minimise edge overlap with in-flight tasks).
 	 */
 	public enum TraceSelectionStrategy {
-		ALG4_PREFIX, DPPI
+		ALG4_PREFIX, DPPI, DIVERSITY
 	}
 
 	/**

@@ -107,6 +107,20 @@ public final class TAPreferences {
 	private final int mSearchLoopBound;
 	private final boolean mAdaptiveWorkerScaling;
 	private final TraceSelectionStrategy mTraceSelectionStrategy;
+	private final boolean mStalePrefilter;
+	private final boolean mCrossWorkerPredicateSharing;
+	private final int mCrossWorkerPredicateSharingCap;
+	private final boolean mLazyMinimization;
+	private final int mLazyMinimizationThreshold;
+	private final int mStaleCheckWorkBudget;
+	private final boolean mActiveStaleRecheck;
+	private final boolean mAsyncStaleSweep;
+	private final boolean mWorkerStrategyPortfolio;
+	private final boolean mRaceBottleneckTrace;
+	private final boolean mRelativeGrowthMinimization;
+	private final int mMinimizationGrowthPercent;
+	private final boolean mLoopAwareMinimization;
+	private final int mLoopAwareMinThreshold;
 
 	public enum Artifact {
 		ABSTRACTION, INTERPOLANT_AUTOMATON, NEG_INTERPOLANT_AUTOMATON, RCFG
@@ -226,6 +240,30 @@ public final class TAPreferences {
 		mTraceSelectionStrategy =
 				mPrefs.getEnum(TraceAbstractionPreferenceInitializer.LABEL_TRACE_SELECTION_STRATEGY,
 						TraceSelectionStrategy.class);
+		mStalePrefilter = mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_STALE_PREFILTER);
+		mCrossWorkerPredicateSharing =
+				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_CROSS_WORKER_PRED_SHARING);
+		mCrossWorkerPredicateSharingCap =
+				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_CROSS_WORKER_PRED_SHARING_CAP);
+		mLazyMinimization = mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_LAZY_MINIMIZATION);
+		mLazyMinimizationThreshold =
+				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_LAZY_MINIMIZATION_THRESHOLD);
+		mStaleCheckWorkBudget =
+				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_STALE_CHECK_WORK_BUDGET);
+		mActiveStaleRecheck = mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_ACTIVE_STALE_RECHECK);
+		mAsyncStaleSweep = mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_ASYNC_STALE_SWEEP);
+		mWorkerStrategyPortfolio =
+				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_WORKER_STRATEGY_PORTFOLIO);
+		mRaceBottleneckTrace =
+				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_RACE_BOTTLENECK_TRACE);
+		mRelativeGrowthMinimization =
+				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_RELATIVE_GROWTH_MINIMIZATION);
+		mMinimizationGrowthPercent =
+				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_MINIMIZATION_GROWTH_PERCENT);
+		mLoopAwareMinimization =
+				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_LOOP_AWARE_MINIMIZATION);
+		mLoopAwareMinThreshold =
+				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_LOOP_AWARE_MIN_THRESHOLD);
 	}
 
 	/**
@@ -641,5 +679,61 @@ public final class TAPreferences {
 
 	public TraceSelectionStrategy getTraceSelectionStrategy() {
 		return mTraceSelectionStrategy;
+	}
+
+	public boolean staleCancellationPrefilterEnabled() {
+		return mStalePrefilter;
+	}
+
+	public boolean crossWorkerPredicateSharingEnabled() {
+		return mCrossWorkerPredicateSharing;
+	}
+
+	public int crossWorkerPredicateSharingCap() {
+		return mCrossWorkerPredicateSharingCap;
+	}
+
+	public boolean lazyMinimizationEnabled() {
+		return mLazyMinimization;
+	}
+
+	public int lazyMinimizationThreshold() {
+		return mLazyMinimizationThreshold;
+	}
+
+	public int staleCheckWorkBudget() {
+		return mStaleCheckWorkBudget;
+	}
+
+	public boolean activeStaleRecheckEnabled() {
+		return mActiveStaleRecheck;
+	}
+
+	public boolean asyncStaleSweepEnabled() {
+		return mAsyncStaleSweep;
+	}
+
+	public boolean workerStrategyPortfolioEnabled() {
+		return mWorkerStrategyPortfolio;
+	}
+
+	public boolean raceBottleneckTraceEnabled() {
+		return mRaceBottleneckTrace;
+	}
+
+	public boolean relativeGrowthMinimizationEnabled() {
+		return mRelativeGrowthMinimization;
+	}
+
+	public int minimizationGrowthPercent() {
+		return mMinimizationGrowthPercent;
+	}
+
+	public boolean loopAwareMinimizationEnabled() {
+		return mLoopAwareMinimization;
+	}
+
+	public int loopAwareMinimizationThreshold() {
+		return mLoopAwareMinThreshold;
 	}
 }

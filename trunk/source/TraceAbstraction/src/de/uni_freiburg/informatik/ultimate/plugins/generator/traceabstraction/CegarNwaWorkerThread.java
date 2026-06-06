@@ -87,6 +87,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.tr
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.tracehandling.StrategyFactory;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.tracehandling.TaCheckAndRefinementPreferences;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.tracehandling.TraceAbstractionRefinementEngine;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.RefinementStrategy;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.tracehandling.TraceAbstractionRefinementEngine.ITARefinementStrategy;
 import de.uni_freiburg.informatik.ultimate.util.datastructures.relation.Pair;
 
@@ -100,6 +101,14 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 	private final PredicateFactory mPredicateFactory;
 	private final PredicateFactoryForInterpolantAutomata mPredicateFactoryInterpolantAutomata;
 	private int mIteration;
+	// Portfolio: the stable id of this worker (mIteration gets incremented per task, so it cannot serve as id).
+	private final int mWorkerId;
+	// Portfolio of diverse trace-refinement strategies (solver + interpolation combos) for integer reach-safety.
+	// Worker i uses PORTFOLIO[i % len] when the portfolio flag is on. Diverse on purpose: SMTInterpol-Craig
+	// (FIXED_PREFERENCES = the configured baseline), light Craig (CAMEL), multi-solver Craig+SP/WP (PENGUIN),
+	// and abstract-interpretation-augmented (TAIPAN). All are sound interpolation strategies.
+	private static final RefinementStrategy[] PORTFOLIO = { RefinementStrategy.FIXED_PREFERENCES,
+			RefinementStrategy.CAMEL, RefinementStrategy.PENGUIN, RefinementStrategy.TAIPAN };
 	private final ErrorGeneralizationEngine<L> mErrorGeneralizationEngine;
 	private IRefinementEngineResult<L, NestedWordAutomaton<L, IPredicate>> mRefinementResult = null;
 	private NestedWordAutomaton<L, IPredicate> mInterpolAutomaton = null;
@@ -120,6 +129,8 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 	private final TransferBetweenMainAndWorker<L, IPredicate> mNwaCexTransferrer;
 	private IRun<L, ?> mMainThreadCounterexample;
 	private StaleCancellationToken mCancellationToken;
+	// Portfolio race: strategy override carried by the current task (racer tasks set this; null = worker default).
+	private RefinementStrategy mCurrentTaskStrategy;
 
 	private final PathProgramCache<L> mProgramCache;
 
@@ -152,6 +163,7 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 		mLogger = logger;
 		mPref = pref;
 		mIteration = id;
+		mWorkerId = id;
 		mResultBuilder = resultBuilder;
 		mErrorGeneralizationEngine = new ErrorGeneralizationEngine<>(services);
 		mServices = services;
@@ -200,6 +212,7 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 				mThreadResult = null;
 				mMainThreadCounterexample = workerTask.getCounterexample();
 				mCancellationToken = workerTask.getCancellationToken();
+				mCurrentTaskStrategy = workerTask.getStrategyOverride();
 				if (mCancellationToken != null) {
 					mCancellationToken.attachWorkerThread(Thread.currentThread());
 				}
@@ -326,13 +339,33 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 	private ITARefinementStrategy<L> setUpStrategy(final Counterexample<L> counterexample) {
 		mStrategyFactory = new StrategyFactory<>(mLogger, mPref, mTaCheckAndRefinementPrefs, mCfgSmtToolkit,
 				mPredicateFactory, mPredicateFactoryInterpolantAutomata, mMainThread.mTransitionClazz, mProgramCache);
+		// R4: let each trace check seed its PredicateUnifier from the shared pool (filled as the run proceeds).
+		mStrategyFactory.setPredicateSharing(mMainThread.getPredicatePool(), mMainThread.getMainManagedScript());
 
 		final ITARefinementStrategy<L> strategy;
 		strategy = mStrategyFactory.constructStrategy(getServices(), counterexample, mAbstraction,
 				new SubtaskIterationIdentifier(mMainThread.mTaskIdentifier, mIteration),
 				mPredicateFactoryInterpolantAutomata, getPreconditionProvider(), getPostconditionProvider(),
-				mPref.getRefinementStrategy());
+				strategyForThisWorker());
 		return strategy;
+	}
+
+	/**
+	 * Portfolio: the refinement strategy this worker uses. With the portfolio flag on, worker i is pinned to
+	 * PORTFOLIO[i % len] so concurrently-processed counterexamples are attacked with diverse solver/interpolation
+	 * backends (and, once the coordinator re-dispatches the bottleneck trace to idle workers, those copies race
+	 * different strategies). Off → the single configured strategy (paper baseline).
+	 */
+	private RefinementStrategy strategyForThisWorker() {
+		// Portfolio race: a racer task carries its own alternative strategy; primary tasks have no override and
+		// keep the (tuned) default so racing only ever ACCELERATES, never replaces the default's solving power.
+		if (mCurrentTaskStrategy != null) {
+			return mCurrentTaskStrategy;
+		}
+		if (!mPref.workerStrategyPortfolioEnabled()) {
+			return mPref.getRefinementStrategy();
+		}
+		return PORTFOLIO[Math.floorMod(mWorkerId, PORTFOLIO.length)];
 	}
 
 	/**

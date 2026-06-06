@@ -39,7 +39,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -76,6 +78,7 @@ import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.predicates.
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.predicates.ISLPredicate;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.smt.predicates.PredicateFactory;
 import de.uni_freiburg.informatik.ultimate.lib.proofs.floydhoare.NwaHoareProofProducer;
+import de.uni_freiburg.informatik.ultimate.lib.smtlibutils.ManagedScript;
 import de.uni_freiburg.informatik.ultimate.lib.smtlibutils.solverbuilder.SolverBuilder;
 import de.uni_freiburg.informatik.ultimate.lib.smtlibutils.solverbuilder.SolverBuilder.SolverMode;
 import de.uni_freiburg.informatik.ultimate.lib.smtlibutils.solverbuilder.SolverBuilder.SolverSettings;
@@ -88,6 +91,7 @@ import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.au
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TAPreferences;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TAPreferences.InterpolantAutomatonEnhancement;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.Minimization;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.RefinementStrategy;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.RelevanceAnalysisMode;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.TraceSelectionStrategy;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.tracehandling.TaCheckAndRefinementPreferences;
@@ -144,11 +148,38 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 	// Kept small because each candidate costs one extra emptiness search (the costly step, paper §3.4); the
 	// search also early-stops once a fully path-program-disjoint (overlap 0) candidate is found.
 	private static final int DPPI_MAX_CANDIDATES = 4;
+	// DIVERSITY selection: IDF-weighted novelty over path programs (the derived diversity metric). df = number of
+	// dispatched path programs containing an edge; idf down-weights the shared structural core (entry/error/loop
+	// heads) so overlap is measured only on reason-bearing statements. Picks the candidate bringing the most NEW
+	// discriminative weight vs the in-flight set. Counters mirror DPPI's.
+	private final Map<L, Integer> mEdgeDocFreq = new HashMap<>();
+	private int mPathProgramsSeen = 0;
+	private int mDiversityNovelSelected = 0;
+	private int mDiversityFairnessFallback = 0;
+	private int mDiversityCandidatesScanned = 0;
 	private final int mExceptionInWorker = 0;
 
 	private long mRefinementTime = 0;
 	private long mStaleCancellationRequests = 0;
 	private long mStaleCancellationAcceptsFailures = 0;
+	// R1: number of staleness checks performed against the small subtrahend automaton instead of the
+	// full, growing abstraction (path-program staleness pre-filter).
+	private long mStaleCancellationPrefilterChecks = 0;
+	// R4: cross-worker predicate sharing pool (null if disabled).
+	private final SharedPredicatePool mPredicatePool;
+	// Lazy minimization: number of refinements whose abstraction minimization was skipped (still below threshold).
+	private long mLazyMinimizationSkips = 0;
+	// R1b: number of stale re-checks skipped because the Accepts cost exceeded the work budget.
+	private long mStaleCheckBudgetSkips = 0;
+	// DIAGNOSTIC: subtrahend-check vs full-abstraction-check agreement.
+	private long mStaleDiagDisagree = 0;
+	private long mStaleDiagBothStale = 0;
+	private long mStaleDiagFullStaleTotal = 0;
+	private long mStaleDiagSubStaleTotal = 0;
+	// DIAGNOSTIC: incremental-membership (removed-states-intersect-run) vs full check.
+	private long mIncrDiagRunHit = 0;
+	private long mIncrDiagFull = 0;
+	private long mIncrDiagBoth = 0;
 	private long mStaleWorkersCancelledBeforeTransfer = 0;
 	private long mStaleWorkersCancelledBeforeTraceCheck = 0;
 	private long mStaleWorkersCancelledBeforeAutomaton = 0;
@@ -160,6 +191,35 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 	private long mStaleThreadInterruptRequests = 0;
 	private long mStaleImmediateStopNoThread = 0;
 	private long mStaleImmediateStopFailures = 0;
+
+	// R6: asynchronous off-critical-path staleness sweep. The S2 staleness re-check
+	// (cancelStaleActiveCounterexamples) runs Accepts(abstraction, trace) for every in-flight counterexample on the
+	// coordinator thread, i.e. on the critical path. On programs with long counterexamples (ECA) this dominates and
+	// makes S2 lose, even though the cancellation it produces is beneficial. Accepts is a pure read-only automaton
+	// traversal (no SMT) and the abstraction is immutable once built, so the sweep can run on an idle core against a
+	// snapshot, off the critical path. Cancellation is sound regardless of timing: it only ever drops/defers
+	// redundant worker effort (a missed/late cancellation just means a redundant refinement that the baseline would
+	// have done anyway; a trace cancelled in error is still a real counterexample and is re-found by the search).
+	private ExecutorService mStaleSweepExecutor;
+	private Future<?> mPendingStaleSweep;
+	private final AtomicLong mAsyncStaleCancellations = new AtomicLong();
+	private long mAsyncStaleSweepsSubmitted = 0;
+	private long mAsyncStaleSweepsCoalesced = 0;
+
+	// Portfolio race: racers re-dispatched to idle workers, and duplicate results skipped.
+	private long mRaceDispatched = 0;
+	private long mRaceDuplicateSkipped = 0;
+	// Relative-growth minimization trigger: abstraction size at the last minimization, and skips counter.
+	private int mAbstractionSizeAtLastMinimization = -1;
+	private long mGrowthMinimizationSkips = 0;
+	// Loop-aware minimization counters (decision is per refinement in the per-worker minimization path).
+	private long mLoopAwareMinimizations = 0;
+	private long mLoopAwareSkips = 0;
+	// Alternative strategies (NOT the tuned default) raced on the bottleneck trace by idle workers. The primary
+	// worker for every trace keeps the default strategy, so racing can only finish a refinement sooner, never
+	// remove a task the default would solve.
+	private static final RefinementStrategy[] RACER_STRATEGIES =
+			{ RefinementStrategy.CAMEL, RefinementStrategy.PENGUIN, RefinementStrategy.TAIPAN };
 
 	/**
 	 * Based on the @NwaCegarLoop. Given a ThreadLimit, creates a ExecutionerService that will manage the worker
@@ -189,6 +249,10 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		mExec = Executors.newFixedThreadPool(mThreadLimit);
 		Thread.currentThread().setName("Main Cegar Thread");
 		getServices().getStorage().pushMarker(mDestroyEverything);
+
+		// R4: cross-worker predicate sharing pool (shared interpolant predicates), if enabled.
+		mPredicatePool = mPref.crossWorkerPredicateSharingEnabled()
+				? new SharedPredicatePool(mLogger, mPref.crossWorkerPredicateSharingCap() * mThreadLimit + 256) : null;
 	}
 
 	/*
@@ -233,6 +297,16 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 				predicateFactory, taCheckAndRefinementPrefs, predicateFactoryInterpolantAutomata,
 				stateFactoryForRefinement, mComputeHoareAnnotation, this, mWorkerResultQueue, mWorkerTaskQueue,
 				transferUtils);
+	}
+
+	/** R4: the shared cross-worker predicate pool for this run, or {@code null} if disabled. */
+	SharedPredicatePool getPredicatePool() {
+		return mPredicatePool;
+	}
+
+	/** R4: the coordinator's (main) managed script, the canonical store for pooled predicates. */
+	ManagedScript getMainManagedScript() {
+		return mCsToolkit.getManagedScript();
 	}
 
 	/*
@@ -295,6 +369,14 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 							updateAndPrintStatistics(true);
 							return;
 						}
+						// Portfolio race: a racer for this trace already refined it (trace no longer active), so
+						// this is a duplicate result. Skip it (sound: refining the same trace twice is redundant).
+						if (mPref.raceBottleneckTraceEnabled() && isDuplicateRaceResult(workerResult)) {
+							handleRaceDuplicateResult(workerResult);
+							workerResult.garbageCollect();
+							workerResult = mWorkerResultQueue.poll();
+							continue;
+						}
 						if (shouldSkipStaleInfeasibilityResult(workerResult)) {
 							handleStaleSkippedWorkerResult(workerResult);
 							workerResult.garbageCollect();
@@ -336,10 +418,18 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 				ie.printStackTrace();
 				mLogger.warn("Worker was interrupted! " + ie);
 			}
-			if (abstractionWasRefined && !mPref.minimizeAbstractionPerWorker()) {
+			if (abstractionWasRefined && !mPref.minimizeAbstractionPerWorker() && shouldMinimizeByGrowth()) {
 				// uses NWA CEGAR loop
 				// When do we minimize how often?
 				minimizeAbstractionIfEnabled();
+				mAbstractionSizeAtLastMinimization = mAbstraction.size();
+			}
+			// R6: launch the staleness sweep off the critical path against the just-refined (and minimized)
+			// abstraction. Done here (once per iteration, after minimization) so the snapshot is the materialized
+			// abstraction the next search will use, and so the sweep overhead is not on the coordinator's path.
+			if (abstractionWasRefined && mPref.isStaleWorkerCancellationEnabled() && mPref.activeStaleRecheckEnabled()
+					&& mPref.asyncStaleSweepEnabled()) {
+				submitAsyncStaleSweep();
 			}
 			if (abstractionWasRefined) {
 				// If we didnt find one we wait until we refine the abstraction
@@ -375,9 +465,17 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 				}
 				firstIteration = false;
 			}
+			// Portfolio race: no fresh trace to dispatch but workers idle -> re-dispatch the bottleneck
+			// (longest) in-flight trace to the idle workers so they race it with diverse strategies.
+			if (mPref.raceBottleneckTraceEnabled() && mRunningThreads < mThreadLimit) {
+				dispatchRacersForIdleWorkers();
+			}
 			updateAndPrintStatistics(false);
 		}
 		mExec.shutdownNow();
+		if (mStaleSweepExecutor != null) {
+			mStaleSweepExecutor.shutdownNow();
+		}
 		mResultBuilder.addResultForAllRemaining(Result.USER_LIMIT_ITERATIONS);
 
 	}
@@ -410,12 +508,33 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 			mLogger.info("DppiNovelSelected: " + mDppiNovelSelected);
 			mLogger.info("DppiFairnessFallback: " + mDppiFairnessFallback);
 			mLogger.info("DppiCandidatesScanned: " + mDppiCandidatesScanned);
+			mLogger.info("DiversityNovelSelected: " + mDiversityNovelSelected);
+			mLogger.info("DiversityFairnessFallback: " + mDiversityFairnessFallback);
+			mLogger.info("DiversityCandidatesScanned: " + mDiversityCandidatesScanned);
 			mLogger.info("SearchTime: " + mSearchTime + " s");
 			mLogger.info("WorkerSetUpTime: " + mWorkerSetUpTime + " s");
 			mLogger.info("ExceptionInWorker: " + mExceptionInWorker);
 			mLogger.info("mRefinementTime: " + mRefinementTime);
 			mLogger.info("StaleCancellationRequests: " + mStaleCancellationRequests);
+			mLogger.info("AsyncStaleSweepsSubmitted: " + mAsyncStaleSweepsSubmitted);
+			mLogger.info("AsyncStaleSweepsCoalesced: " + mAsyncStaleSweepsCoalesced);
+			mLogger.info("AsyncStaleCancellations: " + mAsyncStaleCancellations.get());
+			mLogger.info("RaceDispatched: " + mRaceDispatched);
+			mLogger.info("RaceDuplicateSkipped: " + mRaceDuplicateSkipped);
+			mLogger.info("GrowthMinimizationSkips: " + mGrowthMinimizationSkips);
+			mLogger.info("LoopAwareMinimizations: " + mLoopAwareMinimizations);
+			mLogger.info("LoopAwareSkips: " + mLoopAwareSkips);
 			mLogger.info("StaleCancellationAcceptsFailures: " + mStaleCancellationAcceptsFailures);
+			mLogger.info("StaleCancellationPrefilterChecks: " + mStaleCancellationPrefilterChecks);
+			if (mPredicatePool != null) {
+				mLogger.info("CrossWorkerPredicateSharing: " + mPredicatePool.stats());
+			}
+			mLogger.info("LazyMinimizationSkips: " + mLazyMinimizationSkips);
+			mLogger.info("StaleCheckBudgetSkips: " + mStaleCheckBudgetSkips);
+			mLogger.info("StaleDiag: subStaleTotal=" + mStaleDiagSubStaleTotal + " fullStaleTotal="
+					+ mStaleDiagFullStaleTotal + " bothStale=" + mStaleDiagBothStale + " disagree=" + mStaleDiagDisagree);
+			mLogger.info("IncrDiag: runHitRemoved=" + mIncrDiagRunHit + " fullStale=" + mIncrDiagFull
+					+ " both=" + mIncrDiagBoth);
 			mLogger.info("StaleWorkersCancelledBeforeTransfer: " + mStaleWorkersCancelledBeforeTransfer);
 			mLogger.info("StaleWorkersCancelledBeforeTraceCheck: " + mStaleWorkersCancelledBeforeTraceCheck);
 			mLogger.info("StaleWorkersCancelledBeforeAutomaton: " + mStaleWorkersCancelledBeforeAutomaton);
@@ -461,6 +580,12 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		}
 		mWorkerTaskQueue.add(new WorkerTask<>(mCounterexample, cancellationToken));
 		mProgramCache.addRun(mCounterexample.getWord());
+		// DIVERSITY metric bookkeeping: this dispatched trace's path program is one more "document"; update the
+		// edge document-frequencies used for the IDF weighting.
+		for (final L edge : new HashSet<>(counterexample.getWord().asList())) {
+			mEdgeDocFreq.merge(edge, 1, Integer::sum);
+		}
+		mPathProgramsSeen += 1;
 		final long time = System.nanoTime() / 1000000000;
 		mLogger.info("Main: Starting Thread");
 		final IcfgLocation currentErrorLoc = getErrorLocFromCounterexample();
@@ -469,6 +594,59 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		mRunningThreads += 1;
 		mCounterexamplesChecked += 1;
 		mWorkerSetUpTime += ((System.nanoTime() / 1000000000) - time);
+	}
+
+	/**
+	 * Portfolio race: fill the idle worker slots by re-dispatching the longest in-flight counterexample (the most
+	 * likely bottleneck, since interpolation cost grows with trace length). The racers are NOT added to
+	 * mActiveCounterexamples (the original already is, so the search will not re-find it) and the program cache is
+	 * not touched; combined with the worker strategy portfolio, the idle workers attack the same trace with
+	 * different solver/interpolation backends. The first result for the trace is applied (refinement removes it from
+	 * the active set); every later result for it is a duplicate and is dropped by isDuplicateRaceResult.
+	 */
+	private void dispatchRacersForIdleWorkers() {
+		NestedRun<L, ?> bottleneck = null;
+		int maxLen = -1;
+		for (final NestedRun<L, ?> active : mActiveCounterexamples.values()) {
+			if (active != null && active.getLength() > maxLen) {
+				maxLen = active.getLength();
+				bottleneck = active;
+			}
+		}
+		if (bottleneck == null) {
+			return;
+		}
+		int racerIdx = 0;
+		while (mRunningThreads < mThreadLimit) {
+			// Racers use no cancellation token (we dedup their results at the coordinator instead) and each gets a
+			// DIFFERENT alternative strategy, so the idle workers attack the bottleneck trace with diverse solvers.
+			final RefinementStrategy racerStrategy = RACER_STRATEGIES[racerIdx % RACER_STRATEGIES.length];
+			mWorkerTaskQueue.add(new WorkerTask<>(bottleneck, null, racerStrategy));
+			mRunningThreads += 1;
+			mRaceDispatched += 1;
+			racerIdx += 1;
+		}
+		mLogger.info("PortfolioRace: re-dispatched bottleneck trace (len " + maxLen + ") to idle workers");
+	}
+
+	/**
+	 * Portfolio race: a returned infeasibility result is a duplicate iff its trace is no longer in the active set,
+	 * i.e. another racer (or the original worker) already refined this trace away. Such a result must be skipped
+	 * (re-applying its difference is redundant; dropping it is sound).
+	 */
+	private boolean isDuplicateRaceResult(final WorkerThreadResult<L, A> workerResult) {
+		if (workerResult.getCounterexample() == null || workerResult.getAutomatonType() == AutomatonType.ERROR) {
+			return false;
+		}
+		final int traceHash = workerResult.getCounterexample().getWord().asList().hashCode();
+		return !mActiveCounterexamples.containsKey(traceHash);
+	}
+
+	private void handleRaceDuplicateResult(final WorkerThreadResult<L, A> workerResult) {
+		mRunningThreads -= 1;
+		mRaceDuplicateSkipped += 1;
+		mLogger.info("PortfolioRace: dropped duplicate result for trace "
+				+ workerResult.getCounterexample().getWord().asList().hashCode());
 	}
 
 	private WorkerThreadResult<L, A> getWorkerResult(final boolean didntFindCexLastIteration)
@@ -489,6 +667,9 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 
 	private void shutDownAndDestroy(final Object marker) {
 		mExec.shutdownNow();
+		if (mStaleSweepExecutor != null) {
+			mStaleSweepExecutor.shutdownNow();
+		}
 		final Set<String> destroyedStorables = getServices().getStorage().destroyMarker(marker);
 		if (!destroyedStorables.isEmpty()) {
 			mLogger.warn("Destroyed unattended storables created during the last iteration: "
@@ -515,9 +696,12 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 				computeAutomataDifference(mAbstraction, threadResult, stateFactoryForRefinement);
 
 		mAbstraction = diff.getResult();
-		cancelStaleActiveCounterexamples();
+		diagnoseIncrementalMembership(diff);
+		cancelStaleActiveCounterexamples(threadResult.getSubtrahend());
+		harvestSharedPredicates(threadResult);
 
-		if (mPref.minimizeAbstractionPerWorker()) {
+		if (mPref.minimizeAbstractionPerWorker() && shouldMinimizeNow()
+				&& minimizeGivenLoopAware(threadResult)) {
 			minimizeAbstractionIfEnabled(stateFactoryForRefinement,
 					new PredicateFactoryResultChecking(mPredicateFactory));
 		}
@@ -590,10 +774,96 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		}
 	}
 
-	private void cancelStaleActiveCounterexamples() {
+	/**
+	 * R4: harvest the interpolant predicates of the just-applied refinement (the non-trivial states of the
+	 * subtrahend / infeasibility-proof automaton) into the shared pool. Runs on the coordinator thread with the
+	 * producing worker idle, so reading its script and writing the main script is single-threaded.
+	 */
+	private void harvestSharedPredicates(final WorkerThreadResult<L, A> threadResult) {
+		if (mPredicatePool == null) {
+			return;
+		}
+		final INwaOutgoingLetterAndTransitionProvider<L, IPredicate> subtrahend = threadResult.getSubtrahend();
+		if (!(subtrahend instanceof INestedWordAutomaton)) {
+			return;
+		}
+		mPredicatePool.harvest(((INestedWordAutomaton<L, IPredicate>) subtrahend).getStates(),
+				threadResult.getWorkerMgdScript(), mCsToolkit.getManagedScript());
+	}
+
+	/**
+	 * DIAGNOSTIC for incremental-membership feasibility: a refinement removes states from the minuend; an active
+	 * counterexample is stale iff its accepting run used a removed state. Compare that (cheap, O(len)) to the
+	 * authoritative full Accepts. If they agree, incremental membership is viable; if the run-state intersection
+	 * catches ~0 while full catches many, the in-flight runs are over older abstraction versions (state versioning
+	 * blocks the approach).
+	 */
+	private void diagnoseIncrementalMembership(final IOpWithDelayedDeadEndRemoval<L, IPredicate> diff) {
 		if (!mPref.isStaleWorkerCancellationEnabled()) {
 			return;
 		}
+		final Set<IPredicate> removed = new HashSet<>();
+		for (final IOpWithDelayedDeadEndRemoval.UpDownEntry<IPredicate> e : diff.getRemovedUpDownEntry()) {
+			if (e.getUp() != null) {
+				removed.add(e.getUp());
+			}
+		}
+		final AutomataLibraryServices svc = new AutomataLibraryServices(getServices());
+		for (final Map.Entry<Integer, NestedRun<L, ?>> ac : mActiveCounterexamples.entrySet()) {
+			final NestedRun<L, ?> run = ac.getValue();
+			if (run == null) {
+				continue;
+			}
+			boolean runHitsRemoved = false;
+			for (final Object s : run.getStateSequence()) {
+				if (removed.contains(s)) {
+					runHitsRemoved = true;
+					break;
+				}
+			}
+			boolean staleFull;
+			try {
+				staleFull = !new Accepts<>(svc, mAbstraction, run.getWord()).getResult();
+			} catch (final AutomataLibraryException ex) {
+				continue;
+			}
+			if (runHitsRemoved) {
+				mIncrDiagRunHit += 1;
+			}
+			if (staleFull) {
+				mIncrDiagFull += 1;
+			}
+			if (runHitsRemoved && staleFull) {
+				mIncrDiagBoth += 1;
+			}
+		}
+	}
+
+	private void cancelStaleActiveCounterexamples(
+			final INwaOutgoingLetterAndTransitionProvider<L, IPredicate> subtrahend) {
+		if (!mPref.isStaleWorkerCancellationEnabled() || !mPref.activeStaleRecheckEnabled()) {
+			// Passive-only mode keeps just shouldSkipStaleInfeasibilityResult (one Accepts per returned result),
+			// avoiding the per-refinement re-check of every in-flight counterexample.
+			return;
+		}
+		if (mPref.asyncStaleSweepEnabled()) {
+			// R6: the active re-check is done off the critical path (submitAsyncStaleSweep, once per iteration after
+			// minimization). Skip the synchronous coordinator-thread sweep entirely.
+			return;
+		}
+		// R1 (path-program staleness pre-filter): the refinement just performed is A := A \ subtrahend, so a
+		// trace that was a counterexample (accepted by A) becomes stale exactly when it is accepted by the
+		// subtrahend automaton. Testing membership in the small subtrahend is much cheaper than re-running
+		// Accepts against the full, growing abstraction for every active counterexample (the serialized
+		// coordinator overhead behind S2's PAR-4 regression). Sound either way: a missed cancellation only
+		// wastes worker effort (the trace stays in the abstraction and is re-found), never a wrong verdict.
+		final boolean useSubtrahend = mPref.staleCancellationPrefilterEnabled() && subtrahend != null;
+		// R1b: cap the per-counterexample cost of the stale re-check. The Accepts membership test costs roughly
+		// abstraction.size() * trace.length(); on programs with long counterexamples and large abstractions (e.g.
+		// ECA) this dominates and outweighs the cancellation benefit. Skip the check for a counterexample whose
+		// estimated cost exceeds the budget. Sound: skipping forgoes a possible cancellation, never a verdict.
+		final long workBudget = mPref.staleCheckWorkBudget();
+		final int abstractionSize = mAbstraction.size();
 		final AutomataLibraryServices automataServices = new AutomataLibraryServices(getServices());
 		for (final Map.Entry<Integer, NestedRun<L, ?>> activeCounterexample : mActiveCounterexamples.entrySet()) {
 			final Integer activeTraceHash = activeCounterexample.getKey();
@@ -601,8 +871,36 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 			if (activeRun == null) {
 				continue;
 			}
+			if (!useSubtrahend && workBudget > 0
+					&& (long) abstractionSize * activeRun.getLength() > workBudget) {
+				mStaleCheckBudgetSkips += 1;
+				continue;
+			}
 			try {
-				if (!new Accepts<>(automataServices, mAbstraction, activeRun.getWord()).getResult()) {
+				final boolean stale;
+				if (useSubtrahend) {
+					final boolean staleSub =
+							new Accepts<>(automataServices, subtrahend, activeRun.getWord()).getResult();
+					mStaleCancellationPrefilterChecks += 1;
+					// DIAGNOSTIC: compare the cheap subtrahend check to the authoritative full-abstraction check.
+					final boolean staleFull =
+							!new Accepts<>(automataServices, mAbstraction, activeRun.getWord()).getResult();
+					if (staleSub != staleFull) {
+						mStaleDiagDisagree += 1;
+					} else if (staleFull) {
+						mStaleDiagBothStale += 1;
+					}
+					if (staleFull) {
+						mStaleDiagFullStaleTotal += 1;
+					}
+					if (staleSub) {
+						mStaleDiagSubStaleTotal += 1;
+					}
+					stale = staleSub;
+				} else {
+					stale = !new Accepts<>(automataServices, mAbstraction, activeRun.getWord()).getResult();
+				}
+				if (stale) {
 					requestStaleCancellation(activeTraceHash);
 				}
 			} catch (final AutomataLibraryException e) {
@@ -635,6 +933,73 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 					mLogger.warn("StaleCancellation: failed immediate interrupt for active trace " + activeTraceHash
 							+ ": " + e);
 				}
+			}
+		}
+	}
+
+	/**
+	 * R6: snapshot the current abstraction and the in-flight counterexamples on the coordinator thread (the only
+	 * thread that mutates these maps), then run the staleness sweep on a dedicated background thread so its cost is
+	 * not on the coordinator's critical path. At most one sweep is in flight at a time; if the previous one has not
+	 * finished, this one is coalesced away (sound: a skipped sweep only forgoes cancellations, and the next
+	 * refinement submits a fresher sweep).
+	 */
+	private void submitAsyncStaleSweep() {
+		if (mPendingStaleSweep != null && !mPendingStaleSweep.isDone()) {
+			mAsyncStaleSweepsCoalesced += 1;
+			return;
+		}
+		// Snapshot the immutable abstraction reference and the (run, token) pairs. The helper thread touches only
+		// these locals, never the shared maps, so no synchronization on mActiveCounterexamples is needed.
+		final INestedWordAutomaton<L, IPredicate> snapshot = mAbstraction;
+		final List<NestedRun<L, ?>> runs = new ArrayList<>();
+		final List<StaleCancellationToken> tokens = new ArrayList<>();
+		for (final Map.Entry<Integer, NestedRun<L, ?>> e : mActiveCounterexamples.entrySet()) {
+			final NestedRun<L, ?> run = e.getValue();
+			if (run == null) {
+				continue;
+			}
+			final StaleCancellationToken token = mActiveCancellationTokens.get(e.getKey());
+			if (token == null) {
+				continue;
+			}
+			runs.add(run);
+			tokens.add(token);
+		}
+		if (runs.isEmpty()) {
+			return;
+		}
+		if (mStaleSweepExecutor == null) {
+			mStaleSweepExecutor = Executors.newSingleThreadExecutor(r -> {
+				final Thread t = new Thread(r, "ParallelCegar-StaleSweep");
+				t.setDaemon(true);
+				return t;
+			});
+		}
+		final AutomataLibraryServices svc = new AutomataLibraryServices(getServices());
+		mAsyncStaleSweepsSubmitted += 1;
+		mPendingStaleSweep = mStaleSweepExecutor.submit(() -> runAsyncStaleSweep(snapshot, runs, tokens, svc));
+	}
+
+	/**
+	 * R6: the staleness sweep body, executed on the background thread. For each in-flight counterexample, a trace is
+	 * stale iff the updated abstraction no longer accepts it; stale traces get a cooperative cancellation request
+	 * (the worker honours it at its next StaleCancellationPoint). Only the COOPERATIVE token flag is used (no thread
+	 * interrupt) since the token is flipped from another thread. Any failure forgoes cancellations for this round
+	 * and degrades to the baseline behaviour (sound).
+	 */
+	private void runAsyncStaleSweep(final INestedWordAutomaton<L, IPredicate> snapshot,
+			final List<NestedRun<L, ?>> runs, final List<StaleCancellationToken> tokens,
+			final AutomataLibraryServices svc) {
+		for (int i = 0; i < runs.size(); i++) {
+			try {
+				if (!new Accepts<>(svc, snapshot, runs.get(i).getWord()).getResult()) {
+					if (tokens.get(i).requestCancellation("removed from updated abstraction (async sweep)")) {
+						mAsyncStaleCancellations.incrementAndGet();
+					}
+				}
+			} catch (final AutomataLibraryException | RuntimeException ex) {
+				mLogger.warn("Async stale sweep failed for an in-flight trace: " + ex);
 			}
 		}
 	}
@@ -759,6 +1124,17 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 			mCountFailedToFindCex += 1;
 			return null;
 		}
+		// DIVERSITY: IDF-weighted-novelty trace selection (the derived diversity metric). Alg.4 path left intact.
+		if (mPref.getTraceSelectionStrategy() == TraceSelectionStrategy.DIVERSITY) {
+			final NestedRun<L, IPredicate> divRun = searchForErrorTraceDiversity(possibleEndPoints);
+			mSearchTime += ((System.nanoTime() / 1000000000) - time);
+			if (divRun != null) {
+				return divRun;
+			}
+			mLogger.info("Did not Find a Counterexample (DIVERSITY)!");
+			mCountFailedToFindCex += 1;
+			return null;
+		}
 		search = getSearch(IsEmpty.SearchStrategy.PARALLEL, possibleEndPoints);
 		if (isSearchCorrectAndTraceFresh(search)) {
 			mLogger.info("Found new Counterexample via IsEmptyParallel!");
@@ -866,6 +1242,83 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		return edges;
 	}
 
+	/**
+	 * Inverse document frequency of a CFG edge over the dispatched path programs: log((1+N)/(1+df)). Edges in
+	 * (almost) every path program — the structural core (entry, error location, loop heads) — get idf ~ 0 and so
+	 * do not count toward overlap; rare, reason-bearing edges dominate. This is the correction that plain
+	 * edge-overlap (DPPI) lacked.
+	 */
+	private double idf(final L edge) {
+		final int df = mEdgeDocFreq.getOrDefault(edge, 0);
+		return Math.log((1.0 + mPathProgramsSeen) / (1.0 + df));
+	}
+
+	/**
+	 * DIVERSITY metric: the fraction of a candidate path program's IDF-weighted edges that are NOT already covered
+	 * by the in-flight set — i.e. how much NEW (discriminative) infeasibility reason this trace would bring. 1 =
+	 * entirely new reason, 0 = its discriminative edges are all already being worked on. O(|P(t)|).
+	 */
+	private double weightedNovelty(final Set<L> pathProgram, final Set<L> coveredEdges) {
+		double num = 0.0;
+		double den = 0.0;
+		for (final L edge : pathProgram) {
+			final double w = idf(edge);
+			den += w;
+			if (!coveredEdges.contains(edge)) {
+				num += w;
+			}
+		}
+		return den == 0.0 ? 0.0 : num / den;
+	}
+
+	/**
+	 * DIVERSITY trace selection: enumerate up to DPPI_MAX_CANDIDATES fresh error traces (one extra emptiness search
+	 * each, like DPPI) and dispatch the one with the highest IDF-weighted novelty vs the in-flight set. Fairness
+	 * floor: if no candidate brings new discriminative weight, fall back to the first found trace so progress /
+	 * termination / "L(A)=emptyset => SAFE" are preserved. Alg.4 is reason-blind; this prioritises the trace with
+	 * the most novel infeasibility reason, spreading the workers over distinct reasons to cut redundant refinements.
+	 */
+	private NestedRun<L, IPredicate> searchForErrorTraceDiversity(final Set<IPredicate> possibleEndPoints)
+			throws AutomataOperationCanceledException {
+		final HashMap<Integer, NestedRun<L, ?>> avoid = new HashMap<>(mActiveCounterexamples);
+		final Set<L> covered = inFlightEdgeUnion();
+		NestedRun<L, IPredicate> firstFound = null;
+		NestedRun<L, IPredicate> best = null;
+		double bestNovelty = -1.0;
+		for (int k = 0; k < DPPI_MAX_CANDIDATES; k++) {
+			final IsEmpty<L, IPredicate> search = new IsEmptyParallel<>(new AutomataLibraryServices(mServices),
+					mAbstraction, mAbstraction.getInitialStates(), Collections.emptySet(), possibleEndPoints,
+					possibleEndPoints == null, IsEmpty.SearchStrategy.BFS, avoid, mPref.getSearchLoopBound());
+			if (!isSearchCorrectAndTraceFresh(search)) {
+				break;
+			}
+			final NestedRun<L, IPredicate> cand = search.getNestedRun();
+			if (cand == null) {
+				break;
+			}
+			mDiversityCandidatesScanned += 1;
+			if (firstFound == null) {
+				firstFound = cand;
+			}
+			final List<L> word = cand.getWord().asList();
+			final double novelty = weightedNovelty(new HashSet<>(word), covered);
+			if (novelty > bestNovelty) {
+				bestNovelty = novelty;
+				best = cand;
+			}
+			avoid.put(word.hashCode(), cand);
+		}
+		if (best != null && bestNovelty > 0.0) {
+			mDiversityNovelSelected += 1;
+			mLogger.info("DIVERSITY: selected trace with weighted novelty " + bestNovelty);
+			return best;
+		}
+		if (firstFound != null) {
+			mDiversityFairnessFallback += 1;
+		}
+		return firstFound;
+	}
+
 	@Override
 	protected INwaOutgoingLetterAndTransitionProvider<L, IPredicate> enhanceInterpolantAutomaton(
 			final InterpolantAutomatonEnhancement enhanceMode, final IPredicateUnifier predicateUnifier,
@@ -962,6 +1415,74 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 						.setSolverMode(solverMode).setAdditionalOptions(additionalSmtOptions);
 
 		return solverSettings;
+	}
+
+	/**
+	 * Lazy-minimization gate (improvement): when enabled, skip minimizing a refined abstraction while it is still
+	 * below the configured size threshold, minimizing only once it grows past it. On control-flow-heavy programs
+	 * minimization frequently does not reduce the CEGAR iteration count, so it is pure overhead; skipping it there is
+	 * a direct speedup. Sound: minimization produces a language-equivalent automaton, so skipping/deferring it never
+	 * changes a verdict, and the threshold bounds the abstraction growth.
+	 */
+	private boolean shouldMinimizeNow() {
+		if (!mPref.lazyMinimizationEnabled()) {
+			return true;
+		}
+		final boolean minimize = mAbstraction.size() >= mPref.lazyMinimizationThreshold();
+		if (!minimize) {
+			mLazyMinimizationSkips += 1;
+		}
+		return minimize;
+	}
+
+	/**
+	 * Relative-growth minimization trigger (the robust general version of Minimization=NONE): minimize only once the
+	 * abstraction has grown by at least the configured percentage since the last minimization. On ECA/control-flow
+	 * the abstraction grows slowly per refinement, so most minimizations are skipped (recovering NONE's wall win);
+	 * on loop-unrolling programs the abstraction blows up fast, so the trigger fires and keeps it bounded (avoiding
+	 * the un-minimized CPU/size penalty and the blowup risk that makes pure NONE unsafe). Sound: minimization is
+	 * language-preserving, so skipping/deferring it never changes a verdict. OFF -> minimize every refined iteration
+	 * (the paper's behaviour).
+	 */
+	/**
+	 * Loop-aware minimization (per refinement, in the per-worker minimization path which is the active one): minimize
+	 * this refinement only when its counterexample's path program has recurred at least the threshold number of
+	 * times (loop unrolling — the same loop body refined repeatedly), which is exactly when the un-minimized
+	 * abstraction blows up and minimization is load-bearing. Diverse error traces (ECA/control-flow) keep the count
+	 * at ~1, so they skip minimization and get the wall win of NONE. Sound: minimization is language-preserving, so
+	 * skipping it never changes a verdict. OFF -> always minimize (subject to the other gates).
+	 */
+	private boolean minimizeGivenLoopAware(final WorkerThreadResult<L, A> threadResult) {
+		if (!mPref.loopAwareMinimizationEnabled()) {
+			return true;
+		}
+		final int ppc = threadResult.getCounterexample() != null
+				? mProgramCache.getPathProgramCount(threadResult.getCounterexample().getWord()) : 0;
+		if (ppc >= mPref.loopAwareMinimizationThreshold()) {
+			mLoopAwareMinimizations += 1;
+			return true;
+		}
+		mLoopAwareSkips += 1;
+		return false;
+	}
+
+	private boolean shouldMinimizeByGrowth() {
+		if (!mPref.relativeGrowthMinimizationEnabled()) {
+			return true;
+		}
+		if (mAbstractionSizeAtLastMinimization < 0) {
+			mAbstractionSizeAtLastMinimization = mAbstraction.size();
+		}
+		if (mAbstractionSizeAtLastMinimization == 0) {
+			return true;
+		}
+		final long trigger =
+				(long) mAbstractionSizeAtLastMinimization * (100 + mPref.minimizationGrowthPercent()) / 100;
+		if (mAbstraction.size() >= trigger) {
+			return true;
+		}
+		mGrowthMinimizationSkips += 1;
+		return false;
 	}
 
 	private void minimizeAbstractionIfEnabled(final PredicateFactoryRefinement stateFactoryForRefinement,

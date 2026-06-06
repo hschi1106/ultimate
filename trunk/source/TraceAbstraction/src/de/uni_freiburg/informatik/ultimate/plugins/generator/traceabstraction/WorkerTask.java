@@ -27,14 +27,23 @@ package de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction;
 
 import de.uni_freiburg.informatik.ultimate.automata.IRun;
 import de.uni_freiburg.informatik.ultimate.lib.modelcheckerutils.cfg.structure.IIcfgTransition;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.RefinementStrategy;
 
 final class WorkerTask<L extends IIcfgTransition<?>> {
 	private final IRun<L, ?> mCounterexample;
 	private final StaleCancellationToken mCancellationToken;
+	// Portfolio race: an alternative refinement strategy for this (racer) task, or null to use the worker default.
+	private final RefinementStrategy mStrategyOverride;
 
 	WorkerTask(final IRun<L, ?> counterexample, final StaleCancellationToken cancellationToken) {
+		this(counterexample, cancellationToken, null);
+	}
+
+	WorkerTask(final IRun<L, ?> counterexample, final StaleCancellationToken cancellationToken,
+			final RefinementStrategy strategyOverride) {
 		mCounterexample = counterexample;
 		mCancellationToken = cancellationToken;
+		mStrategyOverride = strategyOverride;
 	}
 
 	IRun<L, ?> getCounterexample() {
@@ -43,5 +52,9 @@ final class WorkerTask<L extends IIcfgTransition<?>> {
 
 	StaleCancellationToken getCancellationToken() {
 		return mCancellationToken;
+	}
+
+	RefinementStrategy getStrategyOverride() {
+		return mStrategyOverride;
 	}
 }
