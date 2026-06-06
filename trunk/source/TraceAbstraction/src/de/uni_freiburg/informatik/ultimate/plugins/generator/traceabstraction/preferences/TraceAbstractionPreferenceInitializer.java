@@ -570,11 +570,6 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 	private static final int DEF_BATCH_LCPS_CANDIDATE_CAP = 32;
 	private static final String DESC_BATCH_LCPS_CANDIDATE_CAP =
 			"Upper bound for the BATCH_LCPS candidate pool generated before greedy batch selection.";
-	public static final String LABEL_ADAPTIVE_BATCH_TRIGGER_MODE = "Adaptive batch trigger mode";
-	private static final AdaptiveBatchTriggerMode DEF_ADAPTIVE_BATCH_TRIGGER_MODE =
-			AdaptiveBatchTriggerMode.NEVER_BATCH;
-	private static final String DESC_ADAPTIVE_BATCH_TRIGGER_MODE =
-			"Single signal that enables BATCH_LCPS for one adaptive dispatch; otherwise PAPER fallback is used.";
 	public static final String LABEL_ADAPTIVE_BATCH_MIN_AVAILABLE_SLOTS = "Adaptive batch min available slots";
 	private static final int DEF_ADAPTIVE_BATCH_MIN_AVAILABLE_SLOTS = 2;
 	private static final String DESC_ADAPTIVE_BATCH_MIN_AVAILABLE_SLOTS =
@@ -891,8 +886,6 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 				new UltimatePreferenceItem<>(LABEL_BATCH_LCPS_CANDIDATE_CAP, DEF_BATCH_LCPS_CANDIDATE_CAP,
 						DESC_BATCH_LCPS_CANDIDATE_CAP, PreferenceType.Integer,
 						new IUltimatePreferenceItemValidator.IntegerValidator(1, 1_0000_000)),
-				new UltimatePreferenceItem<>(LABEL_ADAPTIVE_BATCH_TRIGGER_MODE, DEF_ADAPTIVE_BATCH_TRIGGER_MODE,
-						DESC_ADAPTIVE_BATCH_TRIGGER_MODE, PreferenceType.Combo, AdaptiveBatchTriggerMode.values()),
 				new UltimatePreferenceItem<>(LABEL_ADAPTIVE_BATCH_MIN_AVAILABLE_SLOTS,
 						DEF_ADAPTIVE_BATCH_MIN_AVAILABLE_SLOTS, DESC_ADAPTIVE_BATCH_MIN_AVAILABLE_SLOTS,
 						PreferenceType.Integer, new IUltimatePreferenceItemValidator.IntegerValidator(1, 1_0000_000)),
@@ -917,11 +910,6 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 	 */
 	public enum AbstractInterpretationMode {
 		NONE, USE_PREDICATES, USE_PATH_PROGRAM, USE_CANONICAL, USE_TOTAL,
-	}
-
-	public enum AdaptiveBatchTriggerMode {
-		DUPLICATE_ONLY, STALE_ONLY, SEARCH_FAILED_ONLY, IDLE_SLOT_ONLY, FIRST_FILL_ONLY, FIRST_FILL_OR_STALE,
-		THREADS_GE_4_FIRST_FILL, ALWAYS_BATCH, NEVER_BATCH,
 	}
 
 	/**

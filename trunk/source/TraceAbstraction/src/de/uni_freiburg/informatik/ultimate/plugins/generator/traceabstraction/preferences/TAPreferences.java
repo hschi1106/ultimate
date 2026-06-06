@@ -53,7 +53,6 @@ import de.uni_freiburg.informatik.ultimate.logic.Logics;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.preferences.RcfgPreferenceInitializer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.Activator;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.CoinflipMode;
-import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.AdaptiveBatchTriggerMode;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.FloydHoareAutomataReuse;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.FloydHoareAutomataReuseEnhancement;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.InterpolantAutomaton;
@@ -109,7 +108,6 @@ public final class TAPreferences {
 	private final boolean mParallelTraceSearchTrackStalePrefixes;
 	private final int mBatchLcpsCandidateMultiplier;
 	private final int mBatchLcpsCandidateCap;
-	private final AdaptiveBatchTriggerMode mAdaptiveBatchTriggerMode;
 	private final int mAdaptiveBatchMinAvailableSlots;
 
 	public enum Artifact {
@@ -232,9 +230,6 @@ public final class TAPreferences {
 		mBatchLcpsCandidateMultiplier =
 				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_BATCH_LCPS_CANDIDATE_MULTIPLIER);
 		mBatchLcpsCandidateCap = mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_BATCH_LCPS_CANDIDATE_CAP);
-		mAdaptiveBatchTriggerMode = mPrefs.getEnum(
-				TraceAbstractionPreferenceInitializer.LABEL_ADAPTIVE_BATCH_TRIGGER_MODE,
-				AdaptiveBatchTriggerMode.class);
 		mAdaptiveBatchMinAvailableSlots =
 				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_ADAPTIVE_BATCH_MIN_AVAILABLE_SLOTS);
 	}
@@ -652,10 +647,6 @@ public final class TAPreferences {
 
 	public int getBatchLcpsCandidateCap() {
 		return mBatchLcpsCandidateCap;
-	}
-
-	public AdaptiveBatchTriggerMode getAdaptiveBatchTriggerMode() {
-		return mAdaptiveBatchTriggerMode;
 	}
 
 	public int getAdaptiveBatchMinAvailableSlots() {

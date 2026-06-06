@@ -41,13 +41,52 @@ The set contains one easy testcase, one medium testcase, one harder loop-invaria
 and one concurrent testcase where parallel trace abstraction is expected to produce several checked paths without
 relying on timeout results.
 
-## Representative Results
+## Maintained Scope
 
-The checked-in CSV and Markdown report contain results from the latest run of this experiment. The current runner is
-mode-aware and compares `PAPER` with `LCPS` by default. `BFS` and `DFS` can be added as basic baselines.
+The maintained experiment scope contains these main modes:
 
-Interpret `avg_pairwise_prefix_lca_divergence` as the average fraction of the shorter path that lies below the pair's
-LCA. Higher values mean the checked paths share less of their shorter prefixes.
+- `PAPER`: the active-continuation selector from the paper baseline.
+- `LCPS`: the same local selector with checked/stale prefix-cache counts as lexicographic tie breakers.
+- `BATCH_LCPS`: an always-batch baseline that fills idle workers from a candidate pool selected by fixed batch
+  priority.
+- `ADAPTIVE_BATCH_LCPS`: the maintained adaptive mode.
+
+`BFS` and `DFS` remain available only as basic baselines.
+
+`ADAPTIVE_BATCH_LCPS` uses this fixed rule:
+
+```text
+availableSlots = threadLimit - runningThreads
+
+if availableSlots >= adaptiveMinAvailableSlots
+   and (firstDispatchInCurrentAbstraction or staleTriggerSinceLastDispatch):
+    use BATCH_LCPS for this dispatch
+    reset staleTriggerSinceLastDispatch
+else:
+    use PAPER one-by-one dispatch
+
+after every ADAPTIVE_BATCH_LCPS dispatch decision:
+    firstDispatchInCurrentAbstraction = false
+
+after every successful refinement:
+    firstDispatchInCurrentAbstraction = true
+
+when completed worker work is no longer accepted by the current abstraction:
+    staleTriggerSinceLastDispatch = true
+```
+
+This mode does not use cache data to prove safety or unsafety. It only changes how accepted runs are selected for
+available workers.
+
+### Removed Exploratory Variants
+
+- `LCPS_FULL` was removed because suffix continuation rarely activated and carried timeout risk in prior experiments.
+- Duplicate-only adaptive triggering was removed because it caused timeout risk in prior experiments.
+- Search-failed and idle-slot adaptive triggers were removed because they did not activate meaningfully in prior
+  experiments.
+- Priority-order variants such as stale-first or work-first were removed to avoid heuristic explosion.
+
+These variants were exploratory and are no longer part of the maintained implementation.
 
 ## Running
 
@@ -59,7 +98,7 @@ export ULTIMATE_CMD="/path/to/run-ultimate.sh"
 python3 trunk/examples/experiments/checked-path-divergence/run_checked_path_divergence_experiment.py
 ```
 
-By default the runner uses `1,2,4,8,16` workers and runs `PAPER,LCPS`.
+By default the runner uses `1,2,4,8,16` workers and runs `PAPER,LCPS,BATCH_LCPS,ADAPTIVE_BATCH_LCPS`.
 
 To run the BFS/DFS baselines as well:
 
@@ -90,14 +129,16 @@ trunk/examples/experiments/checked-path-divergence/results/
 The runner writes:
 
 - `checked-path-divergence-results.csv`: raw machine-readable data with columns
-  `benchmark,mode,threads,result,runtime_ms,checked_paths,stale_paths,duplicate_freshness_failures,total_pairwise_prefix_lca_divergence,avg_pairwise_prefix_lca_divergence,refinements,search_failed`
+  `benchmark,mode,repeat_index,threads,result,runtime_ms,checked_paths,stale_paths,duplicate_freshness_failures,total_pairwise_prefix_lca_divergence,avg_pairwise_prefix_lca_divergence,refinements,search_failed`
 - `checked-path-divergence-results.md`: grouped human-readable report
 - `*-<mode>-threads-*.log`: raw Ultimate output for each run
 
 ## Metrics
 
 - `benchmark`: benchmark identifier from this experiment.
-- `mode`: configured trace selection mode, one of `BFS`, `DFS`, `PAPER`, or `LCPS`.
+- `mode`: configured trace selection mode, one of `BFS`, `DFS`, `PAPER`, `LCPS`, `BATCH_LCPS`, or
+  `ADAPTIVE_BATCH_LCPS`.
+- `repeat_index`: zero-based repeat number.
 - `threads`: configured `Threadlimit for Parallel CEGAR`.
 - `result`: parsed Ultimate verification result.
 - `runtime_ms`: wall-clock runtime measured by the runner.
@@ -110,10 +151,16 @@ The runner writes:
 - `stale_paths`: existing stale/skipped-path count if reported by Ultimate; `0` means the current log did not expose such a counter.
 - `duplicate_freshness_failures`: BFS/DFS/PAPER/LCPS attempts that found an active duplicate instead of a fresh worker trace.
 - `search_failed`: search attempts that did not find a fresh counterexample while workers were still active.
+- `lcps_checked_prefix_queries`, `lcps_checked_prefix_hits`, `lcps_stale_prefix_queries`,
+  `lcps_stale_prefix_hits`: prefix-cache activation diagnostics for LCPS.
+- `lcps_effective_priority_decisions`: successor sets where LCPS chose a different best successor than PAPER.
+- `batch_lcps_*`: batch candidate generation, selection, and effective-decision diagnostics.
+- `adaptive_batch_invocations`, `adaptive_batch_fallbacks`, `adaptive_triggered_by_first_fill`,
+  `adaptive_triggered_by_stale`: diagnostics for the fixed first-fill-or-stale adaptive rule.
 
-The experiment changes only configuration, logging/statistics collection, and result formatting. LCPS changes only the
-order in which accepted runs are selected; it does not use the prefix cache to prove safety, prove unsafety, or skip SMT
-checking/refinement.
+The experiment changes only configuration, logging/statistics collection, and result formatting. LCPS and batch modes
+change only the order in which accepted runs are selected; they do not use the prefix cache to prove safety, prove
+unsafety, or skip SMT checking/refinement.
 
 The recorded paths are counterexample state sequences. State equality determines their common prefix, so paths from
 different refinement iterations can appear maximally divergent when corresponding reconstructed states are not equal.

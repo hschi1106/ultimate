@@ -97,8 +97,6 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 	private final List<PathStepKey<LETTER, STATE>> mCurrentPrefixKeys = new ArrayList<>();
 	private final TraceSearchSelectionMode mSearchMode;
 	private final PrefixCoverageCache<LETTER, STATE> mPrefixCoverageCache;
-	private int mLcpsFullCacheSuffixInvocations;
-	private int mLcpsFullCacheSuffixFallbacks;
 	private int mLcpsEffectivePriorityDecisions;
 	private int mCandidateOrder;
 
@@ -424,9 +422,7 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 			checkedPrefixCount = mPrefixCoverageCache.getCheckedPrefixCount(candidatePrefix);
 			stalePrefixCount = mPrefixCoverageCache.getStalePrefixCount(candidatePrefix);
 		}
-		final int priorityActiveCount =
-				mSearchMode.continuesAfterActiveDivergence() && counterexamples.isEmpty() ? 0 : activeContinuationCount;
-		return new PQState(makePriorityKey(mSearchMode, priorityActiveCount, checkedPrefixCount, stalePrefixCount),
+		return new PQState(makePriorityKey(mSearchMode, activeContinuationCount, checkedPrefixCount, stalePrefixCount),
 				state, symbol, succ, stateK, counterexamples, call, ret, checkedPrefixCount, stalePrefixCount,
 				mCandidateOrder++);
 	}
@@ -434,9 +430,6 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 	static PriorityKey makePriorityKey(final TraceSearchSelectionMode searchMode, final int activeContinuationCount,
 			final int checkedPrefixCount, final int stalePrefixCount) {
 		if (searchMode.usesPrefixCoverage()) {
-			if (searchMode.staleCoverageFirst()) {
-				return new PriorityKey(activeContinuationCount, stalePrefixCount, checkedPrefixCount, 0);
-			}
 			return new PriorityKey(activeContinuationCount, checkedPrefixCount, stalePrefixCount, 0);
 		}
 		return new PriorityKey(activeContinuationCount, 0, 0, 0);
@@ -609,17 +602,7 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 
 		mVisitedPairs.clear(); // reset visited Pairs, then add start of subsearch
 		if (counterexamples.isEmpty()) {
-			if (!mSearchMode.continuesAfterActiveDivergence()) {
-				return shortestCompletionFromCurrentPrefix();
-			}
-			final PriorityQueue<PQState> pqStart =
-					pickSuccToExplore(positionOfThisSubSearch, state, stateK, counterexamples);
-			if (!shouldContinueWithCacheAfterActiveDivergence(pqStart)) {
-				mLcpsFullCacheSuffixFallbacks++;
-				return shortestCompletionFromCurrentPrefix();
-			}
-			mLcpsFullCacheSuffixInvocations++;
-			return explorePriorityQueue(positionOfThisSubSearch, state, stateK, pqStart);
+			return shortestCompletionFromCurrentPrefix();
 		}
 
 		// equality intended here
@@ -664,13 +647,6 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 			}
 		}
 		return run; // is null if isEmpty fails, leads to backtracking
-	}
-
-	private boolean shouldContinueWithCacheAfterActiveDivergence(final Collection<PQState> candidates) {
-		if (!mSearchMode.continuesAfterActiveDivergence() || mPrefixCoverageCache == null) {
-			return false;
-		}
-		return candidates.stream().anyMatch(PQState::hasCacheCoverage);
 	}
 
 	private NestedRun<LETTER, STATE> explorePriorityQueue(final int positionOfThisSubSearch, final STATE state,
@@ -767,14 +743,6 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 		return mTimeSpendSearching;
 	}
 
-	public int getLcpsFullCacheSuffixInvocations() {
-		return mLcpsFullCacheSuffixInvocations;
-	}
-
-	public int getLcpsFullCacheSuffixFallbacks() {
-		return mLcpsFullCacheSuffixFallbacks;
-	}
-
 	public int getLcpsEffectivePriorityDecisions() {
 		return mLcpsEffectivePriorityDecisions;
 	}
@@ -858,10 +826,6 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 
 		public int getCandidateOrder() {
 			return mCandidateOrder;
-		}
-
-		public boolean hasCacheCoverage() {
-			return mCheckedPrefixCount > 0 || mStalePrefixCount > 0;
 		}
 
 		public boolean sameTransition(final PQState other) {
