@@ -118,6 +118,46 @@ To run one benchmark:
 python3 trunk/examples/experiments/checked-path-divergence/run_checked_path_divergence_experiment.py --benchmark medium-loop
 ```
 
+## Running SV-COMP ReachSafety subset
+
+Use `run_svcomp_reachsafety_subset.py` when you have a JSON file with selected SV-COMP ReachSafety tasks. The JSON is
+expected to contain `categories -> subcategories -> tasks`, where each task path is relative to the SV-COMP repository's
+`c/` directory, for example `loops/array-1.c`.
+
+The wrapper expands all tasks into a generated benchmark CSV and then calls
+`run_checked_path_divergence_experiment.py`. For SV-COMP C ReachSafety tasks it uses:
+
+- toolchain: `trunk/examples/toolchains/AutomizerC.xml`
+- settings: `trunk/examples/Interactive/settings/SVCOMP2017/svcomp-Reach-32bit-Automizer_Default.epf`
+
+Example:
+
+```bash
+python3 trunk/examples/experiments/checked-path-divergence/run_svcomp_reachsafety_subset.py \
+  --benchmarks-json /path/to/benchmarks_run.json \
+  --svcomp-root /path/to/sv-benchmarks \
+  --threads 4 \
+  --timeout 150 \
+  --output-dir trunk/examples/experiments/checked-path-divergence/results/reachsafety189-t150-w4
+```
+
+Dry-run only generates the benchmark CSV and prints the runner command:
+
+```bash
+python3 trunk/examples/experiments/checked-path-divergence/run_svcomp_reachsafety_subset.py \
+  --benchmarks-json /path/to/benchmarks_run.json \
+  --svcomp-root /path/to/sv-benchmarks \
+  --output-dir trunk/examples/experiments/checked-path-divergence/results/reachsafety189-t150-w4 \
+  --dry-run
+```
+
+The wrapper writes:
+
+- `generated/reachsafety-subset-benchmarks.csv`: generated runner benchmark list
+- `checked-path-divergence-results.enriched.csv`: runner CSV enriched with `category`, `subcategory`, `task`, and
+  `expected_result`
+- `svcomp-reachsafety-subset-summary.md`: compact aggregate summary
+
 ## Outputs
 
 Outputs are written to:
