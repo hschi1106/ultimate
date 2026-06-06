@@ -1,0 +1,856 @@
+This is Ultimate 0.3.1-cache-f5c6788a5b-m
+[2026-06-05 22:09:25,276 INFO  L188        SettingsManager]: Resetting all preferences to default values...
+[2026-06-05 22:09:25,304 INFO  L114        SettingsManager]: Loading settings from /home/hschi1106/ultimate/trunk/examples/Interactive/settings/ResetSettingsCamel.epf
+[2026-06-05 22:09:25,307 WARN  L101        SettingsManager]: Preference file contains the following unknown settings:
+[2026-06-05 22:09:25,307 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.blockencoding.Rewrite not-equals during SBE
+[2026-06-05 22:09:25,307 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.blockencoding.Simplify codeblocks
+[2026-06-05 22:09:25,307 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.blockencoding.Simplify assume statements
+[2026-06-05 22:09:25,307 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.blockencoding.Use SBE during assume simplification
+[2026-06-05 22:09:25,307 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.blockencoding.Use SBE for initial RCFG
+[2026-06-05 22:09:25,307 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.blockencoding.Rewrite not equals when simplifying assume statements with SBE
+[2026-06-05 22:09:25,307 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Debug log message color
+[2026-06-05 22:09:25,307 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Drop models when Ultimate exits
+[2026-06-05 22:09:25,307 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Generate benchmark results
+[2026-06-05 22:09:25,307 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Log level for controller plugin
+[2026-06-05 22:09:25,307 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Warning log message color
+[2026-06-05 22:09:25,307 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Root log level
+[2026-06-05 22:09:25,307 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.UI logger pattern
+[2026-06-05 22:09:25,307 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Log level for external tools
+[2026-06-05 22:09:25,307 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.ultimate.logging.details
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Toolchain timeout in seconds
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Name of the log file
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Info log message color
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Create a Logfile
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Logger pattern
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Log level for core plugin
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Show usable parsers
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Log level for plugins
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Fatal log message color
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Show long description of results
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Error log message color
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Show result in pop-up window after toolchain execution
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Directory (default: instance location)
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Append to exisiting log file
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * CDTParser.Please specify include paths that will be parsed with the given C-File
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.Translate Boogie integers to SMT bitvectors
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.generator.cacsl2boogietranslator.How to treat unsigned ints differently from normal ones
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.witnessprinter.Generate witnesses
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.witnessprinter.Write witness to working directory
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.analysis.irsdependencies.Mode
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.analysis.abstractinterpretationv2.Number type
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.analysis.abstractinterpretationv2.Congruence Widening operator
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Annotate edges
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Background color:
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Which models should be visualized?
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Choose node shape:
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Node color:
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Picked node color:
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Annotate nodes
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.SVG Export directory:
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Default graph layout:
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.boogie.procedureinliner.to and inside polymorphic procedures
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.boogie.procedureinliner.to procedures with 'free requires' specifications
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.boogie.procedureinliner.calls to unimplemented procedures
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.boogie.procedureinliner.to recursive procedures
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.boogie.procedureinliner.with 'forall' modifier
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.boogie.procedureinliner.calls to implemented procedures
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.boogie.procedureinliner.to procedures, called more than once
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.Non-flow-sensitive error trace relevance analysis
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.use unfolding as abstraction
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.Iterations until the model checker surrenders
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.Enable interactive Verification?
+[2026-06-05 22:09:25,308 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.Flow-sensitive error trace relevance analysis
+[2026-06-05 22:09:25,309 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.gui.LASTTOOLCHAINPATH
+[2026-06-05 22:09:25,309 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.gui.LASTPATH
+[2026-06-05 22:09:25,326 INFO  L130        SettingsManager]: Preferences different from defaults after loading the file:
+[2026-06-05 22:09:25,327 INFO  L151        SettingsManager]: Preferences of UltimateCore differ from their defaults:
+[2026-06-05 22:09:25,327 INFO  L153        SettingsManager]:  * Directory (default: instance location)=/home/iari/src/ultimate/trunk/runtime-Debug-E4.product/
+[2026-06-05 22:09:25,327 INFO  L151        SettingsManager]: Preferences of Abstract Interpretation differ from their defaults:
+[2026-06-05 22:09:25,327 INFO  L153        SettingsManager]:  * Log string format=HALF_MATRIX
+[2026-06-05 22:09:25,327 INFO  L151        SettingsManager]: Preferences of BuchiAutomizer differ from their defaults:
+[2026-06-05 22:09:25,327 INFO  L153        SettingsManager]:  * Buchi interpolant automaton=Staged
+[2026-06-05 22:09:25,327 INFO  L153        SettingsManager]:  * Buchi complementation construction=Ncsb
+[2026-06-05 22:09:25,327 INFO  L151        SettingsManager]: Preferences of CACSL2BoogieTranslator differ from their defaults:
+[2026-06-05 22:09:25,327 INFO  L153        SettingsManager]:  * Report unsoundness warnings=false
+[2026-06-05 22:09:25,327 INFO  L151        SettingsManager]: Preferences of RCFGBuilder differ from their defaults:
+[2026-06-05 22:09:25,327 INFO  L153        SettingsManager]:  * Logic for external solver=AUFNIRA
+[2026-06-05 22:09:25,327 INFO  L153        SettingsManager]:  * Convert code blocks to CNF=true
+[2026-06-05 22:09:25,327 INFO  L151        SettingsManager]: Preferences of TraceAbstraction differ from their defaults:
+[2026-06-05 22:09:25,327 INFO  L153        SettingsManager]:  * cut-off requires same transition=true
+[2026-06-05 22:09:25,327 INFO  L153        SettingsManager]:  * Trace refinement strategy=CAMEL
+Applying setting for plugin de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction: Use CEGAR loop for Parallel Trace Abstraction -> true
+Applying setting for plugin de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction: Threadlimit for Parallel CEGAR -> 16
+Applying setting for plugin de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction: Parallel trace search selection mode -> BFS
+Applying setting for plugin de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction: Track stale prefixes in parallel search -> true
+[2026-06-05 22:09:25,441 INFO  L75    nceAwareModelManager]: Repository-Root is: /tmp
+[2026-06-05 22:09:25,445 INFO  L261   ainManager$Toolchain]: [Toolchain 1]: Applicable parser(s) successfully (re)initialized
+[2026-06-05 22:09:25,446 INFO  L217   ainManager$Toolchain]: [Toolchain 1]: Toolchain selected.
+[2026-06-05 22:09:25,446 INFO  L270        PluginConnector]: Initializing Boogie PL CUP Parser...
+[2026-06-05 22:09:25,447 INFO  L274        PluginConnector]: Boogie PL CUP Parser initialized
+[2026-06-05 22:09:25,447 INFO  L431   ainManager$Toolchain]: [Toolchain 1]: Parsing single file: /home/hschi1106/ultimate/trunk/examples/programs/20170304-DifficultPathPrograms/resultKnown/interleave_bits.i_3.bpl
+[2026-06-05 22:09:25,447 INFO  L110           BoogieParser]: Parsing: '/home/hschi1106/ultimate/trunk/examples/programs/20170304-DifficultPathPrograms/resultKnown/interleave_bits.i_3.bpl'
+[2026-06-05 22:09:25,455 INFO  L299   ainManager$Toolchain]: ####################### [Toolchain 1] #######################
+[2026-06-05 22:09:25,456 INFO  L133        ToolchainWalker]: Walking toolchain with 3 elements.
+[2026-06-05 22:09:25,456 INFO  L112        PluginConnector]: ------------------------Boogie Preprocessor----------------------------
+[2026-06-05 22:09:25,456 INFO  L270        PluginConnector]: Initializing Boogie Preprocessor...
+[2026-06-05 22:09:25,456 INFO  L274        PluginConnector]: Boogie Preprocessor initialized
+[2026-06-05 22:09:25,461 INFO  L184        PluginConnector]: Executing the observer EnsureBoogieModelObserver from plugin Boogie Preprocessor for "interleave_bits.i_3.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 10:09:25" (1/1) ...
+[2026-06-05 22:09:25,462 INFO  L184        PluginConnector]: Executing the observer TypeChecker from plugin Boogie Preprocessor for "interleave_bits.i_3.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 10:09:25" (1/1) ...
+[2026-06-05 22:09:25,473 INFO  L184        PluginConnector]: Executing the observer ConstExpander from plugin Boogie Preprocessor for "interleave_bits.i_3.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 10:09:25" (1/1) ...
+[2026-06-05 22:09:25,473 INFO  L184        PluginConnector]: Executing the observer StructExpander from plugin Boogie Preprocessor for "interleave_bits.i_3.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 10:09:25" (1/1) ...
+[2026-06-05 22:09:25,475 INFO  L184        PluginConnector]: Executing the observer ReplaceArrayAssignments from plugin Boogie Preprocessor for "interleave_bits.i_3.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 10:09:25" (1/1) ...
+[2026-06-05 22:09:25,476 INFO  L184        PluginConnector]: Executing the observer UnstructureCode from plugin Boogie Preprocessor for "interleave_bits.i_3.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 10:09:25" (1/1) ...
+[2026-06-05 22:09:25,477 INFO  L184        PluginConnector]: Executing the observer FunctionInliner from plugin Boogie Preprocessor for "interleave_bits.i_3.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 10:09:25" (1/1) ...
+[2026-06-05 22:09:25,477 INFO  L184        PluginConnector]: Executing the observer LTLStepAnnotator from plugin Boogie Preprocessor for "interleave_bits.i_3.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 10:09:25" (1/1) ...
+[2026-06-05 22:09:25,477 INFO  L184        PluginConnector]: Executing the observer BoogieSymbolTableConstructor from plugin Boogie Preprocessor for "interleave_bits.i_3.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 10:09:25" (1/1) ...
+[2026-06-05 22:09:25,479 INFO  L131        PluginConnector]: ------------------------ END Boogie Preprocessor----------------------------
+[2026-06-05 22:09:25,480 INFO  L112        PluginConnector]: ------------------------RCFGBuilder----------------------------
+[2026-06-05 22:09:25,480 INFO  L270        PluginConnector]: Initializing RCFGBuilder...
+[2026-06-05 22:09:25,480 INFO  L274        PluginConnector]: RCFGBuilder initialized
+[2026-06-05 22:09:25,480 INFO  L184        PluginConnector]: Executing the observer RCFGBuilderObserver from plugin RCFGBuilder for "interleave_bits.i_3.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 10:09:25" (1/1) ...
+[2026-06-05 22:09:25,482 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,489 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,493 INFO  L229       MonitoredProcess]: Starting monitored process 1 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,494 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (1)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,503 INFO  L138     BoogieDeclarations]: Found implementation of procedure ULTIMATE.start
+[2026-06-05 22:09:25,503 INFO  L130     BoogieDeclarations]: Found specification of procedure ULTIMATE.start
+[2026-06-05 22:09:25,523 INFO  L234             CfgBuilder]: Building ICFG
+[2026-06-05 22:09:25,523 INFO  L260             CfgBuilder]: Building CFG for each procedure with an implementation
+[2026-06-05 22:09:25,549 INFO  L?                        ?]: Removed 5 outVars from TransFormulas that were not future-live.
+[2026-06-05 22:09:25,549 INFO  L283             CfgBuilder]: Performing block encoding
+[2026-06-05 22:09:25,553 INFO  L89      LargeBlockEncoding]: Applying CFG Large Block Encoding to ICFG that has 1 procedures, 6 locations, 6 edges, 0 initial locations, 0 loop locations, and 1 error locations.
+[2026-06-05 22:09:25,556 INFO  L139     LargeBlockEncoding]: LargeBlockEncoding completed in 6 ms, with 1 straightline sequential compositions, 0 parallel compositions, 0 1:n/n:1 sequential compositions and 0 complex sequential compositions.
+[2026-06-05 22:09:25,557 INFO  L307             CfgBuilder]: Using the 1 location(s) as analysis (start of procedure ULTIMATE.start)
+[2026-06-05 22:09:25,557 INFO  L312             CfgBuilder]: Removed 1 assume(true) statements.
+[2026-06-05 22:09:25,558 INFO  L314             CfgBuilder]: Constructed ICFG has 1 procedures, 5 locations, 5 edges, 1 initial locations, 0 loop locations, and 1 error locations.
+[2026-06-05 22:09:25,558 INFO  L201        PluginConnector]: Adding new model interleave_bits.i_3.bpl de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder CFG 05.06 10:09:25 BoogieIcfgContainer
+[2026-06-05 22:09:25,558 INFO  L131        PluginConnector]: ------------------------ END RCFGBuilder----------------------------
+[2026-06-05 22:09:25,559 INFO  L112        PluginConnector]: ------------------------TraceAbstraction----------------------------
+[2026-06-05 22:09:25,559 INFO  L270        PluginConnector]: Initializing TraceAbstraction...
+[2026-06-05 22:09:25,561 INFO  L274        PluginConnector]: TraceAbstraction initialized
+[2026-06-05 22:09:25,561 INFO  L184        PluginConnector]: Executing the observer TraceAbstractionObserver from plugin TraceAbstraction for "interleave_bits.i_3.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 10:09:25" (1/2) ...
+[2026-06-05 22:09:25,561 INFO  L204        PluginConnector]: Invalid model from TraceAbstraction for observer de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.TraceAbstractionObserver@75067848 and model type interleave_bits.i_3.bpl de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction AST 05.06 10:09:25, skipping insertion in model container
+[2026-06-05 22:09:25,562 INFO  L184        PluginConnector]: Executing the observer TraceAbstractionObserver from plugin TraceAbstraction for "interleave_bits.i_3.bpl de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder CFG 05.06 10:09:25" (2/2) ...
+[2026-06-05 22:09:25,562 INFO  L128   eAbstractionObserver]: Analyzing ICFG interleave_bits.i_3.bpl
+[2026-06-05 22:09:25,568 INFO  L217   ceAbstractionStarter]: Automizer settings: Hoare:None NWA Interpolation:ForwardPredicates Determinization: PREDICATE_ABSTRACTION
+[2026-06-05 22:09:25,568 INFO  L151   ceAbstractionStarter]: Applying trace abstraction to ICFG interleave_bits.i_3.bpl that has 1 procedures, 5 locations, 5 edges, 1 initial locations, 0 loop locations, and 1 error locations.
+[2026-06-05 22:09:25,583 INFO  L344      AbstractCegarLoop]: ======== Iteration 0 == of CEGAR loop == AllErrorsAtOnce ========
+[2026-06-05 22:09:25,587 INFO  L345      AbstractCegarLoop]: Settings: SEPARATE_VIOLATION_CHECK=true, mInterprocedural=true, mMaxIterations=1000000, mWatchIteration=1000000, mArtifact=RCFG, mInterpolation=ForwardPredicates, mInterpolantAutomaton=STRAIGHT_LINE, mDumpAutomata=false, mAutomataFormat=ATS_NUMERATE, mDumpPath=., mDeterminiation=PREDICATE_ABSTRACTION, mMinimize=MINIMIZE_SEVPA, mAutomataTypeConcurrency=FINITE_AUTOMATA, mHoareTripleChecks=INCREMENTAL, mHoareAnnotationPositions=None, mDumpOnlyReuseAutomata=false, mLimitTraceHistogram=0, mErrorLocTimeLimit=0, mLimitPathProgramCount=0, mCollectInterpolantStatistics=true, mHeuristicEmptinessCheck=false, mHeuristicEmptinessCheckAStarHeuristic=ZERO, mHeuristicEmptinessCheckAStarHeuristicRandomSeed=1337, mHeuristicEmptinessCheckSmtFeatureScoringMethod=DAGSIZE, mSMTFeatureExtraction=false, mSMTFeatureExtractionDumpPath=., mOverrideInterpolantAutomaton=false, mMcrInterpolantMethod=WP, mPorIndependenceSettings=[Lde.uni_freiburg.informatik.ultimate.lib.tracecheckerutils.partialorder.independence.IndependenceSettings;@14fdd994, mLbeIndependenceSettings=[IndependenceType=SEMANTIC, AbstractionType=NONE, UseConditional=false, UseSemiCommutativity=true, Solver=Z3, SolverTimeout=1000ms], mThreadLimit=16, mParallelCegarLoop=true, mConsiderOnlyActiveCounterexamplesInIsEmptyParallel=true, mMinimizeAbstractionPerWorker=true, mSearchLoopBound=-1, mParallelTraceSearchSelectionMode=BFS, mParallelTraceSearchUseInitialBfs=true, mParallelTraceSearchTrackStalePrefixes=true
+[2026-06-05 22:09:25,588 INFO  L346      AbstractCegarLoop]: Starting to check reachability of 1 error locations.
+[2026-06-05 22:09:25,589 INFO  L290                IsEmpty]: Start isEmpty. Operand  has 5 states, 3 states have (on average 1.6666666666666667) internal successors, (5), 4 states have internal predecessors, (5), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0)
+[2026-06-05 22:09:25,590 INFO  L300                IsEmpty]: Finished isEmpty. Found accepting run of length 4
+[2026-06-05 22:09:25,590 INFO  L199           NwaCegarLoop]: Found error trace
+[2026-06-05 22:09:25,590 INFO  L207           NwaCegarLoop]: trace histogram [1, 1, 1]
+[2026-06-05 22:09:25,591 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,594 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,595 INFO  L229       MonitoredProcess]: Starting monitored process 2 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,597 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (2)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,607 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,607 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,607 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,609 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,609 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#80,pool-1-thread-1,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,611 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,612 INFO  L229       MonitoredProcess]: Starting monitored process 3 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,613 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (3)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,622 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,622 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,622 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,623 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,623 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#86,pool-1-thread-2,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,626 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,627 INFO  L229       MonitoredProcess]: Starting monitored process 4 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,627 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (4)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,636 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,636 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,636 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,637 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,638 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#92,pool-1-thread-3,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,639 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,640 INFO  L229       MonitoredProcess]: Starting monitored process 5 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,641 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (5)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,650 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,651 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,651 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,652 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,652 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#101,pool-1-thread-4,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,654 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,655 INFO  L229       MonitoredProcess]: Starting monitored process 6 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,655 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (6)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,663 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,663 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,663 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,665 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,665 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#107,pool-1-thread-5,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,667 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,668 INFO  L229       MonitoredProcess]: Starting monitored process 7 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,669 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (7)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,677 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,677 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,677 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,678 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#113,pool-1-thread-6,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,678 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,680 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,681 INFO  L229       MonitoredProcess]: Starting monitored process 8 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,682 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (8)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,690 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,690 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,690 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,691 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,691 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#119,pool-1-thread-7,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,693 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,694 INFO  L229       MonitoredProcess]: Starting monitored process 9 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,695 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (9)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,703 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,703 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,703 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,704 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,704 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#125,pool-1-thread-8,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,706 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,707 INFO  L229       MonitoredProcess]: Starting monitored process 10 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,708 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (10)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,716 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,716 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,716 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,717 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,717 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#131,pool-1-thread-9,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,719 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,720 INFO  L229       MonitoredProcess]: Starting monitored process 11 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,720 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (11)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,728 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,728 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,728 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,729 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,729 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#137,pool-1-thread-10,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,730 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,731 INFO  L229       MonitoredProcess]: Starting monitored process 12 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,732 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (12)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,739 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,739 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,739 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,740 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,740 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#143,pool-1-thread-11,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,742 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,743 INFO  L229       MonitoredProcess]: Starting monitored process 13 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,744 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (13)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,751 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,751 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,752 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,752 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,752 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#149,pool-1-thread-12,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,754 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,755 INFO  L229       MonitoredProcess]: Starting monitored process 14 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,757 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (14)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,765 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,765 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,765 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,766 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,766 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#155,pool-1-thread-13,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,768 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,769 INFO  L229       MonitoredProcess]: Starting monitored process 15 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,770 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (15)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,778 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,778 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,778 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,779 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,779 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#161,pool-1-thread-14,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,781 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,782 INFO  L229       MonitoredProcess]: Starting monitored process 16 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,782 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (16)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,790 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,790 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,790 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,791 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:25,791 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#167,pool-1-thread-15,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,793 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,794 INFO  L229       MonitoredProcess]: Starting monitored process 17 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,794 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (17)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,802 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start_main_~zz~5_4 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,802 WARN  L330   ript$VariableManager]: TermVariable v_ULTIMATE.start___VERIFIER_assert_~cond_3 not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,802 WARN  L330   ript$VariableManager]: TermVariable |v_ULTIMATE.start___VERIFIER_assert_#in~cond_2| not constructed by VariableManager. Cannot ensure absence of name clashes.
+[2026-06-05 22:09:25,803 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#173,pool-1-thread-16,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,803 INFO  L86        PathProgramCache]: Analyzing trace with hash 29955, now seen corresponding path program 1 times
+[2026-06-05 22:09:25,803 INFO  L428   ParallelNwaCegarLoop]: Main: Starting Thread
+[2026-06-05 22:09:25,803 INFO  L248   ParallelNwaCegarLoop]: === Iteration 1 ===
+[2026-06-05 22:09:25,803 INFO  L301   ParallelNwaCegarLoop]: No more worker results to process
+[2026-06-05 22:09:25,803 INFO  L290                IsEmpty]: Start isEmpty. Operand  has 5 states, 3 states have (on average 1.6666666666666667) internal successors, (5), 4 states have internal predecessors, (5), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0)
+[2026-06-05 22:09:25,803 INFO  L300                IsEmpty]: Finished isEmpty. Found accepting run of length 4
+[2026-06-05 22:09:25,803 WARN  L753                IsEmpty]: Correctness of emptinessCheck not tested.
+[2026-06-05 22:09:25,804 INFO  L209   CegarNwaWorkerThread]: Starting Thread: 80# for Trace Check: 29955
+[2026-06-05 22:09:25,804 INFO  L79                 Accepts]: Start accepts. Automaton has  has 5 states, 3 states have (on average 1.6666666666666667) internal successors, (5), 4 states have internal predecessors, (5), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0) Word has length 3
+[2026-06-05 22:09:25,805 INFO  L85                 Accepts]: Finished accepts. word is accepted.
+[2026-06-05 22:09:25,805 INFO  L757                IsEmpty]: Finished testing correctness of emptinessCheck
+[2026-06-05 22:09:25,805 INFO  L662   ParallelNwaCegarLoop]: BFS found an active duplicate counterexample.
+[2026-06-05 22:09:25,805 INFO  L619   ParallelNwaCegarLoop]: Did not Find a Counterexample!
+[2026-06-05 22:09:25,805 INFO  L248   ParallelNwaCegarLoop]: === Iteration 2 ===
+[2026-06-05 22:09:25,805 INFO  L445   ParallelNwaCegarLoop]: All threads busy, going to sleep.
+[2026-06-05 22:09:25,806 INFO  L156       PredicateUnifier]: Initialized classic predicate unifier
+[2026-06-05 22:09:25,806 INFO  L86        PathProgramCache]: Analyzing trace with hash 29955, now seen corresponding path program 1 times
+[2026-06-05 22:09:25,809 INFO  L118   FreeRefinementEngine]: Executing refinement strategy CAMEL
+[2026-06-05 22:09:25,809 INFO  L324   FreeRefinementEngine]: Using trace check IpTcStrategyModuleSmtInterpolCraig [1763767839]
+[2026-06-05 22:09:25,809 INFO  L97    rtionOrderModulation]: Keeping assertion order NOT_INCREMENTALLY
+[2026-06-05 22:09:25,809 INFO  L127          SolverBuilder]: Constructing new instance of SMTInterpol with explicit timeout -1 ms and remaining time -1 ms
+[2026-06-05 22:09:25,832 INFO  L108    AnnotateAndAsserter]: Assert order NOT_INCREMENTALLY partitioned 3 statements into 1 equivalence classes.
+[2026-06-05 22:09:25,839 INFO  L111    AnnotateAndAsserter]: Assert order NOT_INCREMENTALLY issued 1 check-sat command(s) and asserted 3 of 3 statements.
+[2026-06-05 22:09:25,839 INFO  L114    AnnotateAndAsserter]: Assert order NOT_INCREMENTALLY issued 1 check-sat command(s)
+[2026-06-05 22:09:25,839 INFO  L115    AnnotateAndAsserter]: Conjunction of SSA is unsat
+[2026-06-05 22:09:25,880 INFO  L134       CoverageAnalysis]: Checked inductivity of 0 backedges. 0 proven. 0 refuted. 0 times theorem prover too weak. 0 trivial. 0 not checked.
+[2026-06-05 22:09:25,880 INFO  L136   FreeRefinementEngine]: Strategy CAMEL found an infeasible trace
+[2026-06-05 22:09:25,880 INFO  L324   FreeRefinementEngine]: Using interpolant generator IpTcStrategyModuleSmtInterpolCraig [1763767839]
+[2026-06-05 22:09:25,880 INFO  L158   FreeRefinementEngine]: IpTcStrategyModuleSmtInterpolCraig [1763767839] provided 1 perfect and 0 imperfect interpolant sequences
+[2026-06-05 22:09:25,880 INFO  L185   FreeRefinementEngine]: Found 1 perfect and 0 imperfect interpolant sequences.
+[2026-06-05 22:09:25,880 INFO  L198   FreeRefinementEngine]: Number of different interpolants: perfect sequences [2] imperfect sequences [] total 2
+[2026-06-05 22:09:25,881 INFO  L122   tionRefinementEngine]: Using interpolant automaton builder IpAbStrategyModuleStraightlineAll [1069676313]
+[2026-06-05 22:09:25,881 INFO  L85    oduleStraightlineAll]: Using 1 perfect interpolants to construct interpolant automaton
+[2026-06-05 22:09:25,882 INFO  L100   FreeRefinementEngine]: Using predicate unifier PredicateUnifier provided by strategy CAMEL
+[2026-06-05 22:09:25,889 INFO  L144   InterpolantAutomaton]: Constructing interpolant automaton starting with 3 interpolants.
+[2026-06-05 22:09:25,890 INFO  L146   InterpolantAutomaton]: CoverageRelationStatistics Valid=3, Invalid=3, Unknown=0, NotChecked=0, Total=6
+[2026-06-05 22:09:25,890 INFO  L419   CegarNwaWorkerThread]: Difference in Worker for Generalization
+[2026-06-05 22:09:25,890 INFO  L87              Difference]: Start difference. First operand  has 5 states, 3 states have (on average 1.6666666666666667) internal successors, (5), 4 states have internal predecessors, (5), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0) Second operand  has 3 states, 3 states have (on average 1.0) internal successors, (3), 2 states have internal predecessors, (3), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0)
+[2026-06-05 22:09:25,897 INFO  L144             Difference]: Subtrahend was deterministic. Have not used determinization.
+[2026-06-05 22:09:25,898 INFO  L93              Difference]: Finished difference Result 5 states and 5 transitions.
+[2026-06-05 22:09:25,898 INFO  L140   InterpolantAutomaton]: Switched to read-only mode: deterministic interpolant automaton has 3 states. 
+[2026-06-05 22:09:25,900 INFO  L225             Difference]: With dead ends: 5
+[2026-06-05 22:09:25,900 INFO  L226             Difference]: Without dead ends: 5
+[2026-06-05 22:09:25,901 INFO  L487   CegarNwaWorkerThread]: 0 DeclaredPredicates, 2 GetRequests, 1 SyntacticMatches, 0 SemanticMatches, 1 ConstructedPredicates, 0 IntricatePredicates, 0 DeprecatedPredicates, 0 ImplicationChecksByTransitivity, 0.0s TimeCoverageRelationStatistics Valid=3, Invalid=3, Unknown=0, NotChecked=0, Total=6
+[2026-06-05 22:09:25,903 INFO  L488   CegarNwaWorkerThread]: 3 mSDtfsCounter, 0 mSDsluCounter, 1 mSDsCounter, 0 mSdLazyCounter, 3 mSolverCounterSat, 0 mSolverCounterUnsat, 0 mSolverCounterUnknown, 0 mSolverCounterNotChecked, 0.0s Time, 0 mProtectedPredicate, 0 mProtectedAction, 0 SdHoareTripleChecker+Valid, 4 SdHoareTripleChecker+Invalid, 3 SdHoareTripleChecker+Unknown, 0 SdHoareTripleChecker+Unchecked, 0.0s SdHoareTripleChecker+Time, 0 IncrementalHoareTripleChecker+Valid, 3 IncrementalHoareTripleChecker+Invalid, 0 IncrementalHoareTripleChecker+Unknown, 0 IncrementalHoareTripleChecker+Unchecked, 0.0s IncrementalHoareTripleChecker+Time
+[2026-06-05 22:09:25,903 INFO  L489   CegarNwaWorkerThread]: SdHoareTripleChecker [0 Valid, 4 Invalid, 3 Unknown, 0 Unchecked, 0.0s Time], IncrementalHoareTripleChecker [0 Valid, 3 Invalid, 0 Unknown, 0 Unchecked, 0.0s Time]
+[2026-06-05 22:09:25,904 INFO  L224   CegarNwaWorkerThread]: Done with Thread: 80#
+[2026-06-05 22:09:25,904 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#80,Worker for 29955,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,904 INFO  L448   ParallelNwaCegarLoop]: Waking up, a worker is done.
+[2026-06-05 22:09:25,904 INFO  L258   ParallelNwaCegarLoop]: Main: A Thread is Done
+[2026-06-05 22:09:25,904 INFO  L276   ParallelNwaCegarLoop]: Worker Automaton Type: FLOYD_HOARE
+[2026-06-05 22:09:25,904 INFO  L79                 Accepts]: Start accepts. Automaton has  has 5 states, 3 states have (on average 1.6666666666666667) internal successors, (5), 4 states have internal predecessors, (5), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0) Word has length 3
+[2026-06-05 22:09:25,904 INFO  L85                 Accepts]: Finished accepts. word is accepted.
+[2026-06-05 22:09:25,904 INFO  L278   ParallelNwaCegarLoop]: Refining Abstraction
+[2026-06-05 22:09:25,904 INFO  L511   ParallelNwaCegarLoop]: Subtrahend traceHash: 29955
+[2026-06-05 22:09:25,904 INFO  L478   ParallelNwaCegarLoop]: Difference in Main
+[2026-06-05 22:09:25,904 INFO  L87              Difference]: Start difference. First operand  has 5 states, 3 states have (on average 1.6666666666666667) internal successors, (5), 4 states have internal predecessors, (5), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0) Second operand  has 3 states, 2 states have (on average 3.5) internal successors, (7), 3 states have internal predecessors, (7), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0)
+[2026-06-05 22:09:25,905 INFO  L144             Difference]: Subtrahend was deterministic. Have not used determinization.
+[2026-06-05 22:09:25,905 INFO  L93              Difference]: Finished difference Result 5 states and 5 transitions.
+[2026-06-05 22:09:25,905 INFO  L225             Difference]: With dead ends: 5
+[2026-06-05 22:09:25,905 INFO  L226             Difference]: Without dead ends: 5
+[2026-06-05 22:09:25,909 INFO  L82        GeneralOperation]: Start minimizeSevpa. Operand 5 states.
+[2026-06-05 22:09:25,913 INFO  L88        GeneralOperation]: Finished minimizeSevpa. Reduced states from 5 to 5.
+[2026-06-05 22:09:25,913 INFO  L82        GeneralOperation]: Start removeUnreachable. Operand  has 5 states, 4 states have (on average 1.25) internal successors, (5), 4 states have internal predecessors, (5), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0)
+[2026-06-05 22:09:25,914 INFO  L88        GeneralOperation]: Finished removeUnreachable. Reduced from 5 states to 5 states and 5 transitions.
+[2026-06-05 22:09:25,914 INFO  L489   ParallelNwaCegarLoop]: Main: Refinement done.
+[2026-06-05 22:09:25,914 INFO  L408   ParallelNwaCegarLoop]: Checking if program is safe
+[2026-06-05 22:09:25,914 INFO  L290                IsEmpty]: Start isEmpty. Operand 5 states and 5 transitions.
+[2026-06-05 22:09:25,914 INFO  L300                IsEmpty]: Finished isEmpty. Found accepting run of length 5
+[2026-06-05 22:09:25,914 INFO  L199           NwaCegarLoop]: Found error trace
+[2026-06-05 22:09:25,914 INFO  L207           NwaCegarLoop]: trace histogram [1, 1, 1, 1]
+[2026-06-05 22:09:25,914 INFO  L301   ParallelNwaCegarLoop]: No more worker results to process
+[2026-06-05 22:09:25,914 INFO  L290                IsEmpty]: Start isEmpty. Operand 5 states and 5 transitions.
+[2026-06-05 22:09:25,914 INFO  L300                IsEmpty]: Finished isEmpty. Found accepting run of length 5
+[2026-06-05 22:09:25,914 WARN  L753                IsEmpty]: Correctness of emptinessCheck not tested.
+[2026-06-05 22:09:25,914 INFO  L79                 Accepts]: Start accepts. Automaton has 5 states and 5 transitions. Word has length 4
+[2026-06-05 22:09:25,914 INFO  L85                 Accepts]: Finished accepts. word is accepted.
+[2026-06-05 22:09:25,914 INFO  L757                IsEmpty]: Finished testing correctness of emptinessCheck
+[2026-06-05 22:09:25,915 INFO  L658   ParallelNwaCegarLoop]: Found new Counterexample via BFS!
+[2026-06-05 22:09:25,915 INFO  L86        PathProgramCache]: Analyzing trace with hash 930412, now seen corresponding path program 1 times
+[2026-06-05 22:09:25,915 INFO  L428   ParallelNwaCegarLoop]: Main: Starting Thread
+[2026-06-05 22:09:25,915 INFO  L290                IsEmpty]: Start isEmpty. Operand 5 states and 5 transitions.
+[2026-06-05 22:09:25,915 INFO  L209   CegarNwaWorkerThread]: Starting Thread: 86# for Trace Check: 930412
+[2026-06-05 22:09:25,915 INFO  L300                IsEmpty]: Finished isEmpty. Found accepting run of length 5
+[2026-06-05 22:09:25,915 WARN  L753                IsEmpty]: Correctness of emptinessCheck not tested.
+[2026-06-05 22:09:25,915 INFO  L79                 Accepts]: Start accepts. Automaton has 5 states and 5 transitions. Word has length 4
+[2026-06-05 22:09:25,915 INFO  L85                 Accepts]: Finished accepts. word is accepted.
+[2026-06-05 22:09:25,915 INFO  L757                IsEmpty]: Finished testing correctness of emptinessCheck
+[2026-06-05 22:09:25,915 INFO  L662   ParallelNwaCegarLoop]: BFS found an active duplicate counterexample.
+[2026-06-05 22:09:25,915 INFO  L619   ParallelNwaCegarLoop]: Did not Find a Counterexample!
+[2026-06-05 22:09:25,915 INFO  L248   ParallelNwaCegarLoop]: === Iteration 3 ===
+[2026-06-05 22:09:25,915 INFO  L445   ParallelNwaCegarLoop]: All threads busy, going to sleep.
+[2026-06-05 22:09:25,915 INFO  L156       PredicateUnifier]: Initialized classic predicate unifier
+[2026-06-05 22:09:25,915 INFO  L86        PathProgramCache]: Analyzing trace with hash 930412, now seen corresponding path program 1 times
+[2026-06-05 22:09:25,915 INFO  L118   FreeRefinementEngine]: Executing refinement strategy CAMEL
+[2026-06-05 22:09:25,915 INFO  L324   FreeRefinementEngine]: Using trace check IpTcStrategyModuleSmtInterpolCraig [325221363]
+[2026-06-05 22:09:25,915 INFO  L97    rtionOrderModulation]: Keeping assertion order NOT_INCREMENTALLY
+[2026-06-05 22:09:25,915 INFO  L127          SolverBuilder]: Constructing new instance of SMTInterpol with explicit timeout -1 ms and remaining time -1 ms
+[2026-06-05 22:09:25,917 INFO  L108    AnnotateAndAsserter]: Assert order NOT_INCREMENTALLY partitioned 4 statements into 1 equivalence classes.
+[2026-06-05 22:09:25,919 INFO  L111    AnnotateAndAsserter]: Assert order NOT_INCREMENTALLY issued 1 check-sat command(s) and asserted 4 of 4 statements.
+[2026-06-05 22:09:25,919 INFO  L114    AnnotateAndAsserter]: Assert order NOT_INCREMENTALLY issued 1 check-sat command(s)
+[2026-06-05 22:09:25,919 INFO  L115    AnnotateAndAsserter]: Conjunction of SSA is unsat
+[2026-06-05 22:09:25,944 INFO  L134       CoverageAnalysis]: Checked inductivity of 1 backedges. 0 proven. 1 refuted. 0 times theorem prover too weak. 0 trivial. 0 not checked.
+[2026-06-05 22:09:25,945 INFO  L136   FreeRefinementEngine]: Strategy CAMEL found an infeasible trace
+[2026-06-05 22:09:25,945 INFO  L324   FreeRefinementEngine]: Using interpolant generator IpTcStrategyModuleSmtInterpolCraig [325221363]
+[2026-06-05 22:09:25,945 INFO  L158   FreeRefinementEngine]: IpTcStrategyModuleSmtInterpolCraig [325221363] provided 0 perfect and 1 imperfect interpolant sequences
+[2026-06-05 22:09:25,945 INFO  L324   FreeRefinementEngine]: Using interpolant generator IpTcStrategyModuleZ3 [353942955]
+[2026-06-05 22:09:25,945 INFO  L97    rtionOrderModulation]: Keeping assertion order NOT_INCREMENTALLY
+[2026-06-05 22:09:25,945 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 -smt2 -in SMTLIB2_COMPLIANT=true
+[2026-06-05 22:09:25,946 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:25,948 INFO  L229       MonitoredProcess]: Starting monitored process 18 with /usr/bin/z3 -smt2 -in SMTLIB2_COMPLIANT=true (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:25,948 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 -smt2 -in SMTLIB2_COMPLIANT=true (18)] Waiting until timeout for monitored process
+[2026-06-05 22:09:25,962 INFO  L108    AnnotateAndAsserter]: Assert order NOT_INCREMENTALLY partitioned 4 statements into 1 equivalence classes.
+[2026-06-05 22:09:25,964 INFO  L111    AnnotateAndAsserter]: Assert order NOT_INCREMENTALLY issued 1 check-sat command(s) and asserted 4 of 4 statements.
+[2026-06-05 22:09:25,964 INFO  L114    AnnotateAndAsserter]: Assert order NOT_INCREMENTALLY issued 1 check-sat command(s)
+[2026-06-05 22:09:25,964 INFO  L115    AnnotateAndAsserter]: Conjunction of SSA is unsat
+[2026-06-05 22:09:25,964 INFO  L256         TraceCheckSpWp]: Trace formula consists of 17 conjuncts, 5 conjuncts are in the unsatisfiable core
+[2026-06-05 22:09:25,966 INFO  L279         TraceCheckSpWp]: Computing forward predicates...
+[2026-06-05 22:09:25,973 INFO  L134       CoverageAnalysis]: Checked inductivity of 1 backedges. 0 proven. 1 refuted. 0 times theorem prover too weak. 0 trivial. 0 not checked.
+[2026-06-05 22:09:25,973 INFO  L312         TraceCheckSpWp]: Computing backward predicates...
+[2026-06-05 22:09:25,984 INFO  L134       CoverageAnalysis]: Checked inductivity of 1 backedges. 0 proven. 1 refuted. 0 times theorem prover too weak. 0 trivial. 0 not checked.
+[2026-06-05 22:09:25,984 INFO  L158   FreeRefinementEngine]: IpTcStrategyModuleZ3 [353942955] provided 0 perfect and 2 imperfect interpolant sequences
+[2026-06-05 22:09:25,984 INFO  L185   FreeRefinementEngine]: Found 0 perfect and 3 imperfect interpolant sequences.
+[2026-06-05 22:09:25,984 INFO  L198   FreeRefinementEngine]: Number of different interpolants: perfect sequences [] imperfect sequences [3, 3, 3] total 6
+[2026-06-05 22:09:25,984 INFO  L122   tionRefinementEngine]: Using interpolant automaton builder IpAbStrategyModuleStraightlineAll [142149792]
+[2026-06-05 22:09:25,984 INFO  L85    oduleStraightlineAll]: Using 3 imperfect interpolants to construct interpolant automaton
+[2026-06-05 22:09:25,984 INFO  L100   FreeRefinementEngine]: Using predicate unifier PredicateUnifier provided by strategy CAMEL
+[2026-06-05 22:09:25,985 INFO  L144   InterpolantAutomaton]: Constructing interpolant automaton starting with 7 interpolants.
+[2026-06-05 22:09:25,985 INFO  L146   InterpolantAutomaton]: CoverageRelationStatistics Valid=19, Invalid=23, Unknown=0, NotChecked=0, Total=42
+[2026-06-05 22:09:25,985 INFO  L419   CegarNwaWorkerThread]: Difference in Worker for Generalization
+[2026-06-05 22:09:25,985 INFO  L87              Difference]: Start difference. First operand  has 5 states, 3 states have (on average 1.6666666666666667) internal successors, (5), 4 states have internal predecessors, (5), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0) Second operand  has 7 states, 7 states have (on average 1.2857142857142858) internal successors, (9), 6 states have internal predecessors, (9), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0)
+[2026-06-05 22:09:25,995 INFO  L144             Difference]: Subtrahend was deterministic. Have not used determinization.
+[2026-06-05 22:09:25,995 INFO  L93              Difference]: Finished difference Result 8 states and 8 transitions.
+[2026-06-05 22:09:25,996 INFO  L140   InterpolantAutomaton]: Switched to read-only mode: deterministic interpolant automaton has 6 states. 
+[2026-06-05 22:09:25,996 INFO  L225             Difference]: With dead ends: 8
+[2026-06-05 22:09:25,996 INFO  L226             Difference]: Without dead ends: 8
+[2026-06-05 22:09:25,996 INFO  L487   CegarNwaWorkerThread]: 0 DeclaredPredicates, 10 GetRequests, 4 SyntacticMatches, 0 SemanticMatches, 6 ConstructedPredicates, 0 IntricatePredicates, 0 DeprecatedPredicates, 7 ImplicationChecksByTransitivity, 0.0s TimeCoverageRelationStatistics Valid=26, Invalid=30, Unknown=0, NotChecked=0, Total=56
+[2026-06-05 22:09:25,996 INFO  L488   CegarNwaWorkerThread]: 3 mSDtfsCounter, 0 mSDsluCounter, 3 mSDsCounter, 0 mSdLazyCounter, 11 mSolverCounterSat, 1 mSolverCounterUnsat, 0 mSolverCounterUnknown, 0 mSolverCounterNotChecked, 0.0s Time, 0 mProtectedPredicate, 0 mProtectedAction, 0 SdHoareTripleChecker+Valid, 6 SdHoareTripleChecker+Invalid, 12 SdHoareTripleChecker+Unknown, 0 SdHoareTripleChecker+Unchecked, 0.0s SdHoareTripleChecker+Time, 1 IncrementalHoareTripleChecker+Valid, 11 IncrementalHoareTripleChecker+Invalid, 0 IncrementalHoareTripleChecker+Unknown, 0 IncrementalHoareTripleChecker+Unchecked, 0.0s IncrementalHoareTripleChecker+Time
+[2026-06-05 22:09:25,996 INFO  L489   CegarNwaWorkerThread]: SdHoareTripleChecker [0 Valid, 6 Invalid, 12 Unknown, 0 Unchecked, 0.0s Time], IncrementalHoareTripleChecker [1 Valid, 11 Invalid, 0 Unknown, 0 Unchecked, 0.0s Time]
+[2026-06-05 22:09:25,996 INFO  L224   CegarNwaWorkerThread]: Done with Thread: 86#
+[2026-06-05 22:09:25,996 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#86,Worker for 930412,5,main] is Waiting for a Task
+[2026-06-05 22:09:25,996 INFO  L448   ParallelNwaCegarLoop]: Waking up, a worker is done.
+[2026-06-05 22:09:25,996 INFO  L258   ParallelNwaCegarLoop]: Main: A Thread is Done
+[2026-06-05 22:09:25,997 INFO  L276   ParallelNwaCegarLoop]: Worker Automaton Type: FLOYD_HOARE
+[2026-06-05 22:09:25,997 INFO  L79                 Accepts]: Start accepts. Automaton has 5 states and 5 transitions. Word has length 4
+[2026-06-05 22:09:25,997 INFO  L85                 Accepts]: Finished accepts. word is accepted.
+[2026-06-05 22:09:25,997 INFO  L278   ParallelNwaCegarLoop]: Refining Abstraction
+[2026-06-05 22:09:25,997 INFO  L511   ParallelNwaCegarLoop]: Subtrahend traceHash: 930412
+[2026-06-05 22:09:25,997 INFO  L478   ParallelNwaCegarLoop]: Difference in Main
+[2026-06-05 22:09:25,997 INFO  L87              Difference]: Start difference. First operand 5 states and 5 transitions. Second operand  has 6 states, 5 states have (on average 2.6) internal successors, (13), 6 states have internal predecessors, (13), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0)
+[2026-06-05 22:09:25,997 INFO  L144             Difference]: Subtrahend was deterministic. Have not used determinization.
+[2026-06-05 22:09:25,997 INFO  L93              Difference]: Finished difference Result 8 states and 8 transitions.
+[2026-06-05 22:09:25,997 INFO  L225             Difference]: With dead ends: 8
+[2026-06-05 22:09:25,997 INFO  L226             Difference]: Without dead ends: 8
+[2026-06-05 22:09:25,997 INFO  L82        GeneralOperation]: Start minimizeSevpa. Operand 8 states.
+[2026-06-05 22:09:25,997 INFO  L88        GeneralOperation]: Finished minimizeSevpa. Reduced states from 8 to 8.
+[2026-06-05 22:09:25,997 INFO  L82        GeneralOperation]: Start removeUnreachable. Operand  has 8 states, 7 states have (on average 1.1428571428571428) internal successors, (8), 7 states have internal predecessors, (8), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0)
+[2026-06-05 22:09:25,997 INFO  L88        GeneralOperation]: Finished removeUnreachable. Reduced from 8 states to 8 states and 8 transitions.
+[2026-06-05 22:09:25,997 INFO  L489   ParallelNwaCegarLoop]: Main: Refinement done.
+[2026-06-05 22:09:25,997 INFO  L408   ParallelNwaCegarLoop]: Checking if program is safe
+[2026-06-05 22:09:25,997 INFO  L290                IsEmpty]: Start isEmpty. Operand 8 states and 8 transitions.
+[2026-06-05 22:09:25,998 INFO  L300                IsEmpty]: Finished isEmpty. Found accepting run of length 8
+[2026-06-05 22:09:25,998 INFO  L199           NwaCegarLoop]: Found error trace
+[2026-06-05 22:09:25,998 INFO  L207           NwaCegarLoop]: trace histogram [4, 1, 1, 1]
+[2026-06-05 22:09:25,998 INFO  L301   ParallelNwaCegarLoop]: No more worker results to process
+[2026-06-05 22:09:25,998 INFO  L290                IsEmpty]: Start isEmpty. Operand 8 states and 8 transitions.
+[2026-06-05 22:09:25,998 INFO  L300                IsEmpty]: Finished isEmpty. Found accepting run of length 8
+[2026-06-05 22:09:25,998 WARN  L753                IsEmpty]: Correctness of emptinessCheck not tested.
+[2026-06-05 22:09:25,998 INFO  L79                 Accepts]: Start accepts. Automaton has 8 states and 8 transitions. Word has length 7
+[2026-06-05 22:09:25,998 INFO  L85                 Accepts]: Finished accepts. word is accepted.
+[2026-06-05 22:09:25,998 INFO  L757                IsEmpty]: Finished testing correctness of emptinessCheck
+[2026-06-05 22:09:25,998 INFO  L658   ParallelNwaCegarLoop]: Found new Counterexample via BFS!
+[2026-06-05 22:09:25,998 INFO  L86        PathProgramCache]: Analyzing trace with hash 1949894467, now seen corresponding path program 2 times
+[2026-06-05 22:09:25,998 INFO  L428   ParallelNwaCegarLoop]: Main: Starting Thread
+[2026-06-05 22:09:25,998 INFO  L290                IsEmpty]: Start isEmpty. Operand 8 states and 8 transitions.
+[2026-06-05 22:09:25,998 INFO  L209   CegarNwaWorkerThread]: Starting Thread: 92# for Trace Check: 1949894467
+[2026-06-05 22:09:25,998 INFO  L300                IsEmpty]: Finished isEmpty. Found accepting run of length 8
+[2026-06-05 22:09:25,998 WARN  L753                IsEmpty]: Correctness of emptinessCheck not tested.
+[2026-06-05 22:09:25,998 INFO  L79                 Accepts]: Start accepts. Automaton has 8 states and 8 transitions. Word has length 7
+[2026-06-05 22:09:25,998 INFO  L85                 Accepts]: Finished accepts. word is accepted.
+[2026-06-05 22:09:25,998 INFO  L757                IsEmpty]: Finished testing correctness of emptinessCheck
+[2026-06-05 22:09:25,998 INFO  L662   ParallelNwaCegarLoop]: BFS found an active duplicate counterexample.
+[2026-06-05 22:09:25,998 INFO  L619   ParallelNwaCegarLoop]: Did not Find a Counterexample!
+[2026-06-05 22:09:25,998 INFO  L248   ParallelNwaCegarLoop]: === Iteration 4 ===
+[2026-06-05 22:09:25,998 INFO  L445   ParallelNwaCegarLoop]: All threads busy, going to sleep.
+[2026-06-05 22:09:25,998 INFO  L156       PredicateUnifier]: Initialized classic predicate unifier
+[2026-06-05 22:09:25,998 INFO  L86        PathProgramCache]: Analyzing trace with hash 1949894467, now seen corresponding path program 2 times
+[2026-06-05 22:09:25,998 INFO  L118   FreeRefinementEngine]: Executing refinement strategy CAMEL
+[2026-06-05 22:09:25,998 INFO  L324   FreeRefinementEngine]: Using trace check IpTcStrategyModuleSmtInterpolCraig [1690249482]
+[2026-06-05 22:09:25,998 INFO  L95    rtionOrderModulation]: Changing assertion order to OUTSIDE_LOOP_FIRST1
+[2026-06-05 22:09:25,998 INFO  L127          SolverBuilder]: Constructing new instance of SMTInterpol with explicit timeout -1 ms and remaining time -1 ms
+[2026-06-05 22:09:26,001 INFO  L108    AnnotateAndAsserter]: Assert order OUTSIDE_LOOP_FIRST1 partitioned 7 statements into 2 equivalence classes.
+[2026-06-05 22:09:26,006 INFO  L111    AnnotateAndAsserter]: Assert order OUTSIDE_LOOP_FIRST1 issued 2 check-sat command(s) and asserted 7 of 7 statements.
+[2026-06-05 22:09:26,006 INFO  L114    AnnotateAndAsserter]: Assert order OUTSIDE_LOOP_FIRST1 issued 2 check-sat command(s)
+[2026-06-05 22:09:26,006 INFO  L115    AnnotateAndAsserter]: Conjunction of SSA is unsat
+[2026-06-05 22:09:26,044 INFO  L134       CoverageAnalysis]: Checked inductivity of 10 backedges. 0 proven. 10 refuted. 0 times theorem prover too weak. 0 trivial. 0 not checked.
+[2026-06-05 22:09:26,044 INFO  L136   FreeRefinementEngine]: Strategy CAMEL found an infeasible trace
+[2026-06-05 22:09:26,044 INFO  L324   FreeRefinementEngine]: Using interpolant generator IpTcStrategyModuleSmtInterpolCraig [1690249482]
+[2026-06-05 22:09:26,044 INFO  L158   FreeRefinementEngine]: IpTcStrategyModuleSmtInterpolCraig [1690249482] provided 0 perfect and 1 imperfect interpolant sequences
+[2026-06-05 22:09:26,044 INFO  L324   FreeRefinementEngine]: Using interpolant generator IpTcStrategyModuleZ3 [1199124622]
+[2026-06-05 22:09:26,044 INFO  L95    rtionOrderModulation]: Changing assertion order to OUTSIDE_LOOP_FIRST1
+[2026-06-05 22:09:26,044 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 -smt2 -in SMTLIB2_COMPLIANT=true
+[2026-06-05 22:09:26,046 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:26,047 INFO  L229       MonitoredProcess]: Starting monitored process 19 with /usr/bin/z3 -smt2 -in SMTLIB2_COMPLIANT=true (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:26,048 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 -smt2 -in SMTLIB2_COMPLIANT=true (19)] Waiting until timeout for monitored process
+[2026-06-05 22:09:26,060 INFO  L108    AnnotateAndAsserter]: Assert order OUTSIDE_LOOP_FIRST1 partitioned 7 statements into 2 equivalence classes.
+[2026-06-05 22:09:26,063 INFO  L111    AnnotateAndAsserter]: Assert order OUTSIDE_LOOP_FIRST1 issued 2 check-sat command(s) and asserted 7 of 7 statements.
+[2026-06-05 22:09:26,063 INFO  L114    AnnotateAndAsserter]: Assert order OUTSIDE_LOOP_FIRST1 issued 2 check-sat command(s)
+[2026-06-05 22:09:26,063 INFO  L115    AnnotateAndAsserter]: Conjunction of SSA is unsat
+[2026-06-05 22:09:26,063 INFO  L256         TraceCheckSpWp]: Trace formula consists of 26 conjuncts, 11 conjuncts are in the unsatisfiable core
+[2026-06-05 22:09:26,063 INFO  L279         TraceCheckSpWp]: Computing forward predicates...
+[2026-06-05 22:09:26,070 INFO  L134       CoverageAnalysis]: Checked inductivity of 10 backedges. 0 proven. 10 refuted. 0 times theorem prover too weak. 0 trivial. 0 not checked.
+[2026-06-05 22:09:26,070 INFO  L312         TraceCheckSpWp]: Computing backward predicates...
+[2026-06-05 22:09:26,098 INFO  L134       CoverageAnalysis]: Checked inductivity of 10 backedges. 0 proven. 10 refuted. 0 times theorem prover too weak. 0 trivial. 0 not checked.
+[2026-06-05 22:09:26,098 INFO  L158   FreeRefinementEngine]: IpTcStrategyModuleZ3 [1199124622] provided 0 perfect and 2 imperfect interpolant sequences
+[2026-06-05 22:09:26,098 INFO  L185   FreeRefinementEngine]: Found 0 perfect and 3 imperfect interpolant sequences.
+[2026-06-05 22:09:26,098 INFO  L198   FreeRefinementEngine]: Number of different interpolants: perfect sequences [] imperfect sequences [6, 6, 6] total 12
+[2026-06-05 22:09:26,098 INFO  L122   tionRefinementEngine]: Using interpolant automaton builder IpAbStrategyModuleStraightlineAll [1461618358]
+[2026-06-05 22:09:26,098 INFO  L85    oduleStraightlineAll]: Using 3 imperfect interpolants to construct interpolant automaton
+[2026-06-05 22:09:26,098 INFO  L100   FreeRefinementEngine]: Using predicate unifier PredicateUnifier provided by strategy CAMEL
+[2026-06-05 22:09:26,099 INFO  L144   InterpolantAutomaton]: Constructing interpolant automaton starting with 13 interpolants.
+[2026-06-05 22:09:26,099 INFO  L146   InterpolantAutomaton]: CoverageRelationStatistics Valid=58, Invalid=98, Unknown=0, NotChecked=0, Total=156
+[2026-06-05 22:09:26,099 INFO  L419   CegarNwaWorkerThread]: Difference in Worker for Generalization
+[2026-06-05 22:09:26,099 INFO  L87              Difference]: Start difference. First operand  has 5 states, 3 states have (on average 1.6666666666666667) internal successors, (5), 4 states have internal predecessors, (5), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0) Second operand  has 13 states, 13 states have (on average 1.1538461538461537) internal successors, (15), 12 states have internal predecessors, (15), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0)
+[2026-06-05 22:09:26,174 INFO  L144             Difference]: Subtrahend was deterministic. Have not used determinization.
+[2026-06-05 22:09:26,174 INFO  L93              Difference]: Finished difference Result 14 states and 14 transitions.
+[2026-06-05 22:09:26,174 INFO  L140   InterpolantAutomaton]: Switched to read-only mode: deterministic interpolant automaton has 12 states. 
+[2026-06-05 22:09:26,174 INFO  L225             Difference]: With dead ends: 14
+[2026-06-05 22:09:26,174 INFO  L226             Difference]: Without dead ends: 14
+[2026-06-05 22:09:26,174 INFO  L487   CegarNwaWorkerThread]: 0 DeclaredPredicates, 22 GetRequests, 7 SyntacticMatches, 0 SemanticMatches, 15 ConstructedPredicates, 0 IntricatePredicates, 0 DeprecatedPredicates, 25 ImplicationChecksByTransitivity, 0.1s TimeCoverageRelationStatistics Valid=110, Invalid=162, Unknown=0, NotChecked=0, Total=272
+[2026-06-05 22:09:26,175 INFO  L488   CegarNwaWorkerThread]: 3 mSDtfsCounter, 0 mSDsluCounter, 6 mSDsCounter, 0 mSdLazyCounter, 39 mSolverCounterSat, 1 mSolverCounterUnsat, 0 mSolverCounterUnknown, 0 mSolverCounterNotChecked, 0.0s Time, 0 mProtectedPredicate, 0 mProtectedAction, 0 SdHoareTripleChecker+Valid, 9 SdHoareTripleChecker+Invalid, 40 SdHoareTripleChecker+Unknown, 0 SdHoareTripleChecker+Unchecked, 0.0s SdHoareTripleChecker+Time, 1 IncrementalHoareTripleChecker+Valid, 39 IncrementalHoareTripleChecker+Invalid, 0 IncrementalHoareTripleChecker+Unknown, 0 IncrementalHoareTripleChecker+Unchecked, 0.0s IncrementalHoareTripleChecker+Time
+[2026-06-05 22:09:26,175 INFO  L489   CegarNwaWorkerThread]: SdHoareTripleChecker [0 Valid, 9 Invalid, 40 Unknown, 0 Unchecked, 0.0s Time], IncrementalHoareTripleChecker [1 Valid, 39 Invalid, 0 Unknown, 0 Unchecked, 0.0s Time]
+[2026-06-05 22:09:26,175 INFO  L224   CegarNwaWorkerThread]: Done with Thread: 92#
+[2026-06-05 22:09:26,175 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#92,Worker for 1949894467,5,main] is Waiting for a Task
+[2026-06-05 22:09:26,175 INFO  L448   ParallelNwaCegarLoop]: Waking up, a worker is done.
+[2026-06-05 22:09:26,175 INFO  L258   ParallelNwaCegarLoop]: Main: A Thread is Done
+[2026-06-05 22:09:26,175 INFO  L276   ParallelNwaCegarLoop]: Worker Automaton Type: FLOYD_HOARE
+[2026-06-05 22:09:26,175 INFO  L79                 Accepts]: Start accepts. Automaton has 8 states and 8 transitions. Word has length 7
+[2026-06-05 22:09:26,175 INFO  L85                 Accepts]: Finished accepts. word is accepted.
+[2026-06-05 22:09:26,175 INFO  L278   ParallelNwaCegarLoop]: Refining Abstraction
+[2026-06-05 22:09:26,175 INFO  L511   ParallelNwaCegarLoop]: Subtrahend traceHash: 1949894467
+[2026-06-05 22:09:26,175 INFO  L478   ParallelNwaCegarLoop]: Difference in Main
+[2026-06-05 22:09:26,175 INFO  L87              Difference]: Start difference. First operand 8 states and 8 transitions. Second operand  has 12 states, 11 states have (on average 2.272727272727273) internal successors, (25), 12 states have internal predecessors, (25), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0)
+[2026-06-05 22:09:26,175 INFO  L144             Difference]: Subtrahend was deterministic. Have not used determinization.
+[2026-06-05 22:09:26,175 INFO  L93              Difference]: Finished difference Result 14 states and 14 transitions.
+[2026-06-05 22:09:26,176 INFO  L225             Difference]: With dead ends: 14
+[2026-06-05 22:09:26,176 INFO  L226             Difference]: Without dead ends: 14
+[2026-06-05 22:09:26,176 INFO  L82        GeneralOperation]: Start minimizeSevpa. Operand 14 states.
+[2026-06-05 22:09:26,176 INFO  L88        GeneralOperation]: Finished minimizeSevpa. Reduced states from 14 to 14.
+[2026-06-05 22:09:26,176 INFO  L82        GeneralOperation]: Start removeUnreachable. Operand  has 14 states, 13 states have (on average 1.0769230769230769) internal successors, (14), 13 states have internal predecessors, (14), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0)
+[2026-06-05 22:09:26,176 INFO  L88        GeneralOperation]: Finished removeUnreachable. Reduced from 14 states to 14 states and 14 transitions.
+[2026-06-05 22:09:26,176 INFO  L489   ParallelNwaCegarLoop]: Main: Refinement done.
+[2026-06-05 22:09:26,176 INFO  L408   ParallelNwaCegarLoop]: Checking if program is safe
+[2026-06-05 22:09:26,176 INFO  L290                IsEmpty]: Start isEmpty. Operand 14 states and 14 transitions.
+[2026-06-05 22:09:26,176 INFO  L300                IsEmpty]: Finished isEmpty. Found accepting run of length 14
+[2026-06-05 22:09:26,176 INFO  L199           NwaCegarLoop]: Found error trace
+[2026-06-05 22:09:26,176 INFO  L207           NwaCegarLoop]: trace histogram [10, 1, 1, 1]
+[2026-06-05 22:09:26,176 INFO  L301   ParallelNwaCegarLoop]: No more worker results to process
+[2026-06-05 22:09:26,176 INFO  L290                IsEmpty]: Start isEmpty. Operand 14 states and 14 transitions.
+[2026-06-05 22:09:26,177 INFO  L300                IsEmpty]: Finished isEmpty. Found accepting run of length 14
+[2026-06-05 22:09:26,177 WARN  L753                IsEmpty]: Correctness of emptinessCheck not tested.
+[2026-06-05 22:09:26,177 INFO  L79                 Accepts]: Start accepts. Automaton has 14 states and 14 transitions. Word has length 13
+[2026-06-05 22:09:26,177 INFO  L85                 Accepts]: Finished accepts. word is accepted.
+[2026-06-05 22:09:26,177 INFO  L757                IsEmpty]: Finished testing correctness of emptinessCheck
+[2026-06-05 22:09:26,177 INFO  L658   ParallelNwaCegarLoop]: Found new Counterexample via BFS!
+[2026-06-05 22:09:26,177 INFO  L86        PathProgramCache]: Analyzing trace with hash 1000801955, now seen corresponding path program 3 times
+[2026-06-05 22:09:26,177 INFO  L428   ParallelNwaCegarLoop]: Main: Starting Thread
+[2026-06-05 22:09:26,177 INFO  L290                IsEmpty]: Start isEmpty. Operand 14 states and 14 transitions.
+[2026-06-05 22:09:26,177 INFO  L300                IsEmpty]: Finished isEmpty. Found accepting run of length 14
+[2026-06-05 22:09:26,177 WARN  L753                IsEmpty]: Correctness of emptinessCheck not tested.
+[2026-06-05 22:09:26,177 INFO  L79                 Accepts]: Start accepts. Automaton has 14 states and 14 transitions. Word has length 13
+[2026-06-05 22:09:26,177 INFO  L209   CegarNwaWorkerThread]: Starting Thread: 101# for Trace Check: 1000801955
+[2026-06-05 22:09:26,177 INFO  L85                 Accepts]: Finished accepts. word is accepted.
+[2026-06-05 22:09:26,177 INFO  L757                IsEmpty]: Finished testing correctness of emptinessCheck
+[2026-06-05 22:09:26,177 INFO  L662   ParallelNwaCegarLoop]: BFS found an active duplicate counterexample.
+[2026-06-05 22:09:26,177 INFO  L619   ParallelNwaCegarLoop]: Did not Find a Counterexample!
+[2026-06-05 22:09:26,177 INFO  L248   ParallelNwaCegarLoop]: === Iteration 5 ===
+[2026-06-05 22:09:26,177 INFO  L445   ParallelNwaCegarLoop]: All threads busy, going to sleep.
+[2026-06-05 22:09:26,177 INFO  L156       PredicateUnifier]: Initialized classic predicate unifier
+[2026-06-05 22:09:26,177 INFO  L86        PathProgramCache]: Analyzing trace with hash 1000801955, now seen corresponding path program 3 times
+[2026-06-05 22:09:26,177 INFO  L118   FreeRefinementEngine]: Executing refinement strategy CAMEL
+[2026-06-05 22:09:26,177 INFO  L324   FreeRefinementEngine]: Using trace check IpTcStrategyModuleSmtInterpolCraig [548679508]
+[2026-06-05 22:09:26,177 INFO  L95    rtionOrderModulation]: Changing assertion order to OUTSIDE_LOOP_FIRST2
+[2026-06-05 22:09:26,177 INFO  L127          SolverBuilder]: Constructing new instance of SMTInterpol with explicit timeout -1 ms and remaining time -1 ms
+[2026-06-05 22:09:26,180 INFO  L108    AnnotateAndAsserter]: Assert order OUTSIDE_LOOP_FIRST2 partitioned 13 statements into 6 equivalence classes.
+[2026-06-05 22:09:26,185 INFO  L111    AnnotateAndAsserter]: Assert order OUTSIDE_LOOP_FIRST2 issued 6 check-sat command(s) and asserted 13 of 13 statements.
+[2026-06-05 22:09:26,185 INFO  L114    AnnotateAndAsserter]: Assert order OUTSIDE_LOOP_FIRST2 issued 6 check-sat command(s)
+[2026-06-05 22:09:26,185 INFO  L115    AnnotateAndAsserter]: Conjunction of SSA is unsat
+[2026-06-05 22:09:26,246 INFO  L134       CoverageAnalysis]: Checked inductivity of 55 backedges. 0 proven. 55 refuted. 0 times theorem prover too weak. 0 trivial. 0 not checked.
+[2026-06-05 22:09:26,246 INFO  L136   FreeRefinementEngine]: Strategy CAMEL found an infeasible trace
+[2026-06-05 22:09:26,246 INFO  L324   FreeRefinementEngine]: Using interpolant generator IpTcStrategyModuleSmtInterpolCraig [548679508]
+[2026-06-05 22:09:26,246 INFO  L158   FreeRefinementEngine]: IpTcStrategyModuleSmtInterpolCraig [548679508] provided 0 perfect and 1 imperfect interpolant sequences
+[2026-06-05 22:09:26,246 INFO  L324   FreeRefinementEngine]: Using interpolant generator IpTcStrategyModuleZ3 [1951435023]
+[2026-06-05 22:09:26,246 INFO  L95    rtionOrderModulation]: Changing assertion order to OUTSIDE_LOOP_FIRST2
+[2026-06-05 22:09:26,246 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 -smt2 -in SMTLIB2_COMPLIANT=true
+[2026-06-05 22:09:26,248 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 22:09:26,249 INFO  L229       MonitoredProcess]: Starting monitored process 20 with /usr/bin/z3 -smt2 -in SMTLIB2_COMPLIANT=true (exit command is (exit), workingDir is null)
+[2026-06-05 22:09:26,250 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 -smt2 -in SMTLIB2_COMPLIANT=true (20)] Waiting until timeout for monitored process
+[2026-06-05 22:09:26,261 INFO  L108    AnnotateAndAsserter]: Assert order OUTSIDE_LOOP_FIRST2 partitioned 13 statements into 6 equivalence classes.
+[2026-06-05 22:09:26,268 INFO  L111    AnnotateAndAsserter]: Assert order OUTSIDE_LOOP_FIRST2 issued 6 check-sat command(s) and asserted 13 of 13 statements.
+[2026-06-05 22:09:26,268 INFO  L114    AnnotateAndAsserter]: Assert order OUTSIDE_LOOP_FIRST2 issued 6 check-sat command(s)
+[2026-06-05 22:09:26,268 INFO  L115    AnnotateAndAsserter]: Conjunction of SSA is unsat
+[2026-06-05 22:09:26,268 WARN  L254         TraceCheckSpWp]: Trace formula consists of 44 conjuncts, 23 conjuncts are in the unsatisfiable core
+[2026-06-05 22:09:26,268 INFO  L279         TraceCheckSpWp]: Computing forward predicates...
+[2026-06-05 22:09:26,279 INFO  L134       CoverageAnalysis]: Checked inductivity of 55 backedges. 0 proven. 55 refuted. 0 times theorem prover too weak. 0 trivial. 0 not checked.
+[2026-06-05 22:09:26,279 INFO  L312         TraceCheckSpWp]: Computing backward predicates...
+[2026-06-05 22:09:26,368 INFO  L134       CoverageAnalysis]: Checked inductivity of 55 backedges. 0 proven. 55 refuted. 0 times theorem prover too weak. 0 trivial. 0 not checked.
+[2026-06-05 22:09:26,369 INFO  L158   FreeRefinementEngine]: IpTcStrategyModuleZ3 [1951435023] provided 0 perfect and 2 imperfect interpolant sequences
+[2026-06-05 22:09:26,369 INFO  L185   FreeRefinementEngine]: Found 0 perfect and 3 imperfect interpolant sequences.
+[2026-06-05 22:09:26,369 INFO  L198   FreeRefinementEngine]: Number of different interpolants: perfect sequences [] imperfect sequences [12, 12, 12] total 24
+[2026-06-05 22:09:26,369 INFO  L122   tionRefinementEngine]: Using interpolant automaton builder IpAbStrategyModuleStraightlineAll [1641378698]
+[2026-06-05 22:09:26,369 INFO  L85    oduleStraightlineAll]: Using 3 imperfect interpolants to construct interpolant automaton
+[2026-06-05 22:09:26,369 INFO  L100   FreeRefinementEngine]: Using predicate unifier PredicateUnifier provided by strategy CAMEL
+[2026-06-05 22:09:26,369 INFO  L144   InterpolantAutomaton]: Constructing interpolant automaton starting with 25 interpolants.
+[2026-06-05 22:09:26,369 INFO  L146   InterpolantAutomaton]: CoverageRelationStatistics Valid=170, Invalid=430, Unknown=0, NotChecked=0, Total=600
+[2026-06-05 22:09:26,369 INFO  L419   CegarNwaWorkerThread]: Difference in Worker for Generalization
+[2026-06-05 22:09:26,369 INFO  L87              Difference]: Start difference. First operand  has 5 states, 3 states have (on average 1.6666666666666667) internal successors, (5), 4 states have internal predecessors, (5), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0) Second operand  has 25 states, 25 states have (on average 1.08) internal successors, (27), 24 states have internal predecessors, (27), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0)
+[2026-06-05 22:09:26,493 INFO  L144             Difference]: Subtrahend was deterministic. Have not used determinization.
+[2026-06-05 22:09:26,493 INFO  L93              Difference]: Finished difference Result 20 states and 20 transitions.
+[2026-06-05 22:09:26,494 INFO  L140   InterpolantAutomaton]: Switched to read-only mode: deterministic interpolant automaton has 18 states. 
+[2026-06-05 22:09:26,494 INFO  L225             Difference]: With dead ends: 20
+[2026-06-05 22:09:26,494 INFO  L226             Difference]: Without dead ends: 20
+[2026-06-05 22:09:26,494 INFO  L487   CegarNwaWorkerThread]: 0 DeclaredPredicates, 40 GetRequests, 13 SyntacticMatches, 0 SemanticMatches, 27 ConstructedPredicates, 0 IntricatePredicates, 0 DeprecatedPredicates, 76 ImplicationChecksByTransitivity, 0.2s TimeCoverageRelationStatistics Valid=246, Invalid=566, Unknown=0, NotChecked=0, Total=812
+[2026-06-05 22:09:26,494 INFO  L488   CegarNwaWorkerThread]: 3 mSDtfsCounter, 0 mSDsluCounter, 11 mSDsCounter, 0 mSdLazyCounter, 130 mSolverCounterSat, 0 mSolverCounterUnsat, 0 mSolverCounterUnknown, 0 mSolverCounterNotChecked, 0.0s Time, 0 mProtectedPredicate, 0 mProtectedAction, 0 SdHoareTripleChecker+Valid, 14 SdHoareTripleChecker+Invalid, 130 SdHoareTripleChecker+Unknown, 0 SdHoareTripleChecker+Unchecked, 0.0s SdHoareTripleChecker+Time, 0 IncrementalHoareTripleChecker+Valid, 130 IncrementalHoareTripleChecker+Invalid, 0 IncrementalHoareTripleChecker+Unknown, 0 IncrementalHoareTripleChecker+Unchecked, 0.0s IncrementalHoareTripleChecker+Time
+[2026-06-05 22:09:26,495 INFO  L489   CegarNwaWorkerThread]: SdHoareTripleChecker [0 Valid, 14 Invalid, 130 Unknown, 0 Unchecked, 0.0s Time], IncrementalHoareTripleChecker [0 Valid, 130 Invalid, 0 Unknown, 0 Unchecked, 0.0s Time]
+[2026-06-05 22:09:26,495 INFO  L224   CegarNwaWorkerThread]: Done with Thread: 101#
+[2026-06-05 22:09:26,495 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#101,Worker for 1000801955,5,main] is Waiting for a Task
+[2026-06-05 22:09:26,495 INFO  L448   ParallelNwaCegarLoop]: Waking up, a worker is done.
+[2026-06-05 22:09:26,495 INFO  L258   ParallelNwaCegarLoop]: Main: A Thread is Done
+[2026-06-05 22:09:26,495 INFO  L276   ParallelNwaCegarLoop]: Worker Automaton Type: FLOYD_HOARE
+[2026-06-05 22:09:26,495 INFO  L79                 Accepts]: Start accepts. Automaton has 14 states and 14 transitions. Word has length 13
+[2026-06-05 22:09:26,495 INFO  L85                 Accepts]: Finished accepts. word is accepted.
+[2026-06-05 22:09:26,495 INFO  L278   ParallelNwaCegarLoop]: Refining Abstraction
+[2026-06-05 22:09:26,495 INFO  L511   ParallelNwaCegarLoop]: Subtrahend traceHash: 1000801955
+[2026-06-05 22:09:26,495 INFO  L478   ParallelNwaCegarLoop]: Difference in Main
+[2026-06-05 22:09:26,496 INFO  L87              Difference]: Start difference. First operand 14 states and 14 transitions. Second operand  has 18 states, 17 states have (on average 2.176470588235294) internal successors, (37), 18 states have internal predecessors, (37), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0)
+[2026-06-05 22:09:26,496 INFO  L144             Difference]: Subtrahend was deterministic. Have not used determinization.
+[2026-06-05 22:09:26,496 INFO  L93              Difference]: Finished difference Result 20 states and 20 transitions.
+[2026-06-05 22:09:26,496 INFO  L225             Difference]: With dead ends: 20
+[2026-06-05 22:09:26,496 INFO  L226             Difference]: Without dead ends: 20
+[2026-06-05 22:09:26,496 INFO  L82        GeneralOperation]: Start minimizeSevpa. Operand 20 states.
+[2026-06-05 22:09:26,496 INFO  L88        GeneralOperation]: Finished minimizeSevpa. Reduced states from 20 to 20.
+[2026-06-05 22:09:26,496 INFO  L82        GeneralOperation]: Start removeUnreachable. Operand  has 20 states, 19 states have (on average 1.0526315789473684) internal successors, (20), 19 states have internal predecessors, (20), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0)
+[2026-06-05 22:09:26,496 INFO  L88        GeneralOperation]: Finished removeUnreachable. Reduced from 20 states to 20 states and 20 transitions.
+[2026-06-05 22:09:26,496 INFO  L489   ParallelNwaCegarLoop]: Main: Refinement done.
+[2026-06-05 22:09:26,496 INFO  L408   ParallelNwaCegarLoop]: Checking if program is safe
+[2026-06-05 22:09:26,497 INFO  L290                IsEmpty]: Start isEmpty. Operand 20 states and 20 transitions.
+[2026-06-05 22:09:26,497 INFO  L300                IsEmpty]: Finished isEmpty. Found accepting run of length 20
+[2026-06-05 22:09:26,497 INFO  L199           NwaCegarLoop]: Found error trace
+[2026-06-05 22:09:26,497 INFO  L207           NwaCegarLoop]: trace histogram [16, 1, 1, 1]
+[2026-06-05 22:09:26,497 INFO  L301   ParallelNwaCegarLoop]: No more worker results to process
+[2026-06-05 22:09:26,497 INFO  L290                IsEmpty]: Start isEmpty. Operand 20 states and 20 transitions.
+[2026-06-05 22:09:26,497 INFO  L300                IsEmpty]: Finished isEmpty. Found accepting run of length 20
+[2026-06-05 22:09:26,497 WARN  L753                IsEmpty]: Correctness of emptinessCheck not tested.
+[2026-06-05 22:09:26,497 INFO  L79                 Accepts]: Start accepts. Automaton has 20 states and 20 transitions. Word has length 19
+[2026-06-05 22:09:26,497 INFO  L85                 Accepts]: Finished accepts. word is accepted.
+[2026-06-05 22:09:26,497 INFO  L757                IsEmpty]: Finished testing correctness of emptinessCheck
+[2026-06-05 22:09:26,497 INFO  L658   ParallelNwaCegarLoop]: Found new Counterexample via BFS!
+[2026-06-05 22:09:26,497 INFO  L86        PathProgramCache]: Analyzing trace with hash 682622467, now seen corresponding path program 4 times
+[2026-06-05 22:09:26,497 INFO  L428   ParallelNwaCegarLoop]: Main: Starting Thread
+[2026-06-05 22:09:26,497 INFO  L290                IsEmpty]: Start isEmpty. Operand 20 states and 20 transitions.
+[2026-06-05 22:09:26,497 INFO  L300                IsEmpty]: Finished isEmpty. Found accepting run of length 20
+[2026-06-05 22:09:26,497 WARN  L753                IsEmpty]: Correctness of emptinessCheck not tested.
+[2026-06-05 22:09:26,497 INFO  L79                 Accepts]: Start accepts. Automaton has 20 states and 20 transitions. Word has length 19
+[2026-06-05 22:09:26,497 INFO  L209   CegarNwaWorkerThread]: Starting Thread: 107# for Trace Check: 682622467
+[2026-06-05 22:09:26,497 INFO  L85                 Accepts]: Finished accepts. word is accepted.
+[2026-06-05 22:09:26,497 INFO  L757                IsEmpty]: Finished testing correctness of emptinessCheck
+[2026-06-05 22:09:26,497 INFO  L662   ParallelNwaCegarLoop]: BFS found an active duplicate counterexample.
+[2026-06-05 22:09:26,497 INFO  L619   ParallelNwaCegarLoop]: Did not Find a Counterexample!
+[2026-06-05 22:09:26,497 INFO  L248   ParallelNwaCegarLoop]: === Iteration 6 ===
+[2026-06-05 22:09:26,497 INFO  L445   ParallelNwaCegarLoop]: All threads busy, going to sleep.
+[2026-06-05 22:09:26,497 INFO  L156       PredicateUnifier]: Initialized classic predicate unifier
+[2026-06-05 22:09:26,498 INFO  L86        PathProgramCache]: Analyzing trace with hash 682622467, now seen corresponding path program 4 times
+[2026-06-05 22:09:26,498 INFO  L118   FreeRefinementEngine]: Executing refinement strategy CAMEL
+[2026-06-05 22:09:26,498 INFO  L324   FreeRefinementEngine]: Using trace check IpTcStrategyModuleSmtInterpolCraig [225171615]
+[2026-06-05 22:09:26,498 INFO  L95    rtionOrderModulation]: Changing assertion order to TERMS_WITH_SMALL_CONSTANTS_FIRST
+[2026-06-05 22:09:26,498 INFO  L127          SolverBuilder]: Constructing new instance of SMTInterpol with explicit timeout -1 ms and remaining time -1 ms
+[2026-06-05 22:09:26,500 INFO  L108    AnnotateAndAsserter]: Assert order TERMS_WITH_SMALL_CONSTANTS_FIRST partitioned 19 statements into 2 equivalence classes.
+[2026-06-05 22:09:26,504 INFO  L111    AnnotateAndAsserter]: Assert order TERMS_WITH_SMALL_CONSTANTS_FIRST issued 2 check-sat command(s) and asserted 19 of 19 statements.
+[2026-06-05 22:09:26,504 INFO  L114    AnnotateAndAsserter]: Assert order TERMS_WITH_SMALL_CONSTANTS_FIRST issued 2 check-sat command(s)
+[2026-06-05 22:09:26,504 INFO  L115    AnnotateAndAsserter]: Conjunction of SSA is sat
+[2026-06-05 22:09:26,504 INFO  L348             TraceCheck]: Trace is feasible, we will do another trace check, this time with branch encoders.
+[2026-06-05 22:09:26,505 INFO  L108    AnnotateAndAsserter]: Assert order NOT_INCREMENTALLY partitioned 19 statements into 1 equivalence classes.
+[2026-06-05 22:09:26,507 INFO  L111    AnnotateAndAsserter]: Assert order NOT_INCREMENTALLY issued 1 check-sat command(s) and asserted 19 of 19 statements.
+[2026-06-05 22:09:26,507 INFO  L114    AnnotateAndAsserter]: Assert order NOT_INCREMENTALLY issued 1 check-sat command(s)
+[2026-06-05 22:09:26,507 INFO  L115    AnnotateAndAsserter]: Conjunction of SSA is sat
+[2026-06-05 22:09:26,512 INFO  L130   FreeRefinementEngine]: Strategy CAMEL found a feasible trace
+[2026-06-05 22:09:26,512 INFO  L305   CegarNwaWorkerThread]: Counterexample is feasible
+[2026-06-05 22:09:26,512 INFO  L796   garLoopResultBuilder]: Registering result UNSAFE for location ULTIMATE.startErr0ASSERT_VIOLATIONASSERT (0 of 1 remaining)
+[2026-06-05 22:09:26,513 INFO  L370   CegarNwaWorkerThread]: Excluding counterexample to continue analysis with ERROR automaton
+[2026-06-05 22:09:26,513 INFO  L100   FreeRefinementEngine]: Using predicate unifier PredicateUnifier provided by strategy CAMEL
+[2026-06-05 22:09:26,513 INFO  L185   GeneralizationEngine]: Constructing SIMPLE_ERROR_AUTOMATON automaton for trace of length 19
+[2026-06-05 22:09:26,514 INFO  L419   CegarNwaWorkerThread]: Difference in Worker for Generalization
+[2026-06-05 22:09:26,514 INFO  L224   CegarNwaWorkerThread]: Done with Thread: 107#
+[2026-06-05 22:09:26,514 INFO  L196   CegarNwaWorkerThread]: WorkerThread: Thread[#107,Worker for 682622467,5,main] is Waiting for a Task
+[2026-06-05 22:09:26,514 INFO  L448   ParallelNwaCegarLoop]: Waking up, a worker is done.
+[2026-06-05 22:09:26,514 INFO  L258   ParallelNwaCegarLoop]: Main: A Thread is Done
+[2026-06-05 22:09:26,516 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (16)] Ended with exit code 0
+[2026-06-05 22:09:26,716 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (9)] Ended with exit code 0
+[2026-06-05 22:09:26,915 WARN  L718   oredProcess$PipePump]: [MP /usr/bin/z3 -smt2 -in SMTLIB2_COMPLIANT=true (20)] The stream was forcibly closed: stdIn
+[2026-06-05 22:09:26,917 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 -smt2 -in SMTLIB2_COMPLIANT=true (20)] Ended with exit code 0
+[2026-06-05 22:09:27,115 WARN  L718   oredProcess$PipePump]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (5)] The stream was forcibly closed: stdIn
+[2026-06-05 22:09:27,117 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (5)] Ended with exit code 0
+[2026-06-05 22:09:27,317 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (14)] Ended with exit code 0
+[2026-06-05 22:09:27,515 WARN  L718   oredProcess$PipePump]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (3)] The stream was forcibly closed: stdIn
+[2026-06-05 22:09:27,517 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (3)] Ended with exit code 0
+[2026-06-05 22:09:27,718 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (10)] Ended with exit code 0
+[2026-06-05 22:09:27,915 WARN  L718   oredProcess$PipePump]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (6)] The stream was forcibly closed: stdIn
+[2026-06-05 22:09:27,918 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (6)] Ended with exit code 0
+[2026-06-05 22:09:28,118 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (12)] Ended with exit code 0
+[2026-06-05 22:09:28,317 WARN  L718   oredProcess$PipePump]: [MP /usr/bin/z3 -smt2 -in SMTLIB2_COMPLIANT=true (18)] The stream was forcibly closed: stdIn
+[2026-06-05 22:09:28,318 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 -smt2 -in SMTLIB2_COMPLIANT=true (18)] Ended with exit code 0
+[2026-06-05 22:09:28,518 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (17)] Ended with exit code 0
+[2026-06-05 22:09:28,718 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (8)] Ended with exit code 0
+[2026-06-05 22:09:28,918 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (15)] Ended with exit code 0
+[2026-06-05 22:09:29,118 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (13)] Ended with exit code 0
+[2026-06-05 22:09:29,316 WARN  L718   oredProcess$PipePump]: [MP /usr/bin/z3 -smt2 -in SMTLIB2_COMPLIANT=true (19)] The stream was forcibly closed: stdIn
+[2026-06-05 22:09:29,320 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 -smt2 -in SMTLIB2_COMPLIANT=true (19)] Ended with exit code 0
+[2026-06-05 22:09:29,517 WARN  L718   oredProcess$PipePump]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (4)] The stream was forcibly closed: stdIn
+[2026-06-05 22:09:29,519 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (4)] Ended with exit code 0
+[2026-06-05 22:09:29,719 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (7)] Ended with exit code 0
+[2026-06-05 22:09:29,917 WARN  L718   oredProcess$PipePump]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (2)] The stream was forcibly closed: stdIn
+[2026-06-05 22:09:29,919 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (2)] Ended with exit code 0
+[2026-06-05 22:09:30,119 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (11)] Ended with exit code 0
+[2026-06-05 22:09:30,317 WARN  L459   ParallelNwaCegarLoop]: Destroyed unattended storables created during the last iteration: 16 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000,9 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000,20 /usr/bin/z3 -smt2 -in SMTLIB2_COMPLIANT=true,5 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000,14 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000,3 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000,10 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000,6 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000,12 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000,SelfDestructingSolverStorable0,18 /usr/bin/z3 -smt2 -in SMTLIB2_COMPLIANT=true,SelfDestructingSolverStorable4,17 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000,SelfDestructingSolverStorable3,8 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000,SelfDestructingSolverStorable2,15 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000,SelfDestructingSolverStorable1,13 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000,19 /usr/bin/z3 -smt2 -in SMTLIB2_COMPLIANT=true,4 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000,7 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000,2 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000,11 /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 22:09:30,317 INFO  L271   ParallelNwaCegarLoop]: Result: UNSAFE
+[2026-06-05 22:09:30,318 INFO  L360   ParallelNwaCegarLoop]: Iteration 6
+[2026-06-05 22:09:30,318 INFO  L361   ParallelNwaCegarLoop]: SearchMode: BFS
+[2026-06-05 22:09:30,318 INFO  L362   ParallelNwaCegarLoop]: Refinements: 4
+[2026-06-05 22:09:30,318 INFO  L363   ParallelNwaCegarLoop]: Counterexamples: 5
+[2026-06-05 22:09:30,318 INFO  L364   ParallelNwaCegarLoop]: SearchTimeout: 0
+[2026-06-05 22:09:30,318 INFO  L365   ParallelNwaCegarLoop]: RunConstructionFailed: 0
+[2026-06-05 22:09:30,318 INFO  L366   ParallelNwaCegarLoop]: SearchFailed: 5
+[2026-06-05 22:09:30,318 INFO  L367   ParallelNwaCegarLoop]: Duplicate freshness failures: 5
+[2026-06-05 22:09:30,318 INFO  L368   ParallelNwaCegarLoop]: DuplicateFreshnessFailures: 5
+[2026-06-05 22:09:30,318 INFO  L369   ParallelNwaCegarLoop]: BFS: 5
+[2026-06-05 22:09:30,318 INFO  L370   ParallelNwaCegarLoop]: IsEmptyParallel: 0
+[2026-06-05 22:09:30,318 INFO  L371   ParallelNwaCegarLoop]: ActiveThreads: 1
+[2026-06-05 22:09:30,318 INFO  L372   ParallelNwaCegarLoop]: ActiveExecutorsForPathPrograms: 0
+[2026-06-05 22:09:30,318 INFO  L373   ParallelNwaCegarLoop]: IterationsWithMaxThreads: 0
+[2026-06-05 22:09:30,318 INFO  L374   ParallelNwaCegarLoop]: IterationsWithONEThread: 6
+[2026-06-05 22:09:30,318 INFO  L375   ParallelNwaCegarLoop]: SearchTime: 0 s
+[2026-06-05 22:09:30,318 INFO  L376   ParallelNwaCegarLoop]: WorkerSetUpTime: 0 s
+[2026-06-05 22:09:30,318 INFO  L377   ParallelNwaCegarLoop]: ExceptionInWorker: 0
+[2026-06-05 22:09:30,318 INFO  L378   ParallelNwaCegarLoop]: mRefinementTime: 0
+[2026-06-05 22:09:30,318 INFO  L379   ParallelNwaCegarLoop]: Prefix cache checked paths: 5
+[2026-06-05 22:09:30,318 INFO  L380   ParallelNwaCegarLoop]: Prefix cache stale paths: 0
+[2026-06-05 22:09:30,318 INFO  L381   ParallelNwaCegarLoop]: Stale paths: 0
+[2026-06-05 22:09:30,318 INFO  L382   ParallelNwaCegarLoop]: LcpsCheckedPrefixQueries: 0
+[2026-06-05 22:09:30,318 INFO  L383   ParallelNwaCegarLoop]: LcpsStalePrefixQueries: 0
+[2026-06-05 22:09:30,318 INFO  L384   ParallelNwaCegarLoop]: LcpsCheckedPrefixHits: 0
+[2026-06-05 22:09:30,318 INFO  L385   ParallelNwaCegarLoop]: LcpsStalePrefixHits: 0
+[2026-06-05 22:09:30,318 INFO  L386   ParallelNwaCegarLoop]: LcpsSearchInvocations: 0
+[2026-06-05 22:09:30,318 INFO  L389   ParallelNwaCegarLoop]: Checked paths: 5
+[2026-06-05 22:09:30,318 INFO  L390   ParallelNwaCegarLoop]: Total pairwise prefix-LCA divergence: 10.0
+[2026-06-05 22:09:30,318 INFO  L392   ParallelNwaCegarLoop]: Avg pairwise prefix-LCA divergence: 1.0
+[2026-06-05 22:09:30,320 INFO  L424         BasicCegarLoop]: Path program histogram: []
+[2026-06-05 22:09:30,320 INFO  L429         BasicCegarLoop]: Checked paths: 5
+[2026-06-05 22:09:30,320 INFO  L430         BasicCegarLoop]: Total pairwise prefix-LCA divergence: 10.0
+[2026-06-05 22:09:30,320 INFO  L432         BasicCegarLoop]: Avg pairwise prefix-LCA divergence: 1.0
+[2026-06-05 22:09:30,324 INFO  L171   ceAbstractionStarter]: Computing trace abstraction results
+[2026-06-05 22:09:30,325 INFO  L201        PluginConnector]: Adding new model interleave_bits.i_3.bpl de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction CFG 05.06 10:09:30 BoogieIcfgContainer
+[2026-06-05 22:09:30,325 INFO  L131        PluginConnector]: ------------------------ END TraceAbstraction----------------------------
+[2026-06-05 22:09:30,326 INFO  L158              Benchmark]: Toolchain (without parser) took 4869.97ms. Allocated memory was 37.7MB in the beginning and 56.6MB in the end (delta: 18.9MB). Free memory was 12.5MB in the beginning and 28.5MB in the end (delta: -16.1MB). Peak memory consumption was 26.1MB. Max. memory is 4.3GB.
+[2026-06-05 22:09:30,326 INFO  L158              Benchmark]: Boogie PL CUP Parser took 0.07ms. Allocated memory is still 37.7MB. Free memory was 13.5MB in the beginning and 13.5MB in the end (delta: 10.3kB). There was no memory consumed. Max. memory is 4.3GB.
+[2026-06-05 22:09:30,326 INFO  L158              Benchmark]: Boogie Preprocessor took 23.32ms. Allocated memory was 37.7MB in the beginning and 46.1MB in the end (delta: 8.4MB). Free memory was 12.4MB in the beginning and 23.2MB in the end (delta: -10.8MB). Peak memory consumption was 4.3MB. Max. memory is 4.3GB.
+[2026-06-05 22:09:30,326 INFO  L158              Benchmark]: RCFGBuilder took 78.48ms. Allocated memory is still 46.1MB. Free memory was 23.1MB in the beginning and 22.5MB in the end (delta: 617.4kB). Peak memory consumption was 11.8MB. Max. memory is 4.3GB.
+[2026-06-05 22:09:30,326 INFO  L158              Benchmark]: TraceAbstraction took 4766.02ms. Allocated memory was 46.1MB in the beginning and 56.6MB in the end (delta: 10.5MB). Free memory was 21.4MB in the beginning and 28.5MB in the end (delta: -7.2MB). Peak memory consumption was 27.8MB. Max. memory is 4.3GB.
+[2026-06-05 22:09:30,326 INFO  L338   ainManager$Toolchain]: #######################  End [Toolchain 1] #######################
+ --- Results ---
+ * Results from de.uni_freiburg.informatik.ultimate.core:
+  - StatisticsResult: Toolchain Benchmarks
+    Benchmark results are:
+ * Boogie PL CUP Parser took 0.07ms. Allocated memory is still 37.7MB. Free memory was 13.5MB in the beginning and 13.5MB in the end (delta: 10.3kB). There was no memory consumed. Max. memory is 4.3GB.
+ * Boogie Preprocessor took 23.32ms. Allocated memory was 37.7MB in the beginning and 46.1MB in the end (delta: 8.4MB). Free memory was 12.4MB in the beginning and 23.2MB in the end (delta: -10.8MB). Peak memory consumption was 4.3MB. Max. memory is 4.3GB.
+ * RCFGBuilder took 78.48ms. Allocated memory is still 46.1MB. Free memory was 23.1MB in the beginning and 22.5MB in the end (delta: 617.4kB). Peak memory consumption was 11.8MB. Max. memory is 4.3GB.
+ * TraceAbstraction took 4766.02ms. Allocated memory was 46.1MB in the beginning and 56.6MB in the end (delta: 10.5MB). Free memory was 21.4MB in the beginning and 28.5MB in the end (delta: -7.2MB). Peak memory consumption was 27.8MB. Max. memory is 4.3GB.
+ * Results from de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction:
+  - StatisticsResult: ErrorAutomatonStatistics
+    NumberErrorTraces: 0, NumberStatementsAllTraces: 0, NumberRelevantStatements: 0, 0.0s ErrorAutomatonConstructionTimeTotal, 0.0s FaulLocalizationTime, NumberStatementsFirstTrace: -1, TraceLengthAvg: 0, 0.0s ErrorAutomatonConstructionTimeAvg, 0.0s ErrorAutomatonDifferenceTimeAvg, 0.0s ErrorAutomatonDifferenceTimeTotal, NumberOfNoEnhancement: 0, NumberOfFiniteEnhancement: 0, NumberOfInfiniteEnhancement: 0
+  - UnprovableResult [Line: 62]: Unable to prove that assertion always holds
+    Unable to prove that assertion always holds
+ Reason: overapproximation of bitwiseOr at line 58, overapproximation of bitwiseOr at line 49, overapproximation of bitwiseAnd at line 41. 
+Possible FailurePath: 
+[L20]        havoc main_#res;
+[L21]        havoc main_#t~nondet0, main_#t~nondet1, main_~x~5, main_~y~5, main_~xx~5, main_~yy~5, main_~zz~5, main_~z~5, main_~i~5;
+[L22]        main_~x~5 := main_#t~nondet0;
+[L23]        havoc main_#t~nondet0;
+[L24]        main_~y~5 := main_#t~nondet1;
+[L25]        havoc main_#t~nondet1;
+[L26]        havoc main_~xx~5;
+[L27]        havoc main_~yy~5;
+[L28]        havoc main_~zz~5;
+[L29]        main_~z~5 := 0;
+[L30]        main_~i~5 := 0;
+       VAL   [main_~i~5=0, main_~z~5=0]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=1]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=2]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=3]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=4]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=5]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=6]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=7]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=8]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=9]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=10]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=11]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=12]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=13]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=14]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=15]
+[L57]        assume !!(main_~i~5 % 4294967296 < 16);
+[L58]        main_~z~5 := ~bitwiseOr(main_~z~5, ~bitwiseOr(~shiftLeft(~bitwiseAnd(main_~x~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5), ~shiftLeft(~bitwiseAnd(main_~y~5 % 65536, ~shiftLeft(1, main_~i~5)), main_~i~5 + 1)));
+[L59]        main_~i~5 := main_~i~5 + 1;
+       VAL   [main_~i~5=16]
+[L38]        assume !(main_~i~5 % 4294967296 < 16);
+[L39]        main_~xx~5 := main_~x~5 % 65536;
+[L40]        main_~yy~5 := main_~y~5 % 65536;
+[L41]        main_~xx~5 := ~bitwiseAnd(~bitwiseOr(main_~xx~5, ~shiftLeft(main_~xx~5, 8)), 16711935);
+[L42]        main_~xx~5 := ~bitwiseAnd(~bitwiseOr(main_~xx~5, ~shiftLeft(main_~xx~5, 4)), 252645135);
+[L43]        main_~xx~5 := ~bitwiseAnd(~bitwiseOr(main_~xx~5, ~shiftLeft(main_~xx~5, 2)), 858993459);
+[L44]        main_~xx~5 := ~bitwiseAnd(~bitwiseOr(main_~xx~5, ~shiftLeft(main_~xx~5, 1)), 1431655765);
+[L45]        main_~yy~5 := ~bitwiseAnd(~bitwiseOr(main_~yy~5, ~shiftLeft(main_~yy~5, 8)), 16711935);
+[L46]        main_~yy~5 := ~bitwiseAnd(~bitwiseOr(main_~yy~5, ~shiftLeft(main_~yy~5, 4)), 252645135);
+[L47]        main_~yy~5 := ~bitwiseAnd(~bitwiseOr(main_~yy~5, ~shiftLeft(main_~yy~5, 2)), 858993459);
+[L48]        main_~yy~5 := ~bitwiseAnd(~bitwiseOr(main_~yy~5, ~shiftLeft(main_~yy~5, 1)), 1431655765);
+[L49]        main_~zz~5 := ~bitwiseOr(main_~xx~5, ~shiftLeft(main_~yy~5, 1));
+[L50]        __VERIFIER_assert_#in~cond := (if main_~z~5 % 4294967296 == main_~zz~5 % 4294967296 then 1 else 0);
+[L51]        havoc __VERIFIER_assert_~cond;
+[L52]        __VERIFIER_assert_~cond := __VERIFIER_assert_#in~cond;
+[L53]        assume __VERIFIER_assert_~cond == 0;
+[L54]        assume !false;
+[L62]        assert false;
+
+  - StatisticsResult: Ultimate Automizer benchmark data
+    CFG has 1 procedures, 5 locations, 5 edges, 1 error locations. Started 1 CEGAR loops. OverallTime: 4.7s, OverallIterations: 4, TraceHistogramMax: 16, PathProgramHistogramMax: 0, CheckedPaths: 5, TotalPairwisePrefixLcaDivergence: 10.0, AvgPairwisePrefixLcaDivergence: 1.0, SearchMode: BFS, DuplicateFreshnessFailures: 5, FailedToFindCounterexamples: 5, StalePaths: 0, LcpsCheckedPrefixQueries: 0, LcpsStalePrefixQueries: 0, LcpsCheckedPrefixHits: 0, LcpsStalePrefixHits: 0, LcpsSearchInvocations: 0, EmptinessCheckTime: 0.0s, AutomataDifference: 0.0s, DeadEndRemovalTime: 0.0s, HoareAnnotationTime: 0.0s, InitialAbstractionConstructionTime: 0.0s, HoareTripleCheckerStatistics: , PredicateUnifierStatistics: No data available, 0.0s BasicInterpolantAutomatonTime, BiggestAbstraction: size=5occurred in iteration=0, InterpolantAutomatonStates: 39, traceCheckStatistics: No data available, InterpolantConsolidationStatistics: No data available, PathInvariantsStatistics: No data available, 0/0 InterpolantCoveringCapability, TotalInterpolationStatistics: No data available, 0.0s DumpTime, AutomataMinimizationStatistics: 0.0s AutomataMinimizationTime, 4 MinimizatonAttempts, 0 StatesRemovedByMinimization, 0 NontrivialMinimizations, HoareAnnotationStatistics: No data available, RefinementEngineStatistics: No data available, ReuseStatistics: No data available, ConComCheckerStatistics: No data available
+RESULT: Ultimate could not prove your program: unable to determine feasibility of some traces
+[2026-06-05 22:09:30,330 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (1)] Ended with exit code 0
+Received shutdown request...
+

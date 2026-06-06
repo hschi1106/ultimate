@@ -65,6 +65,26 @@ public class IsEmptyParallelPriorityKeyTest {
 	}
 
 	@Test
+	public void testBatchLcpsDoesNotUseSuccessorPriorityCacheCounts() {
+		final IsEmptyParallel.PriorityKey noCache =
+				IsEmptyParallel.makePriorityKey(TraceSearchSelectionMode.BATCH_LCPS, 0, 0, 0);
+		final IsEmptyParallel.PriorityKey withCache =
+				IsEmptyParallel.makePriorityKey(TraceSearchSelectionMode.BATCH_LCPS, 0, 99, 99);
+
+		assertEquals(0, noCache.compareTo(withCache));
+	}
+
+	@Test
+	public void testAdaptiveBatchLcpsDoesNotUseSuccessorPriorityCacheCounts() {
+		final IsEmptyParallel.PriorityKey noCache =
+				IsEmptyParallel.makePriorityKey(TraceSearchSelectionMode.ADAPTIVE_BATCH_LCPS, 0, 0, 0);
+		final IsEmptyParallel.PriorityKey withCache =
+				IsEmptyParallel.makePriorityKey(TraceSearchSelectionMode.ADAPTIVE_BATCH_LCPS, 0, 99, 99);
+
+		assertEquals(0, noCache.compareTo(withCache));
+	}
+
+	@Test
 	public void testLcpsModeUsesCheckedAndStaleCacheCounts() {
 		final IsEmptyParallel.PriorityKey baseline =
 				IsEmptyParallel.makePriorityKey(TraceSearchSelectionMode.LCPS, 0, 0, 0);
@@ -75,5 +95,38 @@ public class IsEmptyParallelPriorityKeyTest {
 
 		assertTrue(baseline.compareTo(checkedHit) < 0);
 		assertTrue(baseline.compareTo(staleHit) < 0);
+	}
+
+	@Test
+	public void testLcpsFullUsesSameCacheOrderAsLcps() {
+		final IsEmptyParallel.PriorityKey baseline =
+				IsEmptyParallel.makePriorityKey(TraceSearchSelectionMode.LCPS_FULL, 0, 0, 0);
+		final IsEmptyParallel.PriorityKey checkedHit =
+				IsEmptyParallel.makePriorityKey(TraceSearchSelectionMode.LCPS_FULL, 0, 1, 0);
+		final IsEmptyParallel.PriorityKey staleHit =
+				IsEmptyParallel.makePriorityKey(TraceSearchSelectionMode.LCPS_FULL, 0, 0, 1);
+
+		assertTrue(baseline.compareTo(checkedHit) < 0);
+		assertTrue(baseline.compareTo(staleHit) < 0);
+	}
+
+	@Test
+	public void testStaleFirstModePrioritizesStaleBeforeChecked() {
+		final IsEmptyParallel.PriorityKey lowerStale =
+				IsEmptyParallel.makePriorityKey(TraceSearchSelectionMode.LCPS_STALE_FIRST, 0, 99, 0);
+		final IsEmptyParallel.PriorityKey higherStale =
+				IsEmptyParallel.makePriorityKey(TraceSearchSelectionMode.LCPS_STALE_FIRST, 0, 0, 1);
+
+		assertTrue(lowerStale.compareTo(higherStale) < 0);
+	}
+
+	@Test
+	public void testLcpsFullStaleFirstKeepsActiveDominance() {
+		final IsEmptyParallel.PriorityKey lowerActive =
+				IsEmptyParallel.makePriorityKey(TraceSearchSelectionMode.LCPS_FULL_STALE_FIRST, 0, 99, 99);
+		final IsEmptyParallel.PriorityKey higherActive =
+				IsEmptyParallel.makePriorityKey(TraceSearchSelectionMode.LCPS_FULL_STALE_FIRST, 1, 0, 0);
+
+		assertTrue(lowerActive.compareTo(higherActive) < 0);
 	}
 }

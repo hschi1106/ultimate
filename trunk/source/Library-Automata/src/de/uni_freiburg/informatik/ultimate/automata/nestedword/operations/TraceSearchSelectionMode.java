@@ -44,5 +44,44 @@ public enum TraceSearchSelectionMode {
 	/**
 	 * Least-Covered Prefix Search: PAPER priority extended by checked/stale prefix coverage.
 	 */
-	LCPS
+	LCPS,
+	/**
+	 * LCPS that keeps cache-guided successor ordering after all active traces diverged, until the cache no longer covers
+	 * any successor.
+	 */
+	LCPS_FULL,
+	/**
+	 * LCPS ablation that prioritizes stale prefix coverage before checked prefix coverage.
+	 */
+	LCPS_STALE_FIRST,
+	/**
+	 * LCPS_FULL ablation that prioritizes stale prefix coverage before checked prefix coverage.
+	 */
+	LCPS_FULL_STALE_FIRST,
+	/**
+	 * Batch LCPS selects a group of fresh runs for currently idle workers. It does not change successor ordering inside
+	 * IsEmptyParallel and uses prefix coverage only as an outer-loop batch selection signal.
+	 */
+	BATCH_LCPS,
+	/**
+	 * Adaptive wrapper around BATCH_LCPS. A single configured trigger decides whether a dispatch uses BATCH_LCPS or
+	 * falls back to PAPER-style one-by-one search.
+	 */
+	ADAPTIVE_BATCH_LCPS;
+
+	public boolean usesPrefixCoverage() {
+		return this == LCPS || this == LCPS_FULL || this == LCPS_STALE_FIRST || this == LCPS_FULL_STALE_FIRST;
+	}
+
+	public boolean continuesAfterActiveDivergence() {
+		return this == LCPS_FULL || this == LCPS_FULL_STALE_FIRST;
+	}
+
+	public boolean staleCoverageFirst() {
+		return this == LCPS_STALE_FIRST || this == LCPS_FULL_STALE_FIRST;
+	}
+
+	public boolean usesBatchSelection() {
+		return this == BATCH_LCPS || this == ADAPTIVE_BATCH_LCPS;
+	}
 }

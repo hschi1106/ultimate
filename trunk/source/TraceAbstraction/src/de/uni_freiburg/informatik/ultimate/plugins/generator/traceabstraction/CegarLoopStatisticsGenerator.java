@@ -64,9 +64,35 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 	private int mParallelDuplicateFreshnessFailures = 0;
 	private int mParallelFailedToFindCounterexamples = 0;
 	private int mParallelStalePaths = 0;
+	private int mLcpsCheckedPrefixQueries = 0;
+	private int mLcpsStalePrefixQueries = 0;
 	private int mLcpsCheckedPrefixHits = 0;
 	private int mLcpsStalePrefixHits = 0;
 	private int mLcpsSearchInvocations = 0;
+	private int mLcpsFullCacheSuffixInvocations = 0;
+	private int mLcpsFullCacheSuffixFallbacks = 0;
+	private int mLcpsEffectivePriorityDecisions = 0;
+	private int mBatchLcpsInvocations = 0;
+	private int mBatchLcpsAvailableSlotsTotal = 0;
+	private int mBatchLcpsCandidatesGenerated = 0;
+	private int mBatchLcpsCandidatesSelected = 0;
+	private int mBatchLcpsCandidateGenerationFailures = 0;
+	private double mBatchLcpsAvgCandidatePoolSize = 0.0;
+	private double mBatchLcpsAvgSelectedBatchSize = 0.0;
+	private int mBatchLcpsEffectiveBatchDecisions = 0;
+	private long mBatchLcpsCandidateGenerationTimeMs = 0;
+	private long mBatchLcpsSelectionTimeMs = 0;
+	private String mAdaptiveBatchTriggerMode = "n/a";
+	private int mAdaptiveBatchInvocations = 0;
+	private int mAdaptiveBatchFallbacks = 0;
+	private int mAdaptiveTriggeredByDuplicate = 0;
+	private int mAdaptiveTriggeredByStale = 0;
+	private int mAdaptiveTriggeredBySearchFailed = 0;
+	private int mAdaptiveTriggeredByIdleSlot = 0;
+	private int mAdaptiveTriggeredByFirstFill = 0;
+	private int mAdaptiveTriggeredByFirstFillOrStale = 0;
+	private int mAdaptiveTriggeredByThreadsGe4FirstFill = 0;
+	private int mAdaptiveMinAvailableSlots = 0;
 
 	@Override
 	public Collection<String> getKeys() {
@@ -149,15 +175,54 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 	}
 
 	public void reportParallelTraceSearchStatistics(final String searchMode, final int duplicateFreshnessFailures,
-			final int failedToFindCounterexamples, final int stalePaths, final int lcpsCheckedPrefixHits,
-			final int lcpsStalePrefixHits, final int lcpsSearchInvocations) {
+			final int failedToFindCounterexamples, final int stalePaths, final int lcpsCheckedPrefixQueries,
+			final int lcpsStalePrefixQueries, final int lcpsCheckedPrefixHits, final int lcpsStalePrefixHits,
+			final int lcpsSearchInvocations, final int lcpsFullCacheSuffixInvocations,
+			final int lcpsFullCacheSuffixFallbacks, final int lcpsEffectivePriorityDecisions,
+			final int batchLcpsInvocations, final int batchLcpsAvailableSlotsTotal,
+			final int batchLcpsCandidatesGenerated, final int batchLcpsCandidatesSelected,
+			final int batchLcpsCandidateGenerationFailures, final double batchLcpsAvgCandidatePoolSize,
+				final double batchLcpsAvgSelectedBatchSize, final int batchLcpsEffectiveBatchDecisions,
+				final long batchLcpsCandidateGenerationTimeMs, final long batchLcpsSelectionTimeMs,
+				final String adaptiveBatchTriggerMode, final int adaptiveBatchInvocations,
+				final int adaptiveBatchFallbacks, final int adaptiveTriggeredByDuplicate,
+				final int adaptiveTriggeredByStale, final int adaptiveTriggeredBySearchFailed,
+				final int adaptiveTriggeredByIdleSlot, final int adaptiveTriggeredByFirstFill,
+				final int adaptiveTriggeredByFirstFillOrStale, final int adaptiveTriggeredByThreadsGe4FirstFill,
+				final int adaptiveMinAvailableSlots) {
 		mParallelSearchMode = searchMode;
 		mParallelDuplicateFreshnessFailures = duplicateFreshnessFailures;
 		mParallelFailedToFindCounterexamples = failedToFindCounterexamples;
 		mParallelStalePaths = stalePaths;
+		mLcpsCheckedPrefixQueries = lcpsCheckedPrefixQueries;
+		mLcpsStalePrefixQueries = lcpsStalePrefixQueries;
 		mLcpsCheckedPrefixHits = lcpsCheckedPrefixHits;
 		mLcpsStalePrefixHits = lcpsStalePrefixHits;
 		mLcpsSearchInvocations = lcpsSearchInvocations;
+		mLcpsFullCacheSuffixInvocations = lcpsFullCacheSuffixInvocations;
+		mLcpsFullCacheSuffixFallbacks = lcpsFullCacheSuffixFallbacks;
+		mLcpsEffectivePriorityDecisions = lcpsEffectivePriorityDecisions;
+		mBatchLcpsInvocations = batchLcpsInvocations;
+		mBatchLcpsAvailableSlotsTotal = batchLcpsAvailableSlotsTotal;
+		mBatchLcpsCandidatesGenerated = batchLcpsCandidatesGenerated;
+		mBatchLcpsCandidatesSelected = batchLcpsCandidatesSelected;
+		mBatchLcpsCandidateGenerationFailures = batchLcpsCandidateGenerationFailures;
+		mBatchLcpsAvgCandidatePoolSize = batchLcpsAvgCandidatePoolSize;
+		mBatchLcpsAvgSelectedBatchSize = batchLcpsAvgSelectedBatchSize;
+		mBatchLcpsEffectiveBatchDecisions = batchLcpsEffectiveBatchDecisions;
+		mBatchLcpsCandidateGenerationTimeMs = batchLcpsCandidateGenerationTimeMs;
+		mBatchLcpsSelectionTimeMs = batchLcpsSelectionTimeMs;
+		mAdaptiveBatchTriggerMode = adaptiveBatchTriggerMode;
+			mAdaptiveBatchInvocations = adaptiveBatchInvocations;
+			mAdaptiveBatchFallbacks = adaptiveBatchFallbacks;
+			mAdaptiveTriggeredByDuplicate = adaptiveTriggeredByDuplicate;
+			mAdaptiveTriggeredByStale = adaptiveTriggeredByStale;
+			mAdaptiveTriggeredBySearchFailed = adaptiveTriggeredBySearchFailed;
+			mAdaptiveTriggeredByIdleSlot = adaptiveTriggeredByIdleSlot;
+			mAdaptiveTriggeredByFirstFill = adaptiveTriggeredByFirstFill;
+			mAdaptiveTriggeredByFirstFillOrStale = adaptiveTriggeredByFirstFillOrStale;
+			mAdaptiveTriggeredByThreadsGe4FirstFill = adaptiveTriggeredByThreadsGe4FirstFill;
+			mAdaptiveMinAvailableSlots = adaptiveMinAvailableSlots;
 	}
 
 	@Override
@@ -190,9 +255,35 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 		case DuplicateFreshnessFailures -> mParallelDuplicateFreshnessFailures;
 		case FailedToFindCounterexamples -> mParallelFailedToFindCounterexamples;
 		case StalePaths -> mParallelStalePaths;
+		case LcpsCheckedPrefixQueries -> mLcpsCheckedPrefixQueries;
+		case LcpsStalePrefixQueries -> mLcpsStalePrefixQueries;
 		case LcpsCheckedPrefixHits -> mLcpsCheckedPrefixHits;
 		case LcpsStalePrefixHits -> mLcpsStalePrefixHits;
 		case LcpsSearchInvocations -> mLcpsSearchInvocations;
+		case LcpsFullCacheSuffixInvocations -> mLcpsFullCacheSuffixInvocations;
+		case LcpsFullCacheSuffixFallbacks -> mLcpsFullCacheSuffixFallbacks;
+		case LcpsEffectivePriorityDecisions -> mLcpsEffectivePriorityDecisions;
+		case BatchLcpsInvocations -> mBatchLcpsInvocations;
+		case BatchLcpsAvailableSlotsTotal -> mBatchLcpsAvailableSlotsTotal;
+		case BatchLcpsCandidatesGenerated -> mBatchLcpsCandidatesGenerated;
+		case BatchLcpsCandidatesSelected -> mBatchLcpsCandidatesSelected;
+		case BatchLcpsCandidateGenerationFailures -> mBatchLcpsCandidateGenerationFailures;
+		case BatchLcpsAvgCandidatePoolSize -> mBatchLcpsAvgCandidatePoolSize;
+		case BatchLcpsAvgSelectedBatchSize -> mBatchLcpsAvgSelectedBatchSize;
+		case BatchLcpsEffectiveBatchDecisions -> mBatchLcpsEffectiveBatchDecisions;
+		case BatchLcpsCandidateGenerationTimeMs -> mBatchLcpsCandidateGenerationTimeMs;
+		case BatchLcpsSelectionTimeMs -> mBatchLcpsSelectionTimeMs;
+		case AdaptiveBatchTriggerMode -> mAdaptiveBatchTriggerMode;
+			case AdaptiveBatchInvocations -> mAdaptiveBatchInvocations;
+			case AdaptiveBatchFallbacks -> mAdaptiveBatchFallbacks;
+			case AdaptiveTriggeredByDuplicate -> mAdaptiveTriggeredByDuplicate;
+			case AdaptiveTriggeredByStale -> mAdaptiveTriggeredByStale;
+			case AdaptiveTriggeredBySearchFailed -> mAdaptiveTriggeredBySearchFailed;
+			case AdaptiveTriggeredByIdleSlot -> mAdaptiveTriggeredByIdleSlot;
+			case AdaptiveTriggeredByFirstFill -> mAdaptiveTriggeredByFirstFill;
+			case AdaptiveTriggeredByFirstFillOrStale -> mAdaptiveTriggeredByFirstFillOrStale;
+			case AdaptiveTriggeredByThreadsGe4FirstFill -> mAdaptiveTriggeredByThreadsGe4FirstFill;
+			case AdaptiveMinAvailableSlots -> mAdaptiveMinAvailableSlots;
 		case BiggestAbstraction -> mBiggestAbstraction;
 		case InterpolantAutomatonStates -> mInterpolantAutomatonStates;
 		case InterpolantCoveringCapability -> mBCI;

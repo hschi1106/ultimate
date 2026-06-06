@@ -562,6 +562,23 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 	private static final boolean DEF_PARALLEL_TRACE_SEARCH_TRACK_STALE_PREFIXES = true;
 	private static final String DESC_PARALLEL_TRACE_SEARCH_TRACK_STALE_PREFIXES =
 			"Check whether completed worker traces are still accepted by the current abstraction and record stale prefixes for LCPS scoring.";
+	public static final String LABEL_BATCH_LCPS_CANDIDATE_MULTIPLIER = "Batch LCPS candidate multiplier";
+	private static final int DEF_BATCH_LCPS_CANDIDATE_MULTIPLIER = 4;
+	private static final String DESC_BATCH_LCPS_CANDIDATE_MULTIPLIER =
+			"Generate up to multiplier times the number of idle worker slots as the BATCH_LCPS candidate pool.";
+	public static final String LABEL_BATCH_LCPS_CANDIDATE_CAP = "Batch LCPS candidate cap";
+	private static final int DEF_BATCH_LCPS_CANDIDATE_CAP = 32;
+	private static final String DESC_BATCH_LCPS_CANDIDATE_CAP =
+			"Upper bound for the BATCH_LCPS candidate pool generated before greedy batch selection.";
+	public static final String LABEL_ADAPTIVE_BATCH_TRIGGER_MODE = "Adaptive batch trigger mode";
+	private static final AdaptiveBatchTriggerMode DEF_ADAPTIVE_BATCH_TRIGGER_MODE =
+			AdaptiveBatchTriggerMode.NEVER_BATCH;
+	private static final String DESC_ADAPTIVE_BATCH_TRIGGER_MODE =
+			"Single signal that enables BATCH_LCPS for one adaptive dispatch; otherwise PAPER fallback is used.";
+	public static final String LABEL_ADAPTIVE_BATCH_MIN_AVAILABLE_SLOTS = "Adaptive batch min available slots";
+	private static final int DEF_ADAPTIVE_BATCH_MIN_AVAILABLE_SLOTS = 2;
+	private static final String DESC_ADAPTIVE_BATCH_MIN_AVAILABLE_SLOTS =
+			"Minimum number of currently idle worker slots required before ADAPTIVE_BATCH_LCPS may use batch selection.";
 	public static final String LABEL_SEARCH_LOOP_BOUND = "search loop bound";
 	private static final String DESC_SEARCH_LOOP_BOUND =
 			"Limits how often the IsEmptyParallel search is allowed to visit the same transition letter pair. Default -1 means infinetly often";
@@ -868,6 +885,17 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 				new UltimatePreferenceItem<>(LABEL_PARALLEL_TRACE_SEARCH_TRACK_STALE_PREFIXES,
 						DEF_PARALLEL_TRACE_SEARCH_TRACK_STALE_PREFIXES, DESC_PARALLEL_TRACE_SEARCH_TRACK_STALE_PREFIXES,
 						PreferenceType.Boolean),
+				new UltimatePreferenceItem<>(LABEL_BATCH_LCPS_CANDIDATE_MULTIPLIER,
+						DEF_BATCH_LCPS_CANDIDATE_MULTIPLIER, DESC_BATCH_LCPS_CANDIDATE_MULTIPLIER,
+						PreferenceType.Integer, new IUltimatePreferenceItemValidator.IntegerValidator(1, 1_0000_000)),
+				new UltimatePreferenceItem<>(LABEL_BATCH_LCPS_CANDIDATE_CAP, DEF_BATCH_LCPS_CANDIDATE_CAP,
+						DESC_BATCH_LCPS_CANDIDATE_CAP, PreferenceType.Integer,
+						new IUltimatePreferenceItemValidator.IntegerValidator(1, 1_0000_000)),
+				new UltimatePreferenceItem<>(LABEL_ADAPTIVE_BATCH_TRIGGER_MODE, DEF_ADAPTIVE_BATCH_TRIGGER_MODE,
+						DESC_ADAPTIVE_BATCH_TRIGGER_MODE, PreferenceType.Combo, AdaptiveBatchTriggerMode.values()),
+				new UltimatePreferenceItem<>(LABEL_ADAPTIVE_BATCH_MIN_AVAILABLE_SLOTS,
+						DEF_ADAPTIVE_BATCH_MIN_AVAILABLE_SLOTS, DESC_ADAPTIVE_BATCH_MIN_AVAILABLE_SLOTS,
+						PreferenceType.Integer, new IUltimatePreferenceItemValidator.IntegerValidator(1, 1_0000_000)),
 				new UltimatePreferenceItem<>(LABEL_SEARCH_LOOP_BOUND, DEF_SEARCH_LOOP_BOUND, DESC_SEARCH_LOOP_BOUND,
 						PreferenceType.Integer, new IUltimatePreferenceItemValidator.IntegerValidator(-1, 1_0000_000)),
 				new UltimatePreferenceItem<>(LABEL_PARALLELSEARCH_ACTIVE_CEX_ONLY, DEF_PARALLELSEARCH_ACTIVE_CEX_ONLY,
@@ -889,6 +917,11 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 	 */
 	public enum AbstractInterpretationMode {
 		NONE, USE_PREDICATES, USE_PATH_PROGRAM, USE_CANONICAL, USE_TOTAL,
+	}
+
+	public enum AdaptiveBatchTriggerMode {
+		DUPLICATE_ONLY, STALE_ONLY, SEARCH_FAILED_ONLY, IDLE_SLOT_ONLY, FIRST_FILL_ONLY, FIRST_FILL_OR_STALE,
+		THREADS_GE_4_FIRST_FILL, ALWAYS_BATCH, NEVER_BATCH,
 	}
 
 	/**

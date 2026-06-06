@@ -97,6 +97,10 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 	private final List<PathStepKey<LETTER, STATE>> mCurrentPrefixKeys = new ArrayList<>();
 	private final TraceSearchSelectionMode mSearchMode;
 	private final PrefixCoverageCache<LETTER, STATE> mPrefixCoverageCache;
+	private int mLcpsFullCacheSuffixInvocations;
+	private int mLcpsFullCacheSuffixFallbacks;
+	private int mLcpsEffectivePriorityDecisions;
+	private int mCandidateOrder;
 
 	/**
 	 * HashMap used for parallel trace abstraction Maps TraceHash to Trace, has an entry for every counterexample
@@ -413,24 +417,26 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 	private PQState createPQState(final int activeContinuationCount, final STATE state, final LETTER symbol,
 			final STATE succ, final STATE stateK, final ArrayList<Integer> counterexamples, final boolean call,
 			final boolean ret) {
-		return new PQState(makePriorityKey(activeContinuationCount, symbol, succ), state, symbol, succ, stateK,
-				counterexamples, call, ret);
-	}
-
-	private PriorityKey makePriorityKey(final int activeContinuationCount, final LETTER symbol, final STATE succ) {
 		int checkedPrefixCount = 0;
 		int stalePrefixCount = 0;
-		if (mSearchMode == TraceSearchSelectionMode.LCPS && mPrefixCoverageCache != null && symbol != null) {
+		if (mSearchMode.usesPrefixCoverage() && mPrefixCoverageCache != null && symbol != null) {
 			final List<PathStepKey<LETTER, STATE>> candidatePrefix = makeCandidatePrefix(symbol, succ);
 			checkedPrefixCount = mPrefixCoverageCache.getCheckedPrefixCount(candidatePrefix);
 			stalePrefixCount = mPrefixCoverageCache.getStalePrefixCount(candidatePrefix);
 		}
-		return makePriorityKey(mSearchMode, activeContinuationCount, checkedPrefixCount, stalePrefixCount);
+		final int priorityActiveCount =
+				mSearchMode.continuesAfterActiveDivergence() && counterexamples.isEmpty() ? 0 : activeContinuationCount;
+		return new PQState(makePriorityKey(mSearchMode, priorityActiveCount, checkedPrefixCount, stalePrefixCount),
+				state, symbol, succ, stateK, counterexamples, call, ret, checkedPrefixCount, stalePrefixCount,
+				mCandidateOrder++);
 	}
 
 	static PriorityKey makePriorityKey(final TraceSearchSelectionMode searchMode, final int activeContinuationCount,
 			final int checkedPrefixCount, final int stalePrefixCount) {
-		if (searchMode == TraceSearchSelectionMode.LCPS) {
+		if (searchMode.usesPrefixCoverage()) {
+			if (searchMode.staleCoverageFirst()) {
+				return new PriorityKey(activeContinuationCount, stalePrefixCount, checkedPrefixCount, 0);
+			}
 			return new PriorityKey(activeContinuationCount, checkedPrefixCount, stalePrefixCount, 0);
 		}
 		return new PriorityKey(activeContinuationCount, 0, 0, 0);
@@ -443,12 +449,16 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 		return candidatePrefix;
 	}
 
+	private Comparator<PQState> pqComparator() {
+		return Comparator.comparing(PQState::getPriorityKey).thenComparingInt(PQState::getCandidateOrder);
+	}
+
 	/**
 	 * Sort the outgoing transitions by how many @param counterexamples cover them. The least has highest priority.
 	 */
 	private PriorityQueue<PQState> pickSuccToExplore(final int position, final STATE state, final STATE stateK,
 			final ArrayList<Integer> counterexamples) {
-		final PriorityQueue<PQState> pq = new PriorityQueue<>(Comparator.comparing(PQState::getPriorityKey));
+		final PriorityQueue<PQState> pq = new PriorityQueue<>(pqComparator());
 
 		if (mSummaryReturnPred.containsKey(state)) {
 			if (!mSummaryReturnSymbol.containsKey(state)) {
@@ -459,6 +469,7 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 				pq.add(getSuccFromSummary(entry, position, state, counterexamples));
 			}
 			// after we process a summary we must not process the return anymore!!
+			reportEffectivePriorityDecision(pq);
 			return pq;
 		}
 
@@ -498,6 +509,7 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 
 		if (stateK == mOperand.getEmptyStackState()) {
 			// there is no return transition
+			reportEffectivePriorityDecision(pq);
 			return pq;
 		}
 		for (final STATE stateKk : getCallStatesOfCallState(stateK)) {
@@ -518,11 +530,26 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 				firstIteration = false;
 			}
 		}
+		reportEffectivePriorityDecision(pq);
 		return pq;
 	}
 
+	private void reportEffectivePriorityDecision(final Collection<PQState> candidates) {
+		if (!mSearchMode.usesPrefixCoverage() || candidates.size() <= 1) {
+			return;
+		}
+		final PQState paperBest = candidates.stream()
+				.min(Comparator.comparingInt(PQState::getActiveContinuationCount)
+						.thenComparingInt(PQState::getCandidateOrder))
+				.orElse(null);
+		final PQState actualBest = candidates.stream().min(pqComparator()).orElse(null);
+		if (paperBest != null && actualBest != null && !paperBest.sameTransition(actualBest)) {
+			mLcpsEffectivePriorityDecisions++;
+		}
+	}
+
 	private PriorityQueue<PQState> pickStartToExplore(final Collection<STATE> states, final Set<Integer> set) {
-		final PriorityQueue<PQState> pq = new PriorityQueue<>(Comparator.comparing(PQState::getPriorityKey));
+		final PriorityQueue<PQState> pq = new PriorityQueue<>(pqComparator());
 
 		for (final STATE state : states) {
 			final ArrayList<Integer> activeCounterexamples = new ArrayList<>();
@@ -582,27 +609,17 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 
 		mVisitedPairs.clear(); // reset visited Pairs, then add start of subsearch
 		if (counterexamples.isEmpty()) {
-			final IsEmptyHeuristic<LETTER, STATE> runsearch;
-			if (mGoalStates != null) {
-				final Predicate<STATE> funIsForbiddenState = a -> false;
-				final Predicate<STATE> goals = a -> mGoalStates.contains(a);
-				final Set<STATE> startset = new HashSet<>(mStartStates);
-				runsearch = new IsEmptyHeuristic<>(mServices, mOperand, startset, funIsForbiddenState, goals,
-						IHeuristic.getHeuristic(AStarHeuristic.ZERO, null, 0), new ArrayList<>(mCurrentPrefix));
-			} else {
-				runsearch = new IsEmptyHeuristic<>(mServices, mOperand,
-						IHeuristic.getHeuristic(AStarHeuristic.ZERO, null, 0), new ArrayList<>(mCurrentPrefix));
+			if (!mSearchMode.continuesAfterActiveDivergence()) {
+				return shortestCompletionFromCurrentPrefix();
 			}
-			final NestedRun<LETTER, STATE> run = runsearch.getNestedRun();
-			if (run == null) {
-				return run;
+			final PriorityQueue<PQState> pqStart =
+					pickSuccToExplore(positionOfThisSubSearch, state, stateK, counterexamples);
+			if (!shouldContinueWithCacheAfterActiveDivergence(pqStart)) {
+				mLcpsFullCacheSuffixFallbacks++;
+				return shortestCompletionFromCurrentPrefix();
 			}
-			for (final Integer cexHash : mActiveCounterexamples.keySet()) {
-				if (cexHash == run.getWord().asList().hashCode()) {
-					throw new AssertionError("Not a fresh counterexample!");
-				}
-			}
-			return run; // is null if isEmpty fails, leads to backtracking
+			mLcpsFullCacheSuffixInvocations++;
+			return explorePriorityQueue(positionOfThisSubSearch, state, stateK, pqStart);
 		}
 
 		// equality intended here
@@ -611,52 +628,89 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 			// getAcceptingRunHelperReturn(state, stateK);
 		}
 
-		// enqueues successors
-		if (!counterexamples.isEmpty()) {
-
-			final PriorityQueue<PQState> pqStart =
-					pickSuccToExplore(positionOfThisSubSearch, state, stateK, counterexamples); // statek is not
-			if (pqStart.isEmpty()) {
-				return null;
-			}
-			while (!pqStart.isEmpty()) {
-				final PQState startpq = pqStart.poll();
-				if (startpq == null) {
-					throw new AssertionError("No Priority Queue");
-				}
-				final STATE newState = startpq.getState(); // only needed for summaries
-				final STATE newStateK = startpq.getStateK();
-				final STATE succ = startpq.getSucc();
-				final LETTER symbol = startpq.getLetter();
-
-				NestedRun<LETTER, STATE> runToGoal;
-				addToCurrentPrefix(succ, symbol);
-				if (startpq.isCall()) {
-					markCallVisited(newState, newStateK);
-					runToGoal = constructRunFromStateToNextBranch(positionOfThisSubSearch,
-							new DoubleDecker<>(newState, succ), startpq.getCounterexamplesUnderConsideration());
-
-					unmarkCall(newState, newStateK);
-
-				} else if (startpq.isReturn()) {
-					// stateK is the hierarchical pre of state
-					// newStateK is the stateKK
-					unmarkCall(stateK, newStateK);
-					addSummary(newStateK, succ, newState, symbol);
-					runToGoal = constructRunFromStateToNextBranch(positionOfThisSubSearch,
-							new DoubleDecker<>(newStateK, succ), startpq.getCounterexamplesUnderConsideration());
-					markCallVisited(stateK, newStateK);
-				} else {
-					runToGoal = constructRunFromStateToNextBranch(positionOfThisSubSearch,
-							new DoubleDecker<>(newStateK, succ), startpq.getCounterexamplesUnderConsideration());
-				}
-				removeFromCurrentPrefix(succ, symbol);
-				if (runToGoal != null) {
-					return runToGoal;
-				}
-			}
+		final PriorityQueue<PQState> pqStart =
+				pickSuccToExplore(positionOfThisSubSearch, state, stateK, counterexamples); // statek is not
+		if (pqStart.isEmpty()) {
+			return null;
+		}
+		final NestedRun<LETTER, STATE> runToGoal =
+				explorePriorityQueue(positionOfThisSubSearch, state, stateK, pqStart);
+		if (runToGoal != null) {
+			return runToGoal;
 		}
 		mCountRecursionSteps -= 1;
+		return null;
+	}
+
+	private NestedRun<LETTER, STATE> shortestCompletionFromCurrentPrefix() throws AutomataOperationCanceledException {
+		final IsEmptyHeuristic<LETTER, STATE> runsearch;
+		if (mGoalStates != null) {
+			final Predicate<STATE> funIsForbiddenState = a -> false;
+			final Predicate<STATE> goals = a -> mGoalStates.contains(a);
+			final Set<STATE> startset = new HashSet<>(mStartStates);
+			runsearch = new IsEmptyHeuristic<>(mServices, mOperand, startset, funIsForbiddenState, goals,
+					IHeuristic.getHeuristic(AStarHeuristic.ZERO, null, 0), new ArrayList<>(mCurrentPrefix));
+		} else {
+			runsearch = new IsEmptyHeuristic<>(mServices, mOperand,
+					IHeuristic.getHeuristic(AStarHeuristic.ZERO, null, 0), new ArrayList<>(mCurrentPrefix));
+		}
+		final NestedRun<LETTER, STATE> run = runsearch.getNestedRun();
+		if (run == null) {
+			return run;
+		}
+		for (final Integer cexHash : mActiveCounterexamples.keySet()) {
+			if (cexHash == run.getWord().asList().hashCode()) {
+				throw new AssertionError("Not a fresh counterexample!");
+			}
+		}
+		return run; // is null if isEmpty fails, leads to backtracking
+	}
+
+	private boolean shouldContinueWithCacheAfterActiveDivergence(final Collection<PQState> candidates) {
+		if (!mSearchMode.continuesAfterActiveDivergence() || mPrefixCoverageCache == null) {
+			return false;
+		}
+		return candidates.stream().anyMatch(PQState::hasCacheCoverage);
+	}
+
+	private NestedRun<LETTER, STATE> explorePriorityQueue(final int positionOfThisSubSearch, final STATE state,
+			final STATE stateK, final PriorityQueue<PQState> pqStart) throws AutomataOperationCanceledException {
+		while (!pqStart.isEmpty()) {
+			final PQState startpq = pqStart.poll();
+			if (startpq == null) {
+				throw new AssertionError("No Priority Queue");
+			}
+			final STATE newState = startpq.getState(); // only needed for summaries
+			final STATE newStateK = startpq.getStateK();
+			final STATE succ = startpq.getSucc();
+			final LETTER symbol = startpq.getLetter();
+
+			NestedRun<LETTER, STATE> runToGoal;
+			addToCurrentPrefix(succ, symbol);
+			if (startpq.isCall()) {
+				markCallVisited(newState, newStateK);
+				runToGoal = constructRunFromStateToNextBranch(positionOfThisSubSearch,
+						new DoubleDecker<>(newState, succ), startpq.getCounterexamplesUnderConsideration());
+
+				unmarkCall(newState, newStateK);
+
+			} else if (startpq.isReturn()) {
+				// stateK is the hierarchical pre of state
+				// newStateK is the stateKK
+				unmarkCall(stateK, newStateK);
+				addSummary(newStateK, succ, newState, symbol);
+				runToGoal = constructRunFromStateToNextBranch(positionOfThisSubSearch,
+						new DoubleDecker<>(newStateK, succ), startpq.getCounterexamplesUnderConsideration());
+				markCallVisited(stateK, newStateK);
+			} else {
+				runToGoal = constructRunFromStateToNextBranch(positionOfThisSubSearch,
+						new DoubleDecker<>(newStateK, succ), startpq.getCounterexamplesUnderConsideration());
+			}
+			removeFromCurrentPrefix(succ, symbol);
+			if (runToGoal != null) {
+				return runToGoal;
+			}
+		}
 		return null;
 	}
 
@@ -713,6 +767,18 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 		return mTimeSpendSearching;
 	}
 
+	public int getLcpsFullCacheSuffixInvocations() {
+		return mLcpsFullCacheSuffixInvocations;
+	}
+
+	public int getLcpsFullCacheSuffixFallbacks() {
+		return mLcpsFullCacheSuffixFallbacks;
+	}
+
+	public int getLcpsEffectivePriorityDecisions() {
+		return mLcpsEffectivePriorityDecisions;
+	}
+
 	/**
 	 * Lexicographic heuristic key for successor ordering only; it does not decide emptiness or suppress candidates.
 	 */
@@ -728,6 +794,10 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 			mCheckedPrefixCount = checkedPrefixCount;
 			mStalePrefixCount = stalePrefixCount;
 			mDistanceToAccepting = distanceToAccepting;
+		}
+
+		public int getActiveContinuationCount() {
+			return mActiveContinuationCount;
 		}
 
 		@Override
@@ -757,9 +827,13 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 		private final LETTER mSymbol;
 		private final boolean mCallTransition;
 		private final boolean mReturnTransition;
+		private final int mCheckedPrefixCount;
+		private final int mStalePrefixCount;
+		private final int mCandidateOrder;
 
 		public PQState(final PriorityKey priorityKey, final STATE state, final LETTER symbol, final STATE succ,
-				final STATE stateK, final ArrayList<Integer> counterexamples, final boolean call, final boolean ret) {
+				final STATE stateK, final ArrayList<Integer> counterexamples, final boolean call, final boolean ret,
+				final int checkedPrefixCount, final int stalePrefixCount, final int candidateOrder) {
 			mPriorityKey = priorityKey;
 			mState = state;
 			mSucc = succ;
@@ -768,11 +842,32 @@ public final class IsEmptyParallel<LETTER, STATE> extends IsEmpty<LETTER, STATE>
 			mSymbol = symbol;
 			mCallTransition = call;
 			mReturnTransition = ret;
+			mCheckedPrefixCount = checkedPrefixCount;
+			mStalePrefixCount = stalePrefixCount;
+			mCandidateOrder = candidateOrder;
 			assert !mCallTransition || !mReturnTransition;
 		}
 
 		public PriorityKey getPriorityKey() {
 			return mPriorityKey;
+		}
+
+		public int getActiveContinuationCount() {
+			return mPriorityKey.getActiveContinuationCount();
+		}
+
+		public int getCandidateOrder() {
+			return mCandidateOrder;
+		}
+
+		public boolean hasCacheCoverage() {
+			return mCheckedPrefixCount > 0 || mStalePrefixCount > 0;
+		}
+
+		public boolean sameTransition(final PQState other) {
+			return mState == other.mState && mSucc == other.mSucc && mStateK == other.mStateK
+					&& mSymbol == other.mSymbol && mCallTransition == other.mCallTransition
+					&& mReturnTransition == other.mReturnTransition;
 		}
 
 		public STATE getState() {

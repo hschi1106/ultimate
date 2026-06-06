@@ -1,0 +1,198 @@
+This is Ultimate 0.3.1-cache-f5c6788a5b-m
+[2026-06-05 21:41:24,595 INFO  L188        SettingsManager]: Resetting all preferences to default values...
+[2026-06-05 21:41:24,626 INFO  L114        SettingsManager]: Loading settings from /home/hschi1106/ultimate/trunk/examples/Interactive/settings/ResetSettingsCamel.epf
+[2026-06-05 21:41:24,628 WARN  L101        SettingsManager]: Preference file contains the following unknown settings:
+[2026-06-05 21:41:24,628 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.blockencoding.Rewrite not-equals during SBE
+[2026-06-05 21:41:24,628 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.blockencoding.Simplify codeblocks
+[2026-06-05 21:41:24,628 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.blockencoding.Simplify assume statements
+[2026-06-05 21:41:24,628 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.blockencoding.Use SBE during assume simplification
+[2026-06-05 21:41:24,628 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.blockencoding.Use SBE for initial RCFG
+[2026-06-05 21:41:24,628 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.blockencoding.Rewrite not equals when simplifying assume statements with SBE
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Debug log message color
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Drop models when Ultimate exits
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Generate benchmark results
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Log level for controller plugin
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Warning log message color
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Root log level
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.UI logger pattern
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Log level for external tools
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.ultimate.logging.details
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Toolchain timeout in seconds
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Name of the log file
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Info log message color
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Create a Logfile
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Logger pattern
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Log level for core plugin
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Show usable parsers
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Log level for plugins
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Fatal log message color
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Show long description of results
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Error log message color
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Show result in pop-up window after toolchain execution
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Directory (default: instance location)
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.core.Append to exisiting log file
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * CDTParser.Please specify include paths that will be parsed with the given C-File
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.Translate Boogie integers to SMT bitvectors
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.generator.cacsl2boogietranslator.How to treat unsigned ints differently from normal ones
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.witnessprinter.Generate witnesses
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.witnessprinter.Write witness to working directory
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.analysis.irsdependencies.Mode
+[2026-06-05 21:41:24,629 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.analysis.abstractinterpretationv2.Number type
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.analysis.abstractinterpretationv2.Congruence Widening operator
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Annotate edges
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Background color:
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Which models should be visualized?
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Choose node shape:
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Node color:
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Picked node color:
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Annotate nodes
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.SVG Export directory:
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.output.jungvisualization.Default graph layout:
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.boogie.procedureinliner.to and inside polymorphic procedures
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.boogie.procedureinliner.to procedures with 'free requires' specifications
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.boogie.procedureinliner.calls to unimplemented procedures
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.boogie.procedureinliner.to recursive procedures
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.boogie.procedureinliner.with 'forall' modifier
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.boogie.procedureinliner.calls to implemented procedures
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.boogie.procedureinliner.to procedures, called more than once
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.Non-flow-sensitive error trace relevance analysis
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.use unfolding as abstraction
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.Iterations until the model checker surrenders
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.Enable interactive Verification?
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.Flow-sensitive error trace relevance analysis
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.gui.LASTTOOLCHAINPATH
+[2026-06-05 21:41:24,630 WARN  L103        SettingsManager]:   * de.uni_freiburg.informatik.ultimate.gui.LASTPATH
+[2026-06-05 21:41:24,648 INFO  L130        SettingsManager]: Preferences different from defaults after loading the file:
+[2026-06-05 21:41:24,649 INFO  L151        SettingsManager]: Preferences of UltimateCore differ from their defaults:
+[2026-06-05 21:41:24,649 INFO  L153        SettingsManager]:  * Directory (default: instance location)=/home/iari/src/ultimate/trunk/runtime-Debug-E4.product/
+[2026-06-05 21:41:24,649 INFO  L151        SettingsManager]: Preferences of Abstract Interpretation differ from their defaults:
+[2026-06-05 21:41:24,649 INFO  L153        SettingsManager]:  * Log string format=HALF_MATRIX
+[2026-06-05 21:41:24,649 INFO  L151        SettingsManager]: Preferences of BuchiAutomizer differ from their defaults:
+[2026-06-05 21:41:24,649 INFO  L153        SettingsManager]:  * Buchi interpolant automaton=Staged
+[2026-06-05 21:41:24,649 INFO  L153        SettingsManager]:  * Buchi complementation construction=Ncsb
+[2026-06-05 21:41:24,649 INFO  L151        SettingsManager]: Preferences of CACSL2BoogieTranslator differ from their defaults:
+[2026-06-05 21:41:24,649 INFO  L153        SettingsManager]:  * Report unsoundness warnings=false
+[2026-06-05 21:41:24,649 INFO  L151        SettingsManager]: Preferences of RCFGBuilder differ from their defaults:
+[2026-06-05 21:41:24,649 INFO  L153        SettingsManager]:  * Logic for external solver=AUFNIRA
+[2026-06-05 21:41:24,649 INFO  L153        SettingsManager]:  * Convert code blocks to CNF=true
+[2026-06-05 21:41:24,649 INFO  L151        SettingsManager]: Preferences of TraceAbstraction differ from their defaults:
+[2026-06-05 21:41:24,649 INFO  L153        SettingsManager]:  * cut-off requires same transition=true
+[2026-06-05 21:41:24,649 INFO  L153        SettingsManager]:  * Trace refinement strategy=CAMEL
+Applying setting for plugin de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction: Use CEGAR loop for Parallel Trace Abstraction -> true
+Applying setting for plugin de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction: Threadlimit for Parallel CEGAR -> 8
+Applying setting for plugin de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction: Parallel trace search selection mode -> PAPER
+Applying setting for plugin de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction: Track stale prefixes in parallel search -> true
+[2026-06-05 21:41:24,777 INFO  L75    nceAwareModelManager]: Repository-Root is: /tmp
+[2026-06-05 21:41:24,782 INFO  L261   ainManager$Toolchain]: [Toolchain 1]: Applicable parser(s) successfully (re)initialized
+[2026-06-05 21:41:24,782 INFO  L217   ainManager$Toolchain]: [Toolchain 1]: Toolchain selected.
+[2026-06-05 21:41:24,783 INFO  L270        PluginConnector]: Initializing Boogie PL CUP Parser...
+[2026-06-05 21:41:24,784 INFO  L274        PluginConnector]: Boogie PL CUP Parser initialized
+[2026-06-05 21:41:24,784 INFO  L431   ainManager$Toolchain]: [Toolchain 1]: Parsing single file: /home/hschi1106/ultimate/trunk/examples/programs/20170304-DifficultPathPrograms/resultKnown/gr2006.c.i_4.bpl
+[2026-06-05 21:41:24,784 INFO  L110           BoogieParser]: Parsing: '/home/hschi1106/ultimate/trunk/examples/programs/20170304-DifficultPathPrograms/resultKnown/gr2006.c.i_4.bpl'
+[2026-06-05 21:41:24,792 INFO  L299   ainManager$Toolchain]: ####################### [Toolchain 1] #######################
+[2026-06-05 21:41:24,793 INFO  L133        ToolchainWalker]: Walking toolchain with 3 elements.
+[2026-06-05 21:41:24,793 INFO  L112        PluginConnector]: ------------------------Boogie Preprocessor----------------------------
+[2026-06-05 21:41:24,794 INFO  L270        PluginConnector]: Initializing Boogie Preprocessor...
+[2026-06-05 21:41:24,794 INFO  L274        PluginConnector]: Boogie Preprocessor initialized
+[2026-06-05 21:41:24,799 INFO  L184        PluginConnector]: Executing the observer EnsureBoogieModelObserver from plugin Boogie Preprocessor for "gr2006.c.i_4.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 09:41:24" (1/1) ...
+[2026-06-05 21:41:24,799 INFO  L184        PluginConnector]: Executing the observer TypeChecker from plugin Boogie Preprocessor for "gr2006.c.i_4.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 09:41:24" (1/1) ...
+[2026-06-05 21:41:24,808 INFO  L184        PluginConnector]: Executing the observer ConstExpander from plugin Boogie Preprocessor for "gr2006.c.i_4.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 09:41:24" (1/1) ...
+[2026-06-05 21:41:24,808 INFO  L184        PluginConnector]: Executing the observer StructExpander from plugin Boogie Preprocessor for "gr2006.c.i_4.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 09:41:24" (1/1) ...
+[2026-06-05 21:41:24,809 INFO  L184        PluginConnector]: Executing the observer ReplaceArrayAssignments from plugin Boogie Preprocessor for "gr2006.c.i_4.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 09:41:24" (1/1) ...
+[2026-06-05 21:41:24,809 INFO  L184        PluginConnector]: Executing the observer UnstructureCode from plugin Boogie Preprocessor for "gr2006.c.i_4.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 09:41:24" (1/1) ...
+[2026-06-05 21:41:24,810 INFO  L184        PluginConnector]: Executing the observer FunctionInliner from plugin Boogie Preprocessor for "gr2006.c.i_4.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 09:41:24" (1/1) ...
+[2026-06-05 21:41:24,810 INFO  L184        PluginConnector]: Executing the observer LTLStepAnnotator from plugin Boogie Preprocessor for "gr2006.c.i_4.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 09:41:24" (1/1) ...
+[2026-06-05 21:41:24,810 INFO  L184        PluginConnector]: Executing the observer BoogieSymbolTableConstructor from plugin Boogie Preprocessor for "gr2006.c.i_4.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 09:41:24" (1/1) ...
+[2026-06-05 21:41:24,812 INFO  L131        PluginConnector]: ------------------------ END Boogie Preprocessor----------------------------
+[2026-06-05 21:41:24,812 INFO  L112        PluginConnector]: ------------------------RCFGBuilder----------------------------
+[2026-06-05 21:41:24,812 INFO  L270        PluginConnector]: Initializing RCFGBuilder...
+[2026-06-05 21:41:24,812 INFO  L274        PluginConnector]: RCFGBuilder initialized
+[2026-06-05 21:41:24,813 INFO  L184        PluginConnector]: Executing the observer RCFGBuilderObserver from plugin RCFGBuilder for "gr2006.c.i_4.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 09:41:24" (1/1) ...
+[2026-06-05 21:41:24,814 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 21:41:24,820 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 21:41:24,824 INFO  L229       MonitoredProcess]: Starting monitored process 1 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 21:41:24,825 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (1)] Waiting until timeout for monitored process
+[2026-06-05 21:41:24,833 INFO  L138     BoogieDeclarations]: Found implementation of procedure ULTIMATE.start
+[2026-06-05 21:41:24,833 INFO  L130     BoogieDeclarations]: Found specification of procedure ULTIMATE.start
+[2026-06-05 21:41:24,852 INFO  L234             CfgBuilder]: Building ICFG
+[2026-06-05 21:41:24,852 INFO  L260             CfgBuilder]: Building CFG for each procedure with an implementation
+[2026-06-05 21:41:24,878 INFO  L?                        ?]: Removed 4 outVars from TransFormulas that were not future-live.
+[2026-06-05 21:41:24,878 INFO  L283             CfgBuilder]: Performing block encoding
+[2026-06-05 21:41:24,881 INFO  L89      LargeBlockEncoding]: Applying CFG Large Block Encoding to ICFG that has 1 procedures, 8 locations, 9 edges, 0 initial locations, 0 loop locations, and 1 error locations.
+[2026-06-05 21:41:24,892 INFO  L139     LargeBlockEncoding]: LargeBlockEncoding completed in 13 ms, with 2 straightline sequential compositions, 1 parallel compositions, 0 1:n/n:1 sequential compositions and 0 complex sequential compositions.
+[2026-06-05 21:41:24,892 INFO  L307             CfgBuilder]: Using the 1 location(s) as analysis (start of procedure ULTIMATE.start)
+[2026-06-05 21:41:24,892 INFO  L312             CfgBuilder]: Removed 1 assume(true) statements.
+[2026-06-05 21:41:24,892 INFO  L314             CfgBuilder]: Constructed ICFG has 1 procedures, 6 locations, 6 edges, 1 initial locations, 0 loop locations, and 1 error locations.
+[2026-06-05 21:41:24,893 INFO  L201        PluginConnector]: Adding new model gr2006.c.i_4.bpl de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder CFG 05.06 09:41:24 BoogieIcfgContainer
+[2026-06-05 21:41:24,893 INFO  L131        PluginConnector]: ------------------------ END RCFGBuilder----------------------------
+[2026-06-05 21:41:24,894 INFO  L112        PluginConnector]: ------------------------TraceAbstraction----------------------------
+[2026-06-05 21:41:24,894 INFO  L270        PluginConnector]: Initializing TraceAbstraction...
+[2026-06-05 21:41:24,896 INFO  L274        PluginConnector]: TraceAbstraction initialized
+[2026-06-05 21:41:24,896 INFO  L184        PluginConnector]: Executing the observer TraceAbstractionObserver from plugin TraceAbstraction for "gr2006.c.i_4.bpl de.uni_freiburg.informatik.ultimate.boogie.parser AST 05.06 09:41:24" (1/2) ...
+[2026-06-05 21:41:24,896 INFO  L204        PluginConnector]: Invalid model from TraceAbstraction for observer de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.TraceAbstractionObserver@587de2e5 and model type gr2006.c.i_4.bpl de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction AST 05.06 09:41:24, skipping insertion in model container
+[2026-06-05 21:41:24,896 INFO  L184        PluginConnector]: Executing the observer TraceAbstractionObserver from plugin TraceAbstraction for "gr2006.c.i_4.bpl de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder CFG 05.06 09:41:24" (2/2) ...
+[2026-06-05 21:41:24,896 INFO  L128   eAbstractionObserver]: Analyzing ICFG gr2006.c.i_4.bpl
+[2026-06-05 21:41:24,902 INFO  L217   ceAbstractionStarter]: Automizer settings: Hoare:None NWA Interpolation:ForwardPredicates Determinization: PREDICATE_ABSTRACTION
+[2026-06-05 21:41:24,902 INFO  L151   ceAbstractionStarter]: Applying trace abstraction to ICFG gr2006.c.i_4.bpl that has 1 procedures, 6 locations, 6 edges, 1 initial locations, 0 loop locations, and 1 error locations.
+[2026-06-05 21:41:24,918 INFO  L344      AbstractCegarLoop]: ======== Iteration 0 == of CEGAR loop == AllErrorsAtOnce ========
+[2026-06-05 21:41:24,922 INFO  L345      AbstractCegarLoop]: Settings: SEPARATE_VIOLATION_CHECK=true, mInterprocedural=true, mMaxIterations=1000000, mWatchIteration=1000000, mArtifact=RCFG, mInterpolation=ForwardPredicates, mInterpolantAutomaton=STRAIGHT_LINE, mDumpAutomata=false, mAutomataFormat=ATS_NUMERATE, mDumpPath=., mDeterminiation=PREDICATE_ABSTRACTION, mMinimize=MINIMIZE_SEVPA, mAutomataTypeConcurrency=FINITE_AUTOMATA, mHoareTripleChecks=INCREMENTAL, mHoareAnnotationPositions=None, mDumpOnlyReuseAutomata=false, mLimitTraceHistogram=0, mErrorLocTimeLimit=0, mLimitPathProgramCount=0, mCollectInterpolantStatistics=true, mHeuristicEmptinessCheck=false, mHeuristicEmptinessCheckAStarHeuristic=ZERO, mHeuristicEmptinessCheckAStarHeuristicRandomSeed=1337, mHeuristicEmptinessCheckSmtFeatureScoringMethod=DAGSIZE, mSMTFeatureExtraction=false, mSMTFeatureExtractionDumpPath=., mOverrideInterpolantAutomaton=false, mMcrInterpolantMethod=WP, mPorIndependenceSettings=[Lde.uni_freiburg.informatik.ultimate.lib.tracecheckerutils.partialorder.independence.IndependenceSettings;@59fabb0d, mLbeIndependenceSettings=[IndependenceType=SEMANTIC, AbstractionType=NONE, UseConditional=false, UseSemiCommutativity=true, Solver=Z3, SolverTimeout=1000ms], mThreadLimit=8, mParallelCegarLoop=true, mConsiderOnlyActiveCounterexamplesInIsEmptyParallel=true, mMinimizeAbstractionPerWorker=true, mSearchLoopBound=-1, mParallelTraceSearchSelectionMode=PAPER, mParallelTraceSearchUseInitialBfs=true, mParallelTraceSearchTrackStalePrefixes=true
+[2026-06-05 21:41:24,923 INFO  L346      AbstractCegarLoop]: Starting to check reachability of 1 error locations.
+[2026-06-05 21:41:24,923 INFO  L290                IsEmpty]: Start isEmpty. Operand  has 6 states, 4 states have (on average 1.5) internal successors, (6), 5 states have internal predecessors, (6), 0 states have call successors, (0), 0 states have call predecessors, (0), 0 states have return successors, (0), 0 states have call predecessors, (0), 0 states have call successors, (0)
+[2026-06-05 21:41:24,925 INFO  L300                IsEmpty]: Finished isEmpty. Found accepting run of length 5
+[2026-06-05 21:41:24,925 INFO  L199           NwaCegarLoop]: Found error trace
+[2026-06-05 21:41:24,925 INFO  L207           NwaCegarLoop]: trace histogram [1, 1, 1, 1]
+[2026-06-05 21:41:24,926 INFO  L173          SolverBuilder]: Constructing external solver with command: z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000
+[2026-06-05 21:41:24,928 INFO  L189       MonitoredProcess]: No working directory specified, using /usr/bin/z3
+[2026-06-05 21:41:24,929 INFO  L229       MonitoredProcess]: Starting monitored process 2 with /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (exit command is (exit), workingDir is null)
+[2026-06-05 21:41:24,930 INFO  L327       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (2)] Waiting until timeout for monitored process
+[2026-06-05 21:41:24,942 FATAL L?                        ?]: The Plugin de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction has thrown an exception:
+java.lang.NullPointerException: Cannot invoke "de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock.getNumberOfOpenCalls()" because "<local3>" is null
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.SequentialComposition.getCheckedOpenCalls(SequentialComposition.java:114)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.SequentialComposition.<init>(SequentialComposition.java:80)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.TransferBetweenMainAndWorker.getTransferSeqComp(TransferBetweenMainAndWorker.java:187)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.TransferBetweenMainAndWorker.transferEdge(TransferBetweenMainAndWorker.java:176)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.TransferBetweenMainAndWorker.transferAutomaton(TransferBetweenMainAndWorker.java:385)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.CegarNwaWorkerThread.getAbstraction(CegarNwaWorkerThread.java:272)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.CegarNwaWorkerThread.<init>(CegarNwaWorkerThread.java:168)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.ParallelNwaCegarLoop.setUpContinuesWorker(ParallelNwaCegarLoop.java:214)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.ParallelNwaCegarLoop.iterate(ParallelNwaCegarLoop.java:236)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.AbstractCegarLoop.startCegar(AbstractCegarLoop.java:354)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.AbstractCegarLoop.runCegar(AbstractCegarLoop.java:336)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.TraceAbstractionStarter.executeCegarLoop(TraceAbstractionStarter.java:427)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.TraceAbstractionStarter.analyseProgram(TraceAbstractionStarter.java:315)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.TraceAbstractionStarter.analyseSequentialProgram(TraceAbstractionStarter.java:276)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.TraceAbstractionStarter.runCegarLoops(TraceAbstractionStarter.java:168)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.TraceAbstractionStarter.<init>(TraceAbstractionStarter.java:140)
+	at de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.TraceAbstractionObserver.finish(TraceAbstractionObserver.java:132)
+	at de.uni_freiburg.informatik.ultimate.core.coreplugin.PluginConnector.runObserver(PluginConnector.java:167)
+	at de.uni_freiburg.informatik.ultimate.core.coreplugin.PluginConnector.runTool(PluginConnector.java:150)
+	at de.uni_freiburg.informatik.ultimate.core.coreplugin.PluginConnector.run(PluginConnector.java:127)
+	at de.uni_freiburg.informatik.ultimate.core.coreplugin.ToolchainWalker.executePluginConnector(ToolchainWalker.java:233)
+	at de.uni_freiburg.informatik.ultimate.core.coreplugin.ToolchainWalker.processPlugin(ToolchainWalker.java:227)
+	at de.uni_freiburg.informatik.ultimate.core.coreplugin.ToolchainWalker.walkUnprotected(ToolchainWalker.java:144)
+	at de.uni_freiburg.informatik.ultimate.core.coreplugin.ToolchainWalker.walk(ToolchainWalker.java:106)
+	at de.uni_freiburg.informatik.ultimate.core.coreplugin.ToolchainManager$Toolchain.processToolchain(ToolchainManager.java:319)
+	at de.uni_freiburg.informatik.ultimate.core.coreplugin.toolchain.DefaultToolchainJob.run(DefaultToolchainJob.java:145)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:63)
+[2026-06-05 21:41:24,944 INFO  L158              Benchmark]: Toolchain (without parser) took 150.97ms. Allocated memory is still 44.0MB. Free memory was 21.0MB in the beginning and 11.8MB in the end (delta: 9.2MB). Peak memory consumption was 8.3MB. Max. memory is 4.3GB.
+[2026-06-05 21:41:24,944 INFO  L158              Benchmark]: Boogie PL CUP Parser took 0.13ms. Allocated memory is still 44.0MB. Free memory is still 21.9MB. There was no memory consumed. Max. memory is 4.3GB.
+[2026-06-05 21:41:24,945 INFO  L158              Benchmark]: Boogie Preprocessor took 18.38ms. Allocated memory is still 44.0MB. Free memory was 20.9MB in the beginning and 18.4MB in the end (delta: 2.5MB). Peak memory consumption was 2.1MB. Max. memory is 4.3GB.
+[2026-06-05 21:41:24,945 INFO  L158              Benchmark]: RCFGBuilder took 80.68ms. Allocated memory is still 44.0MB. Free memory was 18.3MB in the beginning and 20.2MB in the end (delta: -1.8MB). Peak memory consumption was 10.5MB. Max. memory is 4.3GB.
+[2026-06-05 21:41:24,945 INFO  L158              Benchmark]: TraceAbstraction took 49.67ms. Allocated memory is still 44.0MB. Free memory was 19.0MB in the beginning and 11.8MB in the end (delta: 7.2MB). Peak memory consumption was 8.4MB. Max. memory is 4.3GB.
+[2026-06-05 21:41:24,946 INFO  L338   ainManager$Toolchain]: #######################  End [Toolchain 1] #######################
+ --- Results ---
+ * Results from de.uni_freiburg.informatik.ultimate.core:
+  - StatisticsResult: Toolchain Benchmarks
+    Benchmark results are:
+ * Boogie PL CUP Parser took 0.13ms. Allocated memory is still 44.0MB. Free memory is still 21.9MB. There was no memory consumed. Max. memory is 4.3GB.
+ * Boogie Preprocessor took 18.38ms. Allocated memory is still 44.0MB. Free memory was 20.9MB in the beginning and 18.4MB in the end (delta: 2.5MB). Peak memory consumption was 2.1MB. Max. memory is 4.3GB.
+ * RCFGBuilder took 80.68ms. Allocated memory is still 44.0MB. Free memory was 18.3MB in the beginning and 20.2MB in the end (delta: -1.8MB). Peak memory consumption was 10.5MB. Max. memory is 4.3GB.
+ * TraceAbstraction took 49.67ms. Allocated memory is still 44.0MB. Free memory was 19.0MB in the beginning and 11.8MB in the end (delta: 7.2MB). Peak memory consumption was 8.4MB. Max. memory is 4.3GB.
+ * Results from de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction:
+  - ExceptionOrErrorResult: NullPointerException: Cannot invoke "de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock.getNumberOfOpenCalls()" because "<local3>" is null
+    de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction: NullPointerException: Cannot invoke "de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.CodeBlock.getNumberOfOpenCalls()" because "<local3>" is null: de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.cfg.SequentialComposition.getCheckedOpenCalls(SequentialComposition.java:114)
+RESULT: Ultimate could not prove your program: Toolchain returned no result.
+[2026-06-05 21:41:24,950 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (2)] Ended with exit code 0
+[2026-06-05 21:41:25,151 INFO  L546       MonitoredProcess]: [MP /usr/bin/z3 SMTLIB2_COMPLIANT=true -memory:1024 -smt2 -in -t:12000 (1)] Ended with exit code 0
+Received shutdown request...
+

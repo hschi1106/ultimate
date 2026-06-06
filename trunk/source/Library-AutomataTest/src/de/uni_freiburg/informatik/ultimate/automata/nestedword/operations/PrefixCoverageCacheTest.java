@@ -105,14 +105,34 @@ public class PrefixCoverageCacheTest {
 		cache.recordCheckedRun(run(new String[] { a }, "s0", "s1"));
 		cache.recordStaleRun(run(new String[] { a }, "s0", "s1"));
 
+		assertEquals(0, cache.getCheckedPrefixQueries());
+		assertEquals(0, cache.getStalePrefixQueries());
 		assertEquals(0, cache.getCheckedPrefixHits());
 		assertEquals(0, cache.getStalePrefixHits());
 		assertEquals(1, cache.getCheckedPrefixCount(prefix(a, "s1")));
+		assertEquals(1, cache.getCheckedPrefixQueries());
 		assertEquals(1, cache.getCheckedPrefixHits());
 		assertEquals(1, cache.getStalePrefixCount(prefix(a, "s1")));
+		assertEquals(1, cache.getStalePrefixQueries());
 		assertEquals(1, cache.getStalePrefixHits());
 		assertEquals(0, cache.getCheckedPrefixCount(prefix(a, "other")));
+		assertEquals(2, cache.getCheckedPrefixQueries());
 		assertEquals(1, cache.getCheckedPrefixHits());
+	}
+
+	@Test
+	public void testRunCoverageSumsAllCoveredPrefixes() {
+		final PrefixCoverageCache<String, String> cache = new PrefixCoverageCache<>();
+		final String a = "a";
+		final String b = "b";
+		final String c = "c";
+
+		cache.recordCheckedRun(run(new String[] { a, b }, "s0", "s1", "s2"));
+		cache.recordCheckedRun(run(new String[] { a, c }, "s0", "s1", "s3"));
+		cache.recordStaleRun(run(new String[] { a, b }, "s0", "s1", "s2"));
+
+		assertEquals(3, cache.getCheckedCoverageForRun(run(new String[] { a, b }, "s0", "s1", "s2")));
+		assertEquals(2, cache.getStaleCoverageForRun(run(new String[] { a, b }, "s0", "s1", "s2")));
 	}
 
 	@Test

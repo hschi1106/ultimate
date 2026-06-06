@@ -53,6 +53,7 @@ import de.uni_freiburg.informatik.ultimate.logic.Logics;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.rcfgbuilder.preferences.RcfgPreferenceInitializer;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.Activator;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.CoinflipMode;
+import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.AdaptiveBatchTriggerMode;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.FloydHoareAutomataReuse;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.FloydHoareAutomataReuseEnhancement;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.preferences.TraceAbstractionPreferenceInitializer.InterpolantAutomaton;
@@ -106,6 +107,10 @@ public final class TAPreferences {
 	private final TraceSearchSelectionMode mParallelTraceSearchSelectionMode;
 	private final boolean mParallelTraceSearchUseInitialBfs;
 	private final boolean mParallelTraceSearchTrackStalePrefixes;
+	private final int mBatchLcpsCandidateMultiplier;
+	private final int mBatchLcpsCandidateCap;
+	private final AdaptiveBatchTriggerMode mAdaptiveBatchTriggerMode;
+	private final int mAdaptiveBatchMinAvailableSlots;
 
 	public enum Artifact {
 		ABSTRACTION, INTERPOLANT_AUTOMATON, NEG_INTERPOLANT_AUTOMATON, RCFG
@@ -224,6 +229,14 @@ public final class TAPreferences {
 				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_PARALLEL_TRACE_SEARCH_USE_INITIAL_BFS);
 		mParallelTraceSearchTrackStalePrefixes =
 				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_PARALLEL_TRACE_SEARCH_TRACK_STALE_PREFIXES);
+		mBatchLcpsCandidateMultiplier =
+				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_BATCH_LCPS_CANDIDATE_MULTIPLIER);
+		mBatchLcpsCandidateCap = mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_BATCH_LCPS_CANDIDATE_CAP);
+		mAdaptiveBatchTriggerMode = mPrefs.getEnum(
+				TraceAbstractionPreferenceInitializer.LABEL_ADAPTIVE_BATCH_TRIGGER_MODE,
+				AdaptiveBatchTriggerMode.class);
+		mAdaptiveBatchMinAvailableSlots =
+				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_ADAPTIVE_BATCH_MIN_AVAILABLE_SLOTS);
 	}
 
 	/**
@@ -631,5 +644,21 @@ public final class TAPreferences {
 
 	public boolean trackStalePrefixesInParallelTraceSearch() {
 		return mParallelTraceSearchTrackStalePrefixes;
+	}
+
+	public int getBatchLcpsCandidateMultiplier() {
+		return mBatchLcpsCandidateMultiplier;
+	}
+
+	public int getBatchLcpsCandidateCap() {
+		return mBatchLcpsCandidateCap;
+	}
+
+	public AdaptiveBatchTriggerMode getAdaptiveBatchTriggerMode() {
+		return mAdaptiveBatchTriggerMode;
+	}
+
+	public int getAdaptiveBatchMinAvailableSlots() {
+		return mAdaptiveBatchMinAvailableSlots;
 	}
 }

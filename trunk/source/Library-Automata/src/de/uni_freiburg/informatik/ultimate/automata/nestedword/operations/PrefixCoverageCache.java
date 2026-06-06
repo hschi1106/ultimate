@@ -41,6 +41,8 @@ public final class PrefixCoverageCache<LETTER, STATE> {
 	private final Node<LETTER, STATE> mRoot = new Node<>();
 	private int mCheckedRunCount;
 	private int mStaleRunCount;
+	private int mCheckedPrefixQueries;
+	private int mStalePrefixQueries;
 	private int mCheckedPrefixHits;
 	private int mStalePrefixHits;
 
@@ -55,6 +57,7 @@ public final class PrefixCoverageCache<LETTER, STATE> {
 	}
 
 	public synchronized int getCheckedPrefixCount(final List<PathStepKey<LETTER, STATE>> prefix) {
+		mCheckedPrefixQueries++;
 		final Node<LETTER, STATE> node = findNode(prefix);
 		final int count = node == null ? 0 : node.mCheckedCount;
 		if (count > 0) {
@@ -64,6 +67,7 @@ public final class PrefixCoverageCache<LETTER, STATE> {
 	}
 
 	public synchronized int getStalePrefixCount(final List<PathStepKey<LETTER, STATE>> prefix) {
+		mStalePrefixQueries++;
 		final Node<LETTER, STATE> node = findNode(prefix);
 		final int count = node == null ? 0 : node.mStaleCount;
 		if (count > 0) {
@@ -72,12 +76,28 @@ public final class PrefixCoverageCache<LETTER, STATE> {
 		return count;
 	}
 
+	public synchronized int getCheckedCoverageForRun(final NestedRun<LETTER, ?> run) {
+		return getCoverageForRun(run, true);
+	}
+
+	public synchronized int getStaleCoverageForRun(final NestedRun<LETTER, ?> run) {
+		return getCoverageForRun(run, false);
+	}
+
 	public synchronized int getCheckedRunCount() {
 		return mCheckedRunCount;
 	}
 
 	public synchronized int getStaleRunCount() {
 		return mStaleRunCount;
+	}
+
+	public synchronized int getCheckedPrefixQueries() {
+		return mCheckedPrefixQueries;
+	}
+
+	public synchronized int getStalePrefixQueries() {
+		return mStalePrefixQueries;
 	}
 
 	public synchronized int getCheckedPrefixHits() {
@@ -99,6 +119,20 @@ public final class PrefixCoverageCache<LETTER, STATE> {
 				current.mStaleCount++;
 			}
 		}
+	}
+
+	private int getCoverageForRun(final NestedRun<LETTER, ?> run, final boolean checked) {
+		int coverage = 0;
+		Node<LETTER, STATE> current = mRoot;
+		for (int i = 0; i < run.getLength() - 1; i++) {
+			final PathStepKey<LETTER, STATE> key = makeKey(run, i);
+			current = current.mChildren.get(key);
+			if (current == null) {
+				return coverage;
+			}
+			coverage += checked ? current.mCheckedCount : current.mStaleCount;
+		}
+		return coverage;
 	}
 
 	@SuppressWarnings("unchecked")

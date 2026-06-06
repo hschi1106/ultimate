@@ -71,11 +71,71 @@ public enum CegarLoopStatisticsDefinitions implements IStatisticsElement {
 
 	StalePaths(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
 
+	LcpsCheckedPrefixQueries(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	LcpsStalePrefixQueries(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
 	LcpsCheckedPrefixHits(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
 
 	LcpsStalePrefixHits(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
 
 	LcpsSearchInvocations(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	LcpsFullCacheSuffixInvocations(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	LcpsFullCacheSuffixFallbacks(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	LcpsEffectivePriorityDecisions(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	BatchLcpsInvocations(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	BatchLcpsAvailableSlotsTotal(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	BatchLcpsCandidatesGenerated(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	BatchLcpsCandidatesSelected(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	BatchLcpsCandidateGenerationFailures(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	BatchLcpsAvgCandidatePoolSize(StatisticsType.DOUBLE_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	BatchLcpsAvgSelectedBatchSize(StatisticsType.DOUBLE_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	BatchLcpsEffectiveBatchDecisions(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	BatchLcpsCandidateGenerationTimeMs(StatisticsType.LONG_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	BatchLcpsSelectionTimeMs(StatisticsType.LONG_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	AdaptiveBatchTriggerMode(x -> y -> {
+		if (Objects.equals(x, "n/a")) {
+			return y;
+		}
+		if (Objects.equals(y, "n/a")) {
+			return x;
+		}
+		return Objects.equals(x, y) ? x : x + "," + y;
+	}, StatisticsType.KEY_BEFORE_DATA),
+
+	AdaptiveBatchInvocations(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	AdaptiveBatchFallbacks(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	AdaptiveTriggeredByDuplicate(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	AdaptiveTriggeredByStale(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	AdaptiveTriggeredBySearchFailed(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	AdaptiveTriggeredByIdleSlot(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	AdaptiveTriggeredByFirstFill(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	AdaptiveTriggeredByFirstFillOrStale(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	AdaptiveTriggeredByThreadsGe4FirstFill(StatisticsType.INTEGER_ADDITION, StatisticsType.KEY_BEFORE_DATA),
+
+	AdaptiveMinAvailableSlots(StatisticsType.INTEGER_MAX, StatisticsType.KEY_BEFORE_DATA),
 
 	EmptinessCheckTime(StatisticsType.LONG_ADDITION, StatisticsType.KEY_BEFORE_NANOS),
 
