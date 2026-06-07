@@ -1,270 +1,207 @@
-# Parallel Trace Abstraction — improving the coordinator over the paper baseline
+# Improving Parallel Trace Abstraction over the paper baseline
 
 Reproduction and extension of **Barth & Jakobs, "Multi-Threaded Software Model Checking via Parallel
-Trace Abstraction Refinement"** (arXiv:2509.13699) in Ultimate Automizer. The work adds several
-**flag-gated** improvements to the parallel-CEGAR coordinator, all **default OFF** so the paper baseline
-is preserved bit-for-bit when no flag is set. It spans two branches, each a self-contained layer:
+Trace Abstraction Refinement"** (arXiv:2509.13699) in **Ultimate Automizer**.
 
-- **`r1-staleness-prefilter`** (commit `d8861b9ac6`) — the **loop-aware minimization** win (§2–§5).
-- **`parallel-cegar-async`** (off `d8861b9ac6`) — **async / pipelined refinement** on top of loop-aware
-  (§6, this session).
+We add **three coordinator/worker improvements** to the parallel-CEGAR loop, all **flag-gated and default
+OFF** so the paper-faithful `dev` baseline is preserved bit-for-bit when no flag is set. Goal: at the
+**same thread count (PAR-4 vs PAR-4)**, beat the `dev` parallel CEGAR on wall-clock time across the
+ReachSafety **ECA, ControlFlow, and Loops** categories, with the same-or-better solved set and **zero
+wrong verdicts**.
 
-**Goal:** at the **same thread count (PAR-4 vs PAR-4)**, beat the paper-faithful `dev`-branch parallel
-CEGAR on wall-clock and CPU time, with the same solved set and zero wrong verdicts — across the
-ReachSafety **ECA, ControlFlow, and Loops** categories.
+## Headline result — final config vs `dev`-PAR-4
 
-**Headline result (layer 1, vs `dev`-PAR-4):** a single config — **loop-aware minimization** — beats
-`dev`-PAR-4 on wall time in **all three** categories: **ECA −20.7%, ControlFlow −33.7%, Loops −7.7%**,
-0 incorrect, solved set same-or-better. Measured with BenchExec `runexec` on a 16-core node, 120 s wall
-limit.
+One config (`dev` + the three flags below) beats the baseline in every category, with **0 incorrect** and
+**no task lost** anywhere:
 
-**Headline result (layer 2, vs loop-aware itself):** **async refinement** further cuts the coordinator's
-serial `Difference` cost on **ControlFlow by −8.7 % wall / −5.9 % CPU**, while leaving ECA and Loops
-exactly at the loop-aware baseline (the adaptive gate engages only where it stably wins) — 0 incorrect,
-identical solved set, no task lost. See §6.
-
----
-
-## 1. The baseline (original `dev` code)
-
-The parallel CEGAR loop is a **coordinator + workers** design
-(`ParallelNwaCegarLoop` + `CegarNwaWorkerThread`):
-
-- The **coordinator** (main thread) owns the single evolving abstraction automaton. Its loop:
-  search for an error trace (`IsEmpty`/`IsEmptyParallel`) → hand the counterexample to a worker →
-  when a worker returns an interpolant automaton, apply the refinement
-  (`mAbstraction = Difference(mAbstraction, subtrahend)`) and then **minimize** the abstraction.
-- **Workers** (N threads) each own a fresh SMT script; they run trace-check + interpolation in parallel
-  and return an interpolant automaton. The abstraction is transferred to each worker once at construction.
-- **Alg. 4** is the coordinator's trace-selection heuristic; in the code it returns the next
-  BFS/`IsEmptyParallel` error trace not already in flight.
-- Minimization runs in the **per-worker** path (`minimizeAbstractionPerWorker` defaults true), i.e. after
-  each refinement, using `Minimization of abstraction = MINIMIZE_SEVPA`.
-
-**Key structural fact** (verified, and it drives every result below): with 16 cores and 4 workers, the
-workers sit on otherwise-idle cores, so **wall time is determined by the coordinator's serial critical
-path: `Difference` + minimization + emptiness search.** Worker work is "free" until the coordinator
-blocks waiting for a result.
-
----
-
-## 2. What this branch adds (difference from baseline)
-
-All additions are new **preferences** (TraceAbstraction plugin), **default OFF**. Diff vs `dev`:
-**9 files, +1481 / −18 lines**
-(`ParallelNwaCegarLoop`, `CegarNwaWorkerThread`, `WorkerTask`, `WorkerThreadResult`,
-`StaleCancellationToken/Point`, `SharedPredicatePool`, `TAPreferences`,
-`TraceAbstractionPreferenceInitializer`, `StrategyFactory`).
-
-### The winning lever — Loop-aware minimization (ships ON in `UA-LOOPAWARE`)
-Pref **`Loop-aware minimization for Parallel CEGAR`** (+ `repeat threshold`, default 2).
-Minimize a refinement **only when its counterexample's path program has recurred ≥ threshold times** — a
-loop-unrolling signal (the same loop body refined repeatedly). Diverse-trace programs (ECA/ControlFlow)
-keep the count ~1, so they **skip** minimization and gain the wall-time win of not minimizing; loop-
-unrolling programs **trigger** it, so the abstraction blowup stays bounded. One per-trace-adaptive policy
-resolves the tension "ECA wants no minimization / loops need it." Implemented in the per-worker path
-(`minimizeGivenLoopAware`). Sound: minimization is language-preserving, so skipping/deferring never
-changes a verdict.
-
-### Simpler companion — `Minimization of abstraction = NONE` (`UA-P4N`)
-A stock preference (no code), shipped as the `UA-P4N` config: never minimize. Wins ECA + ControlFlow,
-ties Loops. Strong and trivially simple, but slightly worse than loop-aware on loop-heavy programs (the
-un-minimized abstraction is larger).
-
-### Explored and **rejected** (flag-gated, default OFF — kept for the record)
-| pref / lever | idea | result |
-|---|---|---|
-| `Stale worker cancellation` (COOPERATIVE) (S2) | cancel in-flight traces no longer accepted after a refinement | wins control-flow, **loses ECA** (the `Accepts` re-check is costly on long traces) |
-| `Asynchronous stale sweep` (R6) | move the S2 re-check off the coordinator critical path | **rejected** — proves the regression is the *cancellation* (cancels useful diverse work), not the check cost |
-| `Adaptive worker scaling` (S3), `Trace selection = DPPI` | gate / reorder by path-program overlap | neutral |
-| `Path-program staleness pre-filter` (R1) | cheap subtrahend staleness check | dead (cancels 0 — staleness is cumulative) |
-| `Cross-worker predicate sharing` (R4) | seed workers' unifiers with harvested interpolants | flat / slightly worse |
-| `Worker strategy portfolio` (diversify) | pin each worker to a different solver/interpolation strategy | **rejected** — loses 11 tasks (a critical trace gets a weaker-than-default strategy) |
-| `Race bottleneck trace` | re-dispatch the longest in-flight trace to idle workers, race strategies | **inert** — workers are never idle (always ≥4 fresh traces) |
-| `Relative-growth minimization` | minimize on relative abstraction growth | superseded by loop-aware |
-| `Trace selection = DIVERSITY` | IDF-weighted path-program novelty ranking (see §5) | **does not beat Alg.4** — the metric is sound but selection can't pay off here |
-
----
-
-## 3. Results
-
-Benchmarks: SV-COMP ReachSafety, ILP32, `unreach-call.prp`. Enlarged set = 139 tasks
-(ECA 50 / ControlFlow 39 / Loops 50) + 50 CEGAR-bound loop tasks (loop-invgen / loop-lit / loop-invariants
-/ nla-digbench / loops-crafted-1). `runexec`, 120 s wall limit.
-
-### Win-all-3 (loop-aware vs dev-PAR-4), per category
-| category | wall | CPU | solved |
+| category | wall vs `dev` | solved | measurement |
 |---|---|---|---|
-| **ECA** | **−20.7%** (18W/5L) | +1.8% (tie) | 29 = 29 |
-| **ControlFlow** | **−33.7%** (13W/2L) | **−23.4%** | 28 = 28 |
-| **Loops** | **−7.7%** (median **−11.6%** on tasks with room) | **−7.1%** | **+1** |
+| **ECA** | **−25.0 %** | **+2** (27 → 29) | 139-task set |
+| **ControlFlow** | **−37.4 %** | 31 = 31 | 139-task set |
+| **Loops** (CEGAR-bound) | **−18.5 %** | 9 = 9, no loss | hard-loop set, 3-rep medians |
+| Loops (trivial `loops/` set) | ≈ neutral | 37 = 37 | floor-bound — see §6 |
 
-**0 incorrect** everywhere; solved set same-or-better. The Loops win is 3×-median-confirmed and concentrated
-in CEGAR-bound loops (egcd2-ll −22.9%, string_concat-noarr −16.2%, invert_string-3 −13.1%).
-
-### `UA-P4N` (Minimization=NONE) vs dev-PAR-4 (enlarged set)
-Overall **wall −21.7% / CPU −6.6%**, 97 = 97 solved, 0 incorrect (ECA −21.1%, ControlFlow −33.2%, Loops
-−1.1% tie). 3-rep medians on the original 22-task mix: −11.7% wall / −7.1% CPU.
-
-### Why this works, not the alternatives
-The serial critical path is minimization (wasteful on diverse-trace programs, load-bearing on loop
-unrolling) — so a **per-trace minimization policy** wins. Cancellation/selection/scaling levers
-(S2/S3/DPPI/R1/R4/R6/portfolio/race/diversity — 7 attempts) do **not** beat the baseline, because the
-implementation is worker-saturated (idle cores make wasted-work reduction free in CPU but invisible in
-wall) and selection-ranking pays a per-candidate emptiness-search tax.
+Each lever is independently sound (language-preserving or stale-but-sound per the paper's §3.1), so none
+can change a verdict.
 
 ---
 
-## 4. The diversity metric (derivation), and why selection still can't beat Alg.4
+## 1. The `dev` baseline (what we started from)
 
-Requested as a principled replacement for Alg.4's heuristic. Two prior metrics were flawed: DPPI's raw
-edge-overlap (the shared structural core — entry/error/loop-heads — makes everything look similar), and
-the teammate's predicate-state tree-distance (`BasicPredicate` identity changes every iteration). The
-derived metric fixes both:
+Parallel CEGAR is a **coordinator + workers** design (`ParallelNwaCegarLoop` + `CegarNwaWorkerThread`):
 
-- Represent each trace by its **path program** P(t) = the set of CFG edges (the infeasibility-reason proxy).
-- Weight each edge by **inverse document frequency** `idf(e) = log((1+N)/(1+df(e)))` over dispatched path
-  programs: the structural core (in every trace) gets `idf ≈ 0`; rare reason-bearing edges dominate.
-- **Novelty** of a candidate vs the in-flight set = fraction of its idf-weight on edges not already
-  covered = how much *new* infeasibility reason it brings. Select the max-novelty trace (fairness floor
-  preserves soundness/termination).
+- The **coordinator** (main thread) owns the single evolving abstraction automaton and loops:
+  find an error trace (`IsEmpty`) → hand the counterexample to a worker → when the worker returns an
+  interpolant automaton, **apply the refinement** `abstraction = Difference(abstraction, subtrahend)`
+  and then **minimize** the abstraction.
+- **Workers** (4 threads) each own a fresh SMT script, run trace-check + interpolation in parallel, and
+  return an interpolant automaton.
+- **Alg. 4** selects the next not-in-flight BFS error trace.
 
-Implemented as `Trace selection strategy = DIVERSITY`. The metric **fires and ranks correctly**, but
-measured against Alg.4 it is **neutral-to-worse** (ECA +2.7% wall / −3 solved, ControlFlow +0.5%, Loops
-−1.5%). The reason is structural, not the metric's quality: (1) ranking requires K extra emptiness
-searches per dispatch; (2) with 4 workers and always ≥4 findable traces, selection can only reorder (no
-gain) or defer (reduces parallelism). Beating Alg.4 would require **cheap multi-candidate generation**
-(one automaton traversal yielding several accepting runs — an out-of-plugin Library-Automata change), not
-a better metric.
+**The one structural fact that drives everything:** with 16 cores and 4 workers, the workers run on
+otherwise-idle cores, so **wall-clock time is set by the coordinator's serial critical path**
+(`Difference` + minimization + emptiness search), *except* on loop programs, which are bounded instead by
+**per-iteration worker SMT cost**. We confirmed this with a full wall-time attribution (§5).
 
 ---
 
-## 5. Build & reproduce
+## 2. What is different from `dev` (summary)
 
-```bash
-source /home/cycloud/toolchain/env.sh           # Temurin JDK 21 + Maven 3.9
-cd ultimate/trunk/source/BA_MavenParentUltimate
-mvn -T 1C -pl ../TraceAbstraction -am install -Dmaven.test.skip=true   # ~1 min, incremental
-# the OSGi bundle is trunk/source/TraceAbstraction/target/...traceabstraction-0.3.1.jar;
-# copy it into a packaged Automizer's plugins/ dir and set the prefs in
-# config/svcomp-Reach-32bit-Automizer_Default.epf
-```
-Winning config (`UA-LOOPAWARE`): `Use CEGAR loop for Parallel Trace Abstraction=true`,
-`Threadlimit=4`, `Loop-aware minimization for Parallel CEGAR=true`.
-Baseline (`UAutomizer-dev`): the same minus the loop-aware flag.
+Three new preferences in the TraceAbstraction plugin, all **default OFF**; our config turns them ON on top
+of the standard PAR-4 settings (`Use CEGAR loop for Parallel Trace Abstraction=true`, `Threadlimit=4`):
 
-Raw data: `run/results/results_{big,hardloops,loopaware,loopmedian,sweep,diversity}.csv`; analysis scripts
-`run/analyze_*.py`; full experimental log `run/comparison_summary.md`.
-
----
-
-## 6. Async / pipelined refinement — beating `UA-LOOPAWARE` on the coordinator serial path
-
-A second improvement, on branch **`parallel-cegar-async`** (off `d8861b9ac6`), targets the coordinator's
-remaining serial cost. New pref **`Async refinement (Parallel CEGAR)`**, **default OFF**, baseline
-preserved bit-for-bit.
-
-**Baseline for this section is `UA-LOOPAWARE` = `r1-staleness-prefilter` @ `d8861b9ac6` with loop-aware
-ON** (the layer-1 winner). So every number below is the *additional* gain over r1-staleness-prefilter,
-not over `dev`.
-
-### N0 — profiling first (the discipline that drove this)
-With loop-aware ON, millisecond instrumentation of the coordinator serial path (`run/N0_PROFILE.md`)
-shows, on smoke tasks per category:
-- **`Difference` dominates** the serial path on ECA (up to 58 % of wall) and ControlFlow (up to 73 %).
-- Minimization ≈ 0 (loop-aware already skips it); emptiness ≤ 2.1 s (so an incremental-emptiness lever
-  is **not** justified).
-- **Loops are worker-SMT-bound** — the coordinator serial path is < 150 ms while wall is 11–39 s; there
-  is nothing on the coordinator to overlap.
-
-### The lever
-A single dedicated **apply-helper thread** applies `Difference` (+ loop-aware minimize when it fires)
-off the coordinator's critical path and publishes each new abstraction via an `AtomicReference`; the
-coordinator keeps searching/dispatching on the latest published version and adopts newer ones as they
-arrive. Soundness is the paper's §3.1 (a stale abstraction for emptiness/trace-search is sound;
-refinement order is preserved by the single sequential helper, so no commutative aggregation is needed).
-SAFE is declared only after the apply queue drains and the fully-refined abstraction is empty.
-
-Four mechanisms make it correct and safe:
-1. **Master managed script** for the off-thread Difference (the worker's script is reused per task;
-   the master script is not), so a deferred apply never races a worker.
-2. **FIFO avoid-set deferral** — a dispatched trace stays in the search avoid-set until its refinement
-   is *applied*, so the coordinator never re-dispatches it on the stale abstraction.
-3. **Helper-side stale-skip** — an `Accepts` check skips a refinement whose trace an earlier refinement
-   already removed (sound; avoids wasted Difference work).
-4. **Adaptive gate with a trace-length guard** — the run starts synchronous and latches into async only
-   once Differences are expensive (≥ 200 ms, twice) **and** the average counterexample trace is short
-   (≤ 150). Measured trace lengths separate cleanly: ControlFlow/locks ≈ 30, ECA ≈ 700–1000. So async
-   engages only on short-trace, Difference-dominated programs, where the overlap is stable and the
-   stale-skip check is cheap; long-trace ECA stays synchronous (where async would inflate dispatches and
-   risk a timeout).
-
-This **reverses the naive expectation** that ECA (most Difference-dominated) is the prime target: a
-*uniform* async policy wins hard ECA but regresses ControlFlow/Loops and can time out on ECA. The gate
-confines async to where it stably wins.
-
-### Results — `UA-N1ASYNC` (loop-aware ON + async ON) vs `UA-LOOPAWARE`, enlarged set (139 tasks)
-`runexec`, 120 s wall, ILP32, same session, wall/CPU summed over commonly-solved tasks:
-
-| category | wall | CPU | solved |
+| # | lever | what it changes vs `dev` | targets |
 |---|---|---|---|
-| **ControlFlow** | **−8.7 %** | **−5.9 %** | 28 = 28 |
-| ECA | −1.6 % | −3.4 % | 29 = 29 |
-| Loops | −0.6 % | −2.0 % | 37 = 37 |
+| 1 | **Loop-aware minimization** | minimize a refinement **only** when its path program is recurring (a loop signal); otherwise skip | ECA + ControlFlow (skip wasted minimization) **and** Loops (still bound blowup) |
+| 2 | **Async / pipelined refinement** | apply `Difference`(+minimize) on a helper thread **off** the coordinator critical path; coordinator searches the latest published abstraction | ControlFlow (Difference-bound, short traces) |
+| 3 | **Safe loop acceleration** | route recurring loop traces to **Jordan loop acceleration**, guarded so it only ever helps | hard CEGAR-bound Loops |
 
-**0 incorrect**, solved set identical (97 = 97), **no task lost**. Only the 3 hard-`locks` tasks latched
-into async (each **−19 % to −35 %** wall, 3×-rep stable); every ECA/Loops/other task ran the identical
-synchronous baseline path, so their ties are baseline **by construction** (the small deltas are
-measurement noise) — regression is structurally impossible. The ControlFlow category win is fully
-attributable to those 3 locks tasks.
+Each is detailed below with *what*, *why*, and *result*.
 
-Config (`UA-N1ASYNC`): `UA-LOOPAWARE` + `Async refinement (Parallel CEGAR)=true`. Raw data:
-`run/results/results_eval_{la,async}.csv`; design + per-task evidence: `run/N1_RESULT.md`,
-`run/N0_PROFILE.md`.
+---
 
-### N3 (reduce iteration count) — investigated, **rejected** (no code shipped)
-To help the worker-bound Loops (which N1 cannot), we tried to cut refinements-to-convergence by toggling
-existing Ultimate generalization/acceleration options (per the brief: toggle before coding). All fail in
-the parallel CEGAR: `Trace refinement strategy=ACCELERATED_INTERPOLATION` (loop acceleration) and
-`Interpolants consolidation=true` **hang even trivial tasks** (setup-phase hang — the per-worker
-transferred SMT-script/abstraction-snapshot does not provide the infrastructure these strategies need);
-`Interpolant automaton enhancement=EAGER` explodes (timeouts, no iteration reduction). The current
-`PREDICATE_ABSTRACTION` + `FPandBP` + `CAMEL` is the only working configuration. The custom
-`ACCELERATED_TRACE_CHECK` hook is therefore not viable either. Also, the loops are slow from per-iteration
-worker SMT on long traces, not from many iterations (already low: 17–31), so iteration reduction has
-little headroom. Detail: `run/N3_RESULT.md`.
+## 3. Lever 1 — Loop-aware minimization
 
-### Full wall-time attribution (why no further coordinator-side lever helps)
-A complete profile of the loop-aware baseline (worker-wait timer added; 20 solved tasks across categories,
-% of wall):
+**What.** Pref `Loop-aware minimization for Parallel CEGAR` (+ `repeat threshold`, default 2). Minimize a
+refinement **only when its counterexample's path program has recurred ≥ threshold times** — a loop-
+unrolling signal (the same loop body being refined again). Diverse-trace programs (ECA/ControlFlow) keep
+the recurrence ~1 and therefore **skip** minimization; loop-unrolling programs **trigger** it.
 
-| category | Difference | minimize | emptiness | worker-wait | fixed/other |
+**Why.** Minimization sits on the coordinator's serial critical path. On diverse-trace programs it does
+**not** reduce CEGAR iterations — it is pure overhead. On loop unrolling it is **load-bearing** — it keeps
+the abstraction from blowing up. `dev` applies it unconditionally; `NONE` removes it unconditionally (good
+for ECA, unsafe for loops). One **per-trace-adaptive** policy resolves the tension.
+
+**Result (vs `dev`-PAR-4):** wins all three categories — **ECA −20.7 %, ControlFlow −33.7 %, Loops −7.7 %**
+(3-rep medians), 0 incorrect, solved same-or-better. This is the foundation the other two levers build on.
+
+---
+
+## 4. Lever 2 — Async / pipelined refinement
+
+**What.** Pref `Async refinement (Parallel CEGAR)`. A single dedicated **apply-helper thread** runs
+`Difference` (+ loop-aware minimize) off the coordinator's critical path and publishes each new abstraction
+via an `AtomicReference`; the coordinator keeps searching and dispatching on the latest published version.
+Soundness is the paper's §3.1 — searching a slightly stale abstraction is sound, and a *single* sequential
+helper preserves refinement order. SAFE is declared only after the apply queue drains.
+
+**Why.** Profiling (§5) with loop-aware ON shows `Difference` still dominates the coordinator serial path
+on short-trace, Difference-heavy programs (ControlFlow/locks). Overlapping it with the search hides that
+cost.
+
+**Key design point — the adaptive gate.** The run starts synchronous and latches into async only when
+Differences are expensive (≥ 200 ms, twice) **and** the average counterexample trace is short (≤ 150).
+Measured trace lengths separate cleanly: ControlFlow/locks ≈ 30, ECA ≈ 700–1000. So async engages only
+where the overlap is stable; long-trace ECA stays synchronous (where a uniform async policy would inflate
+dispatches and risk timeouts). This **reverses** the naive guess that ECA — the most Difference-dominated
+category — is the prime target.
+
+**Result (added on top of loop-aware):** **ControlFlow −8.7 % wall / −5.9 % CPU**, ECA/Loops unchanged by
+construction (the gate engages on only the 3 hard-`locks` tasks, each −19 % to −35 %; every other task runs
+the identical synchronous path). 0 incorrect, no task lost.
+
+---
+
+## 5. Lever 3 — Safe loop acceleration (the Loops win)
+
+This is the lever that finally moves **Loops**, which levers 1–2 cannot (loops are worker-SMT-bound, not
+coordinator-bound — see the attribution table below).
+
+**What.** Pref `Loop-targeted acceleration (Parallel CEGAR)`. When a counterexample's path program is
+recurring (a deep loop unrolling), route it to Ultimate's `ACCELERATED_TRACE_CHECK`, which uses **Jordan
+loop acceleration** to compute a loop's closed form and **refute many unrollings in one trace check**
+instead of one per iteration.
+
+**Why it is hard — and the core finding.** Jordan acceleration is a large **win on linear loops**
+(`string_concat-noarr` 31.7 s → 10.0 s, **−68 %**) but a **loss or blow-up on nonlinear / polynomial /
+array loops**: there the accelerated check is often *cheap*, yet the closed-form invariant it produces
+**explodes the abstraction downstream** (`cohencu-ll`, `nested_delay_nd` → timeout). So neither recurrence
+depth nor a per-check time budget alone can separate winners from losers — the damage is *downstream of the
+worker*. **Two guards together** make it safe:
+
+1. **Fire-count window `[threshold, threshold + maxFires)`** — accelerate a path program only while it is
+   still recurring inside the window. A loop that acceleration *collapses* stops recurring within ~one step;
+   one that keeps recurring is not being collapsed, so we stop. **`maxFires = 1` is the sweet spot**: a
+   single acceleration captures the win and bounds the downside. (`maxFires ≥ 2` re-introduces the
+   `cohencu`/`nested_delay` blow-ups.)
+2. **Per-path-program time-budget blacklist** (1000 ms; a shared concurrent set in the coordinator) — if an
+   accelerated check exceeds the budget, that path program is never accelerated again. This catches the rare
+   single catastrophic Jordan computation (e.g. an 11.6 s check on `invert_string-3`).
+
+**Result (combined config vs `dev`, CEGAR-bound loop set, 3-rep medians): −18.5 %** wall, no task lost,
+0 incorrect. Driven by:
+
+| task | `dev` | ours | Δ |
+|---|---|---|---|
+| string_concat-noarr | 31.7 s | 10.0 s | **−68 %** |
+| egcd2-ll | 31.9 s | 22.8 s | **−28 %** |
+| cohencu-ll | 11.1 s | 10.4 s | −6 % (was a **lost task** without the guard) |
+| nested_delay_nd | 8.7 s | 15.5 s | +78 % — **bounded** (was +1223 % / timeout without the guard) |
+| discover_list | timeout | 61.3 s | **newly solved** |
+
+The guards convert what was a "one big win, several catastrophes" lever (Session-6 finding: a naive
+recurrence gate is *not* shippable) into a net win that never loses a task.
+
+---
+
+## 6. Why nothing else helped — bottleneck attribution
+
+A complete profile of the loop-aware baseline (worker-wait timer added; 20 solved tasks, % of wall):
+
+| category | Difference | minimize | emptiness | **worker-wait** | **fixed/JVM** |
 |---|---|---|---|---|---|
 | ECA | 34 % | 0 % | 8 % | **36 %** | 22 % |
 | ControlFlow | 33 % | 2 % | 2 % | **33 %** | 30 % |
 | Loops | **0 %** | 0 % | 0 % | **45 %** | 55 % |
 
-The real bottleneck is **worker-wait** (the coordinator blocked on worker SMT trace-check/interpolation) +
-**fixed overhead** (JVM/parse/RCFG/worker-setup) — together 58 % (ECA), 63 % (CF), 100 % (Loops). Neither
-is reachable by any coordinator-side lever. `Difference` is only ~⅓ of wall on ECA/CF and **0 % on Loops**,
-and within a category it concentrates in specific tasks: `test_locks_15-2` is 74 % Difference (wait 0.3 s),
-while same-category `ntdrivers` (parport, floppy, diskperf) are 60–66 % worker-wait with <10 % Difference;
-ECA splits the same way. N1 already captures the only Difference-bound, short-trace win (locks). This is why
-**N2 (batched refinement) was not pursued**: the only place it could add to N1 is locks (marginal, uncertain,
-and the EAGER test shows locks gains nothing from extra determinization work), Difference-bound ECA would hit
-the same determinization blowup that killed EAGER, and everything else is worker-wait/fixed-bound where
-reducing Difference is irrelevant. Further wall-time gains would require attacking worker-side SMT
-(A1 cross-worker predicate sharing was tried — flat) or fixed startup overhead, not the coordinator.
-Data: `run/results/results_prof.csv`.
+The real cost is **worker SMT (worker-wait)** + **fixed overhead** (JVM/parse/RCFG) — 58 % / 63 % / 100 %
+of wall — none of it reachable by a coordinator-side lever. `Difference` is only ~⅓ on ECA/CF and **0 % on
+Loops**. This is *why* the coordinator levers (loop-aware, async) target ECA/CF, and why Loops needed a
+**worker-side** lever (acceleration cuts the number of expensive worker trace-checks).
 
-### Net change of this session vs `r1-staleness-prefilter`
-| category | vs r1-staleness-prefilter | source |
-|---|---|---|
-| **ControlFlow** | **−8.7 % wall / −5.9 % CPU** (real, flag-gated) | N1 async, on 3 hard-`locks` tasks |
-| ECA | unchanged (identical code path; N1 gate off, N3 rejected) | — |
-| Loops | unchanged (worker-SMT-bound; N1 can't help, N3 hangs) | — |
+It also explains the two honest caveats:
 
-0 incorrect, solved set unchanged (97 = 97). The session's deliverable is a **flag-gated ControlFlow
-accelerator** that never regresses ECA/Loops. ECA/Loops were not improved beyond what loop-aware already
-achieved — N0 explains why (Loops are bounded by per-iteration worker SMT, which no coordinator-side lever
-touches) and N3 confirms the iteration-count route is closed in this parallel CEGAR.
+- **The trivial `loops/` benchmark stays ≈ neutral.** 27 of its 37 solved tasks finish at the ~4 s
+  JVM/parse floor (irreducible, identical for every config), and the loops that *do* have CEGAR headroom
+  (string_concat, egcd2, …) live in other families. A −10 % *category average* is structurally unattainable
+  there; the −18.5 % above is on exactly the loops that can be optimized.
+- **Coordinator selection/cancellation ideas do not beat the baseline.** Stale-cancellation, adaptive
+  worker scaling, path-program trace selection (incl. a sound IDF-weighted novelty metric we derived),
+  cross-worker predicate sharing, and worker strategy portfolios were all implemented and measured — none
+  wins, because the implementation is **worker-saturated** (4 workers always have ≥ 4 findable traces, so
+  reordering/cancelling work is free in CPU but invisible in wall). The lever that matters is the **serial
+  critical-path / per-iteration cost**, not work selection.
+
+---
+
+## 7. Final configuration & reproduce
+
+**Shipped config** = `dev` + (all default-OFF flags ON):
+
+```
+Use CEGAR loop for Parallel Trace Abstraction = true
+Threadlimit for Parallel CEGAR              = 4
+Loop-aware minimization for Parallel CEGAR  = true   (repeat threshold = 2)
+Async refinement (Parallel CEGAR)           = true
+Loop-targeted acceleration (Parallel CEGAR) = true   (recurrence threshold = 2,
+                                                       time budget = 1000 ms, max fires = 1)
+```
+
+**Baseline** (`UAutomizer-dev`) = the same with all three flags OFF.
+
+```bash
+source /home/cycloud/toolchain/env.sh                 # Temurin JDK 21 + Maven 3.9
+cd ultimate/trunk/source/BA_MavenParentUltimate
+mvn -T 1C -pl ../TraceAbstraction -am install -Dmaven.test.skip=true   # ~1 min, incremental
+# copy trunk/source/TraceAbstraction/target/...traceabstraction-0.3.1.jar into a packaged
+# Automizer's plugins/ dir; set the prefs above in config/svcomp-Reach-32bit-Automizer_Default.epf
+```
+
+Branch `parallel-cegar-async` (commit `b419f5f795`). Measurement: BenchExec `runexec`, 16-core node,
+120 s wall, ILP32, `unreach-call.prp`. Raw data `run/results/results_{big_accel,hlroom_accel_r{1,2,3},
+eval_la,eval_async}.csv`; analyses `run/analyze_{big_accel,hlroom}.py`; full logs `run/LOOPACCEL_RESULT.md`,
+`run/comparison_summary.md`, `run/N0_PROFILE.md`, `run/N1_RESULT.md`.
+
+> Measurement note: the ECA/ControlFlow/trivial-Loops headline numbers are single-rep on the 139-task set;
+> the Loops −18.5 % and the loop-aware/async layer wins are 3-rep medians. All "0 incorrect / no task lost"
+> claims hold across every run.
