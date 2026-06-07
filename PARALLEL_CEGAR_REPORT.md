@@ -1,17 +1,27 @@
 # Parallel Trace Abstraction — improving the coordinator over the paper baseline
 
 Reproduction and extension of **Barth & Jakobs, "Multi-Threaded Software Model Checking via Parallel
-Trace Abstraction Refinement"** (arXiv:2509.13699) in Ultimate Automizer. This branch
-(`r1-staleness-prefilter`) adds several **flag-gated** improvements to the parallel-CEGAR coordinator,
-all **default OFF** so the paper baseline is preserved bit-for-bit when no flag is set.
+Trace Abstraction Refinement"** (arXiv:2509.13699) in Ultimate Automizer. The work adds several
+**flag-gated** improvements to the parallel-CEGAR coordinator, all **default OFF** so the paper baseline
+is preserved bit-for-bit when no flag is set. It spans two branches, each a self-contained layer:
+
+- **`r1-staleness-prefilter`** (commit `d8861b9ac6`) — the **loop-aware minimization** win (§2–§5).
+- **`parallel-cegar-async`** (off `d8861b9ac6`) — **async / pipelined refinement** on top of loop-aware
+  (§6, this session).
 
 **Goal:** at the **same thread count (PAR-4 vs PAR-4)**, beat the paper-faithful `dev`-branch parallel
 CEGAR on wall-clock and CPU time, with the same solved set and zero wrong verdicts — across the
 ReachSafety **ECA, ControlFlow, and Loops** categories.
 
-**Headline result:** a single config — **loop-aware minimization** — beats `dev`-PAR-4 on wall time in
-**all three** categories: **ECA −20.7%, ControlFlow −33.7%, Loops −7.7%**, 0 incorrect, solved set
-same-or-better. Measured with BenchExec `runexec` on a 16-core node, 120 s wall limit.
+**Headline result (layer 1, vs `dev`-PAR-4):** a single config — **loop-aware minimization** — beats
+`dev`-PAR-4 on wall time in **all three** categories: **ECA −20.7%, ControlFlow −33.7%, Loops −7.7%**,
+0 incorrect, solved set same-or-better. Measured with BenchExec `runexec` on a 16-core node, 120 s wall
+limit.
+
+**Headline result (layer 2, vs loop-aware itself):** **async refinement** further cuts the coordinator's
+serial `Difference` cost on **ControlFlow by −8.7 % wall / −5.9 % CPU**, while leaving ECA and Loops
+exactly at the loop-aware baseline (the adaptive gate engages only where it stably wins) — 0 incorrect,
+identical solved set, no task lost. See §6.
 
 ---
 
@@ -150,9 +160,13 @@ Raw data: `run/results/results_{big,hardloops,loopaware,loopmedian,sweep,diversi
 
 ## 6. Async / pipelined refinement — beating `UA-LOOPAWARE` on the coordinator serial path
 
-A second improvement, on branch **`parallel-cegar-async`** (off the loop-aware branch), targets the
-coordinator's remaining serial cost. New pref **`Async refinement (Parallel CEGAR)`**, **default OFF**,
-baseline preserved bit-for-bit.
+A second improvement, on branch **`parallel-cegar-async`** (off `d8861b9ac6`), targets the coordinator's
+remaining serial cost. New pref **`Async refinement (Parallel CEGAR)`**, **default OFF**, baseline
+preserved bit-for-bit.
+
+**Baseline for this section is `UA-LOOPAWARE` = `r1-staleness-prefilter` @ `d8861b9ac6` with loop-aware
+ON** (the layer-1 winner). So every number below is the *additional* gain over r1-staleness-prefilter,
+not over `dev`.
 
 ### N0 — profiling first (the discipline that drove this)
 With loop-aware ON, millisecond instrumentation of the coordinator serial path (`run/N0_PROFILE.md`)
@@ -219,3 +233,15 @@ transferred SMT-script/abstraction-snapshot does not provide the infrastructure 
 `ACCELERATED_TRACE_CHECK` hook is therefore not viable either. Also, the loops are slow from per-iteration
 worker SMT on long traces, not from many iterations (already low: 17–31), so iteration reduction has
 little headroom. Detail: `run/N3_RESULT.md`.
+
+### Net change of this session vs `r1-staleness-prefilter`
+| category | vs r1-staleness-prefilter | source |
+|---|---|---|
+| **ControlFlow** | **−8.7 % wall / −5.9 % CPU** (real, flag-gated) | N1 async, on 3 hard-`locks` tasks |
+| ECA | unchanged (identical code path; N1 gate off, N3 rejected) | — |
+| Loops | unchanged (worker-SMT-bound; N1 can't help, N3 hangs) | — |
+
+0 incorrect, solved set unchanged (97 = 97). The session's deliverable is a **flag-gated ControlFlow
+accelerator** that never regresses ECA/Loops. ECA/Loops were not improved beyond what loop-aware already
+achieved — N0 explains why (Loops are bounded by per-iteration worker SMT, which no coordinator-side lever
+touches) and N3 confirms the iteration-count route is closed in this parallel CEGAR.
