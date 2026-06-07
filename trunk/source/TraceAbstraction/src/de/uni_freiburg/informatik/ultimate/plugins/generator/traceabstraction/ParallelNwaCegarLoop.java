@@ -145,6 +145,8 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 	private volatile long mDiffTimeMs = 0;
 	private volatile long mMinimizeTimeMs = 0;
 	private long mEmptinessTimeMs = 0;
+	// N0+: time the coordinator is BLOCKED waiting for a worker result (worker-wait component of wall).
+	private long mWorkerWaitMs = 0;
 	private long mWorkerSetUpTime = 0;
 
 	// N1 (async refinement): apply a refinement (Difference + minimization) on a single dedicated helper thread off
@@ -628,6 +630,7 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 			mLogger.info("N0_DiffTimeMs: " + mDiffTimeMs);
 			mLogger.info("N0_MinimizeTimeMs: " + mMinimizeTimeMs);
 			mLogger.info("N0_EmptinessTimeMs: " + mEmptinessTimeMs);
+			mLogger.info("N0_WorkerWaitMs: " + mWorkerWaitMs);
 			mLogger.info("AsyncRefinementsApplied: " + mAsyncRefinementsApplied);
 			mLogger.info("AsyncRefinementPending: " + mPendingApplies.get());
 			mLogger.info("AsyncSubmitWaits: " + mAsyncSubmitWaits);
@@ -785,8 +788,11 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		if (mRunningThreads >= mThreadLimit || didntFindCexLastIteration) {
 			assert mRunningThreads > 0;
 			mLogger.info("All threads busy, going to sleep.");
-			// No busy waiting via BlockingQueue
+			// No busy waiting via BlockingQueue. N0+: time spent here is the coordinator BLOCKED waiting for a worker
+			// (the "worker-wait" component of wall) — distinct from the serial Difference/minimize/emptiness cost.
+			final long waitStart = System.nanoTime();
 			doneFuture = mWorkerResultQueue.take();
+			mWorkerWaitMs += (System.nanoTime() - waitStart) / 1000000;
 			mLogger.info("Waking up, a worker is done.");
 		} else {
 			doneFuture = mWorkerResultQueue.poll();

@@ -234,6 +234,29 @@ transferred SMT-script/abstraction-snapshot does not provide the infrastructure 
 worker SMT on long traces, not from many iterations (already low: 17–31), so iteration reduction has
 little headroom. Detail: `run/N3_RESULT.md`.
 
+### Full wall-time attribution (why no further coordinator-side lever helps)
+A complete profile of the loop-aware baseline (worker-wait timer added; 20 solved tasks across categories,
+% of wall):
+
+| category | Difference | minimize | emptiness | worker-wait | fixed/other |
+|---|---|---|---|---|---|
+| ECA | 34 % | 0 % | 8 % | **36 %** | 22 % |
+| ControlFlow | 33 % | 2 % | 2 % | **33 %** | 30 % |
+| Loops | **0 %** | 0 % | 0 % | **45 %** | 55 % |
+
+The real bottleneck is **worker-wait** (the coordinator blocked on worker SMT trace-check/interpolation) +
+**fixed overhead** (JVM/parse/RCFG/worker-setup) — together 58 % (ECA), 63 % (CF), 100 % (Loops). Neither
+is reachable by any coordinator-side lever. `Difference` is only ~⅓ of wall on ECA/CF and **0 % on Loops**,
+and within a category it concentrates in specific tasks: `test_locks_15-2` is 74 % Difference (wait 0.3 s),
+while same-category `ntdrivers` (parport, floppy, diskperf) are 60–66 % worker-wait with <10 % Difference;
+ECA splits the same way. N1 already captures the only Difference-bound, short-trace win (locks). This is why
+**N2 (batched refinement) was not pursued**: the only place it could add to N1 is locks (marginal, uncertain,
+and the EAGER test shows locks gains nothing from extra determinization work), Difference-bound ECA would hit
+the same determinization blowup that killed EAGER, and everything else is worker-wait/fixed-bound where
+reducing Difference is irrelevant. Further wall-time gains would require attacking worker-side SMT
+(A1 cross-worker predicate sharing was tried — flat) or fixed startup overhead, not the coordinator.
+Data: `run/results/results_prof.csv`.
+
 ### Net change of this session vs `r1-staleness-prefilter`
 | category | vs r1-staleness-prefilter | source |
 |---|---|---|
