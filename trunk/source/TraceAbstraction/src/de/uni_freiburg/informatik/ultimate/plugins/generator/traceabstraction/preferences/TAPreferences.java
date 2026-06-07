@@ -120,6 +120,7 @@ public final class TAPreferences {
 	private final boolean mRelativeGrowthMinimization;
 	private final int mMinimizationGrowthPercent;
 	private final boolean mLoopAwareMinimization;
+	private final boolean mAsyncRefinement;
 	private final int mLoopAwareMinThreshold;
 
 	public enum Artifact {
@@ -264,6 +265,8 @@ public final class TAPreferences {
 				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_LOOP_AWARE_MINIMIZATION);
 		mLoopAwareMinThreshold =
 				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_LOOP_AWARE_MIN_THRESHOLD);
+		mAsyncRefinement =
+				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_ASYNC_REFINEMENT);
 	}
 
 	/**
@@ -735,5 +738,9 @@ public final class TAPreferences {
 
 	public int loopAwareMinimizationThreshold() {
 		return mLoopAwareMinThreshold;
+	}
+
+	public boolean asyncRefinementEnabled() {
+		return mAsyncRefinement;
 	}
 }

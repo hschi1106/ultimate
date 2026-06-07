@@ -145,3 +145,65 @@ Baseline (`UAutomizer-dev`): the same minus the loop-aware flag.
 
 Raw data: `run/results/results_{big,hardloops,loopaware,loopmedian,sweep,diversity}.csv`; analysis scripts
 `run/analyze_*.py`; full experimental log `run/comparison_summary.md`.
+
+---
+
+## 6. Async / pipelined refinement — beating `UA-LOOPAWARE` on the coordinator serial path
+
+A second improvement, on branch **`parallel-cegar-async`** (off the loop-aware branch), targets the
+coordinator's remaining serial cost. New pref **`Async refinement (Parallel CEGAR)`**, **default OFF**,
+baseline preserved bit-for-bit.
+
+### N0 — profiling first (the discipline that drove this)
+With loop-aware ON, millisecond instrumentation of the coordinator serial path (`run/N0_PROFILE.md`)
+shows, on smoke tasks per category:
+- **`Difference` dominates** the serial path on ECA (up to 58 % of wall) and ControlFlow (up to 73 %).
+- Minimization ≈ 0 (loop-aware already skips it); emptiness ≤ 2.1 s (so an incremental-emptiness lever
+  is **not** justified).
+- **Loops are worker-SMT-bound** — the coordinator serial path is < 150 ms while wall is 11–39 s; there
+  is nothing on the coordinator to overlap.
+
+### The lever
+A single dedicated **apply-helper thread** applies `Difference` (+ loop-aware minimize when it fires)
+off the coordinator's critical path and publishes each new abstraction via an `AtomicReference`; the
+coordinator keeps searching/dispatching on the latest published version and adopts newer ones as they
+arrive. Soundness is the paper's §3.1 (a stale abstraction for emptiness/trace-search is sound;
+refinement order is preserved by the single sequential helper, so no commutative aggregation is needed).
+SAFE is declared only after the apply queue drains and the fully-refined abstraction is empty.
+
+Four mechanisms make it correct and safe:
+1. **Master managed script** for the off-thread Difference (the worker's script is reused per task;
+   the master script is not), so a deferred apply never races a worker.
+2. **FIFO avoid-set deferral** — a dispatched trace stays in the search avoid-set until its refinement
+   is *applied*, so the coordinator never re-dispatches it on the stale abstraction.
+3. **Helper-side stale-skip** — an `Accepts` check skips a refinement whose trace an earlier refinement
+   already removed (sound; avoids wasted Difference work).
+4. **Adaptive gate with a trace-length guard** — the run starts synchronous and latches into async only
+   once Differences are expensive (≥ 200 ms, twice) **and** the average counterexample trace is short
+   (≤ 150). Measured trace lengths separate cleanly: ControlFlow/locks ≈ 30, ECA ≈ 700–1000. So async
+   engages only on short-trace, Difference-dominated programs, where the overlap is stable and the
+   stale-skip check is cheap; long-trace ECA stays synchronous (where async would inflate dispatches and
+   risk a timeout).
+
+This **reverses the naive expectation** that ECA (most Difference-dominated) is the prime target: a
+*uniform* async policy wins hard ECA but regresses ControlFlow/Loops and can time out on ECA. The gate
+confines async to where it stably wins.
+
+### Results — `UA-N1ASYNC` (loop-aware ON + async ON) vs `UA-LOOPAWARE`, enlarged set (139 tasks)
+`runexec`, 120 s wall, ILP32, same session, wall/CPU summed over commonly-solved tasks:
+
+| category | wall | CPU | solved |
+|---|---|---|---|
+| **ControlFlow** | **−8.7 %** | **−5.9 %** | 28 = 28 |
+| ECA | −1.6 % | −3.4 % | 29 = 29 |
+| Loops | −0.6 % | −2.0 % | 37 = 37 |
+
+**0 incorrect**, solved set identical (97 = 97), **no task lost**. Only the 3 hard-`locks` tasks latched
+into async (each **−19 % to −35 %** wall, 3×-rep stable); every ECA/Loops/other task ran the identical
+synchronous baseline path, so their ties are baseline **by construction** (the small deltas are
+measurement noise) — regression is structurally impossible. The ControlFlow category win is fully
+attributable to those 3 locks tasks.
+
+Config (`UA-N1ASYNC`): `UA-LOOPAWARE` + `Async refinement (Parallel CEGAR)=true`. Raw data:
+`run/results/results_eval_{la,async}.csv`; design + per-task evidence: `run/N1_RESULT.md`,
+`run/N0_PROFILE.md`.

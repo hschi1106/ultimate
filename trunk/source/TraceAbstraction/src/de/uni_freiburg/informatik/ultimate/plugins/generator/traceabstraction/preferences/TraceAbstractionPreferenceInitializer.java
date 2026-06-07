@@ -589,6 +589,11 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 	private static final String DESC_LOOP_AWARE_MIN_THRESHOLD =
 			"Used only when 'Loop-aware minimization' is on: minimize once a refined counterexample's path program has been seen at least this many times (loop-unrolling signal). 2 = minimize as soon as a path program recurs; higher = require more repetition before minimizing (more NONE-like).";
 
+	public static final String LABEL_ASYNC_REFINEMENT = "Async refinement (Parallel CEGAR)";
+	private static final boolean DEF_ASYNC_REFINEMENT = false;
+	private static final String DESC_ASYNC_REFINEMENT =
+			"N1: offload applying a refinement (the automaton Difference, plus minimization when it fires) from the coordinator's serial critical path to a single dedicated helper thread on an otherwise-idle core. The coordinator no longer blocks on Difference: it keeps searching for error traces and dispatching workers on the latest published (possibly out-of-date) abstraction, and adopts the newer version when the helper finishes. Profiling shows Difference dominates the coordinator's serial path on ECA/control-flow (up to ~73% of wall), so overlapping it with search/dispatch and worker SMT is a direct wall-time win there; loop-heavy programs are worker-bound and unaffected. Sound (paper §3.1): using a stale abstraction for emptiness check / trace search is sound, and a stale dispatch only ever costs a redundant (free, idle-core) worker; SAFE is still declared only once all refinements are applied and the fully-refined abstraction is empty. OFF = the coordinator applies each refinement inline (the paper's behaviour).";
+
 	public static final String LABEL_RELATIVE_GROWTH_MINIMIZATION =
 			"Relative-growth minimization for Parallel CEGAR";
 	private static final boolean DEF_RELATIVE_GROWTH_MINIMIZATION = false;
@@ -964,6 +969,8 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 						DESC_LOOP_AWARE_MINIMIZATION, PreferenceType.Boolean),
 				new UltimatePreferenceItem<>(LABEL_LOOP_AWARE_MIN_THRESHOLD, DEF_LOOP_AWARE_MIN_THRESHOLD,
 						DESC_LOOP_AWARE_MIN_THRESHOLD, PreferenceType.Integer),
+				new UltimatePreferenceItem<>(LABEL_ASYNC_REFINEMENT, DEF_ASYNC_REFINEMENT,
+						DESC_ASYNC_REFINEMENT, PreferenceType.Boolean),
 				new UltimatePreferenceItem<>(LABEL_RELATIVE_GROWTH_MINIMIZATION, DEF_RELATIVE_GROWTH_MINIMIZATION,
 						DESC_RELATIVE_GROWTH_MINIMIZATION, PreferenceType.Boolean),
 				new UltimatePreferenceItem<>(LABEL_MINIMIZATION_GROWTH_PERCENT, DEF_MINIMIZATION_GROWTH_PERCENT,

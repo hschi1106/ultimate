@@ -41,7 +41,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -134,7 +137,67 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 	private Integer maxActiveThreads = 0;
 	private final Integer mActiveExecutors = 0;
 	private long mSearchTime = 0;
+	// N0 profiling: millisecond-granularity split of the coordinator serial critical path. The existing
+	// mSearchTime/mRefinementTime are second-truncated and lump Difference+minimize together; these three
+	// separate Difference, minimization, and emptiness search so the dominant remaining component (with
+	// loop-aware minimization ON) can be identified. Overhead is two nanoTime() reads per phase (noise).
+	// volatile: in async-refinement mode these are written by the apply-helper thread and read by the coordinator.
+	private volatile long mDiffTimeMs = 0;
+	private volatile long mMinimizeTimeMs = 0;
+	private long mEmptinessTimeMs = 0;
 	private long mWorkerSetUpTime = 0;
+
+	// N1 (async refinement): apply a refinement (Difference + minimization) on a single dedicated helper thread off
+	// the coordinator's serial critical path. The coordinator publishes/consumes the abstraction via
+	// mPublishedAbstraction (an immutable reference handoff, like the R6 sweep snapshot); only the helper writes it,
+	// the coordinator pulls the latest version at each iteration. Reading an automaton concurrently is already
+	// library-safe (IsEmptyParallel reads it from many threads). The Difference is built with the MASTER managed
+	// script (mCsToolkit) + mPredicateFactory so it is independent of the worker's reused script. SAFE is declared
+	// only after the apply queue drains and the fully-refined abstraction is empty. Sound: paper §3.1.
+	private ExecutorService mApplyExecutor;
+	private final AtomicReference<INestedWordAutomaton<L, IPredicate>> mPublishedAbstraction = new AtomicReference<>();
+	private final AtomicInteger mPendingApplies = new AtomicInteger(0);
+	private volatile Throwable mApplyError;
+	// volatile: incremented by the apply-helper, read by the coordinator to release avoid-set entries.
+	private volatile long mAsyncRefinementsApplied = 0;
+	// Coordinator-owned FIFO of counterexamples whose refinement is submitted but not yet applied. In async mode the
+	// trace is NOT removed from the search avoid-set (mActiveCounterexamples) at submit time — if it were, the
+	// coordinator would re-find and re-dispatch it on the still-stale abstraction (a redundant-dispatch storm). It is
+	// released only once its refinement is applied (FIFO == single-helper apply order).
+	private final java.util.ArrayDeque<IRun<L, ?>> mAsyncAppliedPending = new java.util.ArrayDeque<>();
+	private long mAsyncCleanedUp = 0;
+	// Pipeline-depth bound: the coordinator may run at most this many refinements ahead of the apply-helper. Bounding
+	// the in-flight applies bounds how STALE the abstraction the coordinator searches/dispatches on can be, which
+	// bounds (a) redundant dispatches that inflate the helper's sequential Difference chain and (b) the artificial
+	// path-program recurrence that would otherwise trip loop-aware minimization on programs where sync skips it.
+	private static final int ASYNC_MAX_PENDING_APPLIES = 2;
+	private long mAsyncSubmitWaits = 0;
+	// Adaptive gate: async only pays off when applying a refinement (the Difference) is expensive enough that
+	// overlapping it outweighs the cost of dispatching on a slightly-stale abstraction. We therefore start
+	// SYNCHRONOUS (measuring each Difference) and latch into async only once Differences prove expensive. On
+	// Difference-cheap programs (control-flow/loops, where stale dispatch would inflate the refinement count) the
+	// latch never fires, so behaviour is identical to the loop-aware baseline; on Difference-dominated programs
+	// (hard ECA) it fires and overlaps the expensive Difference chain. One-way latch (never reverts).
+	private static final long ASYNC_DIFF_THRESHOLD_MS = 200;
+	// Trace-length guard: only latch into async on SHORT-trace programs. Measured separation is large — control-flow
+	// (locks) averages ~30, where async overlaps the Difference chain stably and the stale-skip Accepts check is
+	// cheap; ECA averages ~700-1000, where the long-trace Accepts checks are costly and the dispatch inflation can
+	// spiral to a timeout (losing a task). 150 sits in the wide gap.
+	private static final long ASYNC_MAX_CEX_LEN = 150;
+	private volatile boolean mAsyncActive = false;
+	private long mPrevSyncDiffMs = -1;
+	// Redundant async refinements skipped because the trace was already removed by an earlier refinement.
+	private volatile long mAsyncRedundantSkipped = 0;
+	// Dispatched counterexample trace-length stats (to characterise the program: short-trace programs like
+	// control-flow benefit stably from async; long-trace ECA does not). Used by the trace-length latch guard.
+	private long mCexLenSum = 0;
+	private long mCexLenCount = 0;
+	private int mCexLenMax = 0;
+
+	/** True once the adaptive gate has switched this run into async-refinement mode (requires the flag too). */
+	private boolean asyncActive() {
+		return mPref.asyncRefinementEnabled() && mAsyncActive;
+	}
 	private int mIterationsWithMaxThreads = 0;
 	private int mIterationsWithOneThread = 0;
 	// S3: number of times an idle worker was withheld because the selected trace
@@ -331,11 +394,31 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 			}
 		}
 
+		// N1 (async refinement) uses an adaptive gate: the run starts synchronous and the apply-helper's starting
+		// abstraction is published only when the gate latches into async mode (see refinement()).
+
 		// start worker for initial cex:
 		startWorker();
 
 		for (mIteration = 1; mIteration <= mPref.maxIterations(); mIteration++) {
 			abortIfTimeout();
+			// N1: surface any helper-thread failure on the coordinator (fail loud), and adopt the latest abstraction
+			// version the helper has published. A new version means the search must run again on it.
+			if (asyncActive()) {
+				rethrowApplyErrorIfAny();
+				final INestedWordAutomaton<L, IPredicate> latest = mPublishedAbstraction.get();
+				if (latest != mAbstraction) {
+					mAbstraction = latest;
+					didntFindCexLastIteration = false;
+				}
+				// Release avoid-set entries whose refinement the helper has now applied (FIFO == apply order), so the
+				// search can again consider those traces (now removed from the abstraction) and so the set does not
+				// grow unbounded.
+				while (mAsyncCleanedUp < mAsyncRefinementsApplied && !mAsyncAppliedPending.isEmpty()) {
+					removeCounterexampleFromSet(mAsyncAppliedPending.pollFirst());
+					mAsyncCleanedUp++;
+				}
+			}
 			boolean abstractionWasRefined = false;
 			mLogger.info(String.format("=== Iteration %s ===", getIteration()));
 
@@ -389,6 +472,14 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 						refinement(workerResult);
 						mRefinementsDone += 1;
 						abstractionWasRefined = true;
+						if (asyncActive()) {
+							// N1: the apply-helper now owns this result (it still needs the subtrahend), and the
+							// abstraction is not yet updated, so do NOT garbage-collect it here and do NOT check
+							// emptiness on the stale abstraction. The helper garbage-collects after applying, and SAFE
+							// is checked after the apply queue drains (see below).
+							workerResult = mWorkerResultQueue.poll();
+							continue;
+						}
 						// Not sure if necessary
 						workerResult.garbageCollect();
 						// If new abstraction is empty terminate immediately
@@ -442,7 +533,9 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 			boolean firstIteration = true;
 			while (mRunningThreads < mThreadLimit && !didntFindCexLastIteration) {
 				assert mRunningThreads >= 0;
+				final long emptinessStart = System.nanoTime();
 				mCounterexample = searchForErrorTrace(!firstIteration);
+				mEmptinessTimeMs += (System.nanoTime() - emptinessStart) / 1000000;
 				if (mCounterexample == null) {
 					didntFindCexLastIteration = true;
 					break;
@@ -470,11 +563,28 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 			if (mPref.raceBottleneckTraceEnabled() && mRunningThreads < mThreadLimit) {
 				dispatchRacersForIdleWorkers();
 			}
+			// N1: with async refinement the per-refinement emptiness check is deferred (the abstraction is updated on
+			// the helper). Once there is no error trace in the current abstraction, no worker is running, and the
+			// apply queue has drained (so the abstraction is fully refined), the program is SAFE. Difference only
+			// shrinks the language, so an empty abstraction stays empty under any pending refinement; requiring the
+			// queue to be empty before declaring SAFE is therefore conservative and sound (paper §3.1).
+			if (asyncActive() && didntFindCexLastIteration && mRunningThreads == 0
+					&& mPendingApplies.get() == 0) {
+				mAbstraction = mPublishedAbstraction.get();
+				rethrowApplyErrorIfAny();
+				if (isSafeThenTerminate()) {
+					updateAndPrintStatistics(true);
+					return;
+				}
+			}
 			updateAndPrintStatistics(false);
 		}
 		mExec.shutdownNow();
 		if (mStaleSweepExecutor != null) {
 			mStaleSweepExecutor.shutdownNow();
+		}
+		if (mApplyExecutor != null) {
+			mApplyExecutor.shutdownNow();
 		}
 		mResultBuilder.addResultForAllRemaining(Result.USER_LIMIT_ITERATIONS);
 
@@ -515,6 +625,16 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 			mLogger.info("WorkerSetUpTime: " + mWorkerSetUpTime + " s");
 			mLogger.info("ExceptionInWorker: " + mExceptionInWorker);
 			mLogger.info("mRefinementTime: " + mRefinementTime);
+			mLogger.info("N0_DiffTimeMs: " + mDiffTimeMs);
+			mLogger.info("N0_MinimizeTimeMs: " + mMinimizeTimeMs);
+			mLogger.info("N0_EmptinessTimeMs: " + mEmptinessTimeMs);
+			mLogger.info("AsyncRefinementsApplied: " + mAsyncRefinementsApplied);
+			mLogger.info("AsyncRefinementPending: " + mPendingApplies.get());
+			mLogger.info("AsyncSubmitWaits: " + mAsyncSubmitWaits);
+			mLogger.info("AsyncGateLatched: " + mAsyncActive);
+			mLogger.info("AsyncRedundantSkipped: " + mAsyncRedundantSkipped);
+			mLogger.info("CexLenAvg: " + (mCexLenCount == 0 ? 0 : mCexLenSum / mCexLenCount) + " CexLenMax: "
+					+ mCexLenMax + " CexLenCount: " + mCexLenCount);
 			mLogger.info("StaleCancellationRequests: " + mStaleCancellationRequests);
 			mLogger.info("AsyncStaleSweepsSubmitted: " + mAsyncStaleSweepsSubmitted);
 			mLogger.info("AsyncStaleSweepsCoalesced: " + mAsyncStaleSweepsCoalesced);
@@ -571,6 +691,12 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 	private void startWorker() {
 		final NestedRun<L, ?> counterexample = (NestedRun<L, ?>) mCounterexample;
 		final int traceHash = counterexample.getWord().asList().hashCode();
+		final int cexLen = counterexample.getWord().length();
+		mCexLenSum += cexLen;
+		mCexLenCount += 1;
+		if (cexLen > mCexLenMax) {
+			mCexLenMax = cexLen;
+		}
 		final StaleCancellationToken cancellationToken =
 				mPref.isStaleWorkerCancellationEnabled() ? new StaleCancellationToken(traceHash) : null;
 		// add mCounterexample to list such that we dont get it twice in our search
@@ -651,6 +777,9 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 
 	private WorkerThreadResult<L, A> getWorkerResult(final boolean didntFindCexLastIteration)
 			throws InterruptedException {
+		if (asyncActive()) {
+			return getWorkerResultAsync(didntFindCexLastIteration);
+		}
 		WorkerThreadResult<L, A> doneFuture = null;
 
 		if (mRunningThreads >= mThreadLimit || didntFindCexLastIteration) {
@@ -665,10 +794,47 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		return doneFuture;
 	}
 
+	/**
+	 * N1: async-refinement variant of {@link #getWorkerResult}. The coordinator must wake on EITHER a worker result
+	 * OR an apply-helper completing (which publishes a newer abstraction to re-search), and must NOT block forever
+	 * when no worker is running but applies are still in flight (the sync code asserts a running thread; that
+	 * invariant does not hold here). We therefore poll the result queue with a short timeout: returning a result
+	 * when one is ready, or null when (a) the helper has published a newer abstraction (re-search it) or (b) there is
+	 * no work left at all (let the coordinator's SAFE-after-drain check run). The 50 ms tick adds at most ~50 ms of
+	 * latency per wake-up, negligible against the seconds-scale Difference it overlaps.
+	 */
+	private WorkerThreadResult<L, A> getWorkerResultAsync(final boolean didntFindCexLastIteration)
+			throws InterruptedException {
+		final boolean wouldBlock = mRunningThreads >= mThreadLimit || didntFindCexLastIteration;
+		if (!wouldBlock) {
+			return mWorkerResultQueue.poll();
+		}
+		while (true) {
+			if (mRunningThreads == 0 && mPendingApplies.get() == 0) {
+				// nothing in flight: do not block; let the coordinator re-search / declare SAFE.
+				return null;
+			}
+			final WorkerThreadResult<L, A> r = mWorkerResultQueue.poll(50, TimeUnit.MILLISECONDS);
+			if (r != null) {
+				return r;
+			}
+			if (mApplyError != null) {
+				return null;
+			}
+			if (mPublishedAbstraction.get() != mAbstraction) {
+				// the helper published a newer abstraction; return so the coordinator adopts and re-searches it.
+				return null;
+			}
+		}
+	}
+
 	private void shutDownAndDestroy(final Object marker) {
 		mExec.shutdownNow();
 		if (mStaleSweepExecutor != null) {
 			mStaleSweepExecutor.shutdownNow();
+		}
+		if (mApplyExecutor != null) {
+			mApplyExecutor.shutdownNow();
 		}
 		final Set<String> destroyedStorables = getServices().getStorage().destroyMarker(marker);
 		if (!destroyedStorables.isEmpty()) {
@@ -682,31 +848,249 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		// mInterations equals the amount of refinements
 		mCegarLoopBenchmark.announceNextIteration();
 
-		removeCounterexampleFromSet(threadResult.getCounterexample());
+		if (!asyncActive()) {
+			// Sync (incl. the pre-latch measuring phase): the abstraction is refined inline immediately below, so the
+			// trace can leave the avoid-set now.
+			removeCounterexampleFromSet(threadResult.getCounterexample());
+		}
 
 		final Set<IcfgLocation> hoareAnnotationLocs;
 		// TODO support for HoareAnnotations
 		hoareAnnotationLocs = Collections.emptySet();
 
+		if (asyncActive()) {
+			// Keep this trace in the avoid-set until the helper has actually applied its refinement; otherwise the
+			// coordinator would re-find it on the still-stale abstraction and re-dispatch it (a redundant-dispatch
+			// storm). It is released in FIFO order at the loop top as applies complete.
+			mAsyncAppliedPending.addLast(threadResult.getCounterexample());
+			// N1: do the coordinator-owned bookkeeping inline (mProgramCache / abstraction-size reads must stay on
+			// the coordinator thread), then hand the heavy Difference (+ optional minimize) to the helper. Compute
+			// the loop-aware / lazy minimization DECISION here (it reads the shared mProgramCache and mAbstraction)
+			// and pass it as a boolean so the helper touches no shared mutable coordinator state.
+			final boolean doMinimize = mPref.minimizeAbstractionPerWorker() && shouldMinimizeNow()
+					&& minimizeGivenLoopAware(threadResult);
+			submitAsyncRefinement(threadResult, doMinimize);
+			mRunningThreads -= 1;
+			return;
+		}
+
 		final PredicateFactoryRefinement stateFactoryForRefinement =
 				new PredicateFactoryRefinement(getServices(), threadResult.getWorkerMgdScript(),
 						threadResult.getPredicateFactory(), mComputeHoareAnnotation, hoareAnnotationLocs);
 		mLogger.info("Difference in Main");
+		final long diffStart = System.nanoTime();
 		final IOpWithDelayedDeadEndRemoval<L, IPredicate> diff =
 				computeAutomataDifference(mAbstraction, threadResult, stateFactoryForRefinement);
 
 		mAbstraction = diff.getResult();
+		final long thisDiffMs = (System.nanoTime() - diffStart) / 1000000;
+		mDiffTimeMs += thisDiffMs;
 		diagnoseIncrementalMembership(diff);
 		cancelStaleActiveCounterexamples(threadResult.getSubtrahend());
 		harvestSharedPredicates(threadResult);
 
 		if (mPref.minimizeAbstractionPerWorker() && shouldMinimizeNow()
 				&& minimizeGivenLoopAware(threadResult)) {
+			final long minStart = System.nanoTime();
 			minimizeAbstractionIfEnabled(stateFactoryForRefinement,
 					new PredicateFactoryResultChecking(mPredicateFactory));
+			mMinimizeTimeMs += (System.nanoTime() - minStart) / 1000000;
 		}
 		mRunningThreads -= 1;
 		mLogger.info("Main: Refinement done.");
+
+		// Adaptive gate: if the flag is on and the last two Differences were both expensive, latch into async mode
+		// for the remainder of the run. Requiring two consecutive expensive Differences avoids latching on a one-off
+		// spike. mAbstraction is the just-refined-and-minimized abstraction, so it is the correct chain head to hand
+		// to the helper. No applies are in flight yet (we are still synchronous), so the handoff is clean.
+		final long avgCexLen = mCexLenCount == 0 ? 0 : mCexLenSum / mCexLenCount;
+		if (mPref.asyncRefinementEnabled() && !mAsyncActive && thisDiffMs >= ASYNC_DIFF_THRESHOLD_MS
+				&& mPrevSyncDiffMs >= ASYNC_DIFF_THRESHOLD_MS && avgCexLen <= ASYNC_MAX_CEX_LEN) {
+			mAsyncActive = true;
+			mPublishedAbstraction.set(mAbstraction);
+			mLogger.info("N1 adaptive gate: switching to async refinement at iteration " + getIteration()
+					+ " (Difference ~" + thisDiffMs + " ms/refinement >= " + ASYNC_DIFF_THRESHOLD_MS
+					+ " ms, avg trace length " + avgCexLen + " <= " + ASYNC_MAX_CEX_LEN + ")");
+		}
+		mPrevSyncDiffMs = thisDiffMs;
+	}
+
+	/**
+	 * N1: hand a refinement to the single apply-helper thread. All shared coordinator state needed to build the
+	 * Difference is captured here (on the coordinator thread): the current abstraction as the minuend, a state
+	 * factory built from the MASTER managed script (so the apply is independent of the worker's reused script), and
+	 * the per-iteration services. The helper then touches only these captured locals, the result's own subtrahend,
+	 * and the publish/pending atomics. {@code doMinimize} is the loop-aware/lazy decision computed on the coordinator
+	 * (it reads the shared mProgramCache / abstraction size, which must not be touched from the helper).
+	 */
+	private void submitAsyncRefinement(final WorkerThreadResult<L, A> threadResult, final boolean doMinimize)
+			throws AutomataOperationCanceledException, AutomataLibraryException {
+		if (mApplyExecutor == null) {
+			mApplyExecutor = Executors.newSingleThreadExecutor(r -> {
+				final Thread t = new Thread(r, "ParallelCegar-ApplyRefinement");
+				t.setDaemon(true);
+				return t;
+			});
+		}
+		// Pipeline-depth bound: do not get more than ASYNC_MAX_PENDING_APPLIES refinements ahead of the helper.
+		// Paces the coordinator to the helper's apply rate and keeps the dispatched-on abstraction near-fresh.
+		while (mPendingApplies.get() >= ASYNC_MAX_PENDING_APPLIES) {
+			abortIfTimeout();
+			rethrowApplyErrorIfAny();
+			mAsyncSubmitWaits++;
+			try {
+				Thread.sleep(1);
+			} catch (final InterruptedException e) {
+				Thread.currentThread().interrupt();
+				break;
+			}
+		}
+		final PredicateFactoryRefinement stateFactory = new PredicateFactoryRefinement(getServices(),
+				mCsToolkit.getManagedScript(), mPredicateFactory, mComputeHoareAnnotation, Collections.emptySet());
+		final PredicateFactoryResultChecking resultCheckFactory = new PredicateFactoryResultChecking(mPredicateFactory);
+		final IUltimateServiceProvider services = getServices();
+		mPendingApplies.incrementAndGet();
+		mApplyExecutor.submit(
+				() -> applyRefinementAsync(threadResult, doMinimize, stateFactory, resultCheckFactory, services));
+	}
+
+	/**
+	 * N1: the apply-helper body (runs on the single ParallelCegar-ApplyRefinement thread). Applies the Difference
+	 * (and minimization when {@code doMinimize}) to the helper's running abstraction and publishes the new version.
+	 * Because there is exactly one helper, refinements are applied in submission order — identical to the synchronous
+	 * coordinator order, so no commutative aggregation is needed. The published reference is set BEFORE the pending
+	 * counter is decremented, so when the coordinator observes pendingApplies==0 the published abstraction already
+	 * reflects every applied refinement (needed for the SAFE-after-drain check). Any failure is recorded in
+	 * mApplyError and re-surfaced on the coordinator (fail loud).
+	 */
+	private void applyRefinementAsync(final WorkerThreadResult<L, A> threadResult, final boolean doMinimize,
+			final PredicateFactoryRefinement stateFactory, final PredicateFactoryResultChecking resultCheckFactory,
+			final IUltimateServiceProvider services) {
+		try {
+			// Chain on the helper's own latest result. Because this is the single apply thread and it publishes after
+			// each apply, mPublishedAbstraction holds the result of the immediately-preceding apply (or the initial
+			// abstraction) — so each Difference is applied on top of all previously-applied refinements, exactly as
+			// in the synchronous sequence. Capturing the minuend at submit time would instead drop earlier pending
+			// refinements.
+			final INestedWordAutomaton<L, IPredicate> minuend = mPublishedAbstraction.get();
+			// Stale-skip: the trace was selected on a possibly-older abstraction; if an earlier (already-applied)
+			// refinement has since removed it, re-refining it is pure waste (the Difference would change nothing) — and
+			// such redundant work is exactly what inflates the helper's chain on programs with overlapping traces. A
+			// read-only Accepts check on the chain head detects this; skip the Difference if the trace is gone. Sound:
+			// refining a trace not in the abstraction removes nothing, so skipping it cannot change a verdict.
+			final IRun<L, ?> cex = threadResult.getCounterexample();
+			if (cex != null && !new Accepts<>(new AutomataLibraryServices(services), minuend,
+					(NestedWord<L>) cex.getWord()).getResult()) {
+				mAsyncRedundantSkipped += 1;
+				return;
+			}
+			final long diffStart = System.nanoTime();
+			final IOpWithDelayedDeadEndRemoval<L, IPredicate> diff =
+					computeAutomataDifferenceAsync(minuend, threadResult, stateFactory, services);
+			INestedWordAutomaton<L, IPredicate> next = diff.getResult();
+			mDiffTimeMs += (System.nanoTime() - diffStart) / 1000000;
+			if (doMinimize) {
+				final long minStart = System.nanoTime();
+				next = minimizeGivenAsync(next, stateFactory, resultCheckFactory, services);
+				mMinimizeTimeMs += (System.nanoTime() - minStart) / 1000000;
+			}
+			mPublishedAbstraction.set(next);
+		} catch (final Throwable t) {
+			// Record and surface on the coordinator. A late cancellation/timeout is preserved (rethrowApplyErrorIfAny
+			// re-throws cancellation as cancellation, not as a crash).
+			mApplyError = t;
+		} finally {
+			threadResult.garbageCollect();
+			// "Processed" count (applied OR stale-skipped): the coordinator uses it to release the matching avoid-set
+			// entry in FIFO order. Incremented after any publish above, so when the coordinator sees the count advance
+			// the published abstraction already reflects this step.
+			mAsyncRefinementsApplied += 1;
+			mPendingApplies.decrementAndGet();
+		}
+	}
+
+	/**
+	 * N1: master-script, off-coordinator variant of {@link #computeAutomataDifference}. Identical except that it uses
+	 * the explicitly-captured {@code services} (the coordinator reassigns mServices per iteration, so the helper must
+	 * not call getServices()). reportInterpolantAutomatonStates is an independent int accumulator, safe to call from
+	 * the helper.
+	 */
+	private IOpWithDelayedDeadEndRemoval<L, IPredicate> computeAutomataDifferenceAsync(
+			final INestedWordAutomaton<L, IPredicate> minuend, final WorkerThreadResult<L, A> workerResult,
+			final PredicateFactoryRefinement stateFactory, final IUltimateServiceProvider services)
+			throws AutomataLibraryException {
+		final PowersetDeterminizer<L, IPredicate> psd =
+				new PowersetDeterminizer<>(workerResult.getSubtrahend(), true, mPredicateFactoryInterpolantAutomata);
+		final IOpWithDelayedDeadEndRemoval<L, IPredicate> diff;
+		if (mPref.differenceSenwa()) {
+			diff = new DifferenceSenwa<>(new AutomataLibraryServices(services), stateFactory, minuend,
+					workerResult.getSubtrahend(), psd, false);
+		} else {
+			diff = new Difference<>(new AutomataLibraryServices(services), stateFactory, minuend,
+					workerResult.getSubtrahend(), psd, workerResult.exploitSigmaStarConcatOfIa());
+		}
+		mCegarLoopBenchmark.reportInterpolantAutomatonStates(workerResult.getSubtrahend().size());
+		if (REMOVE_DEAD_ENDS) {
+			diff.removeDeadEnds();
+		}
+		return diff;
+	}
+
+	/**
+	 * N1: pure, off-coordinator variant of {@link #minimizeAbstraction}. Minimizes the GIVEN automaton and RETURNS
+	 * the result instead of mutating the mAbstraction field (which is owned by the coordinator). With the configured
+	 * Minimization=NONE it is a no-op. Only this single helper thread calls it, so the (map-backed)
+	 * addAutomataMinimizationData aggregation has no concurrent writer. Sound: minimization is language-preserving.
+	 */
+	private INestedWordAutomaton<L, IPredicate> minimizeGivenAsync(final INestedWordAutomaton<L, IPredicate> input,
+			final PredicateFactoryRefinement stateFactory, final PredicateFactoryResultChecking resultCheckFactory,
+			final IUltimateServiceProvider services)
+			throws AutomataOperationCanceledException, AutomataLibraryException {
+		final Minimization minimization = mPref.getMinimization();
+		if (minimization == Minimization.NONE) {
+			return input;
+		}
+		final Function<IPredicate, Set<IcfgLocation>> lcsProvider =
+				x -> (x instanceof ISLPredicate ? Collections.singleton(((ISLPredicate) x).getProgramPoint())
+						: new HashSet<>(Arrays.asList(((IMLPredicate) x).getProgramPoints())));
+		final AutomataMinimization<Set<IcfgLocation>, IPredicate, L> am;
+		try {
+			am = new AutomataMinimization<>(services, input, minimization, mComputeHoareAnnotation, getIteration(),
+					stateFactory, MINIMIZE_EVERY_KTH_ITERATION, mStoredRawInterpolantAutomata, mInterpolAutomaton,
+					MINIMIZATION_TIMEOUT, resultCheckFactory, lcsProvider, true);
+		} catch (final AutomataMinimizationTimeout e) {
+			mCegarLoopBenchmark.addAutomataMinimizationData(e.getStatistics());
+			throw e.getAutomataOperationCanceledException();
+		}
+		mCegarLoopBenchmark.addAutomataMinimizationData(am.getStatistics());
+		if (am.newAutomatonWasBuilt()) {
+			return am.getMinimizedAutomaton();
+		}
+		return input;
+	}
+
+	/**
+	 * N1: re-surface a failure that occurred on the apply-helper thread, preserving cancellation/timeout semantics so
+	 * a timed-out Difference is reported as a timeout rather than a crash.
+	 */
+	private void rethrowApplyErrorIfAny() throws AutomataOperationCanceledException, AutomataLibraryException {
+		final Throwable t = mApplyError;
+		if (t == null) {
+			return;
+		}
+		if (t instanceof AutomataOperationCanceledException) {
+			throw (AutomataOperationCanceledException) t;
+		}
+		if (t instanceof AutomataLibraryException) {
+			throw (AutomataLibraryException) t;
+		}
+		if (t instanceof RuntimeException) {
+			throw (RuntimeException) t;
+		}
+		if (t instanceof Error) {
+			throw (Error) t;
+		}
+		throw new AssertionError("Parallel CEGAR async refinement helper failed", t);
 	}
 
 	private boolean hasInfeasibilityProof(final WorkerThreadResult<L, A> workerResult) {
