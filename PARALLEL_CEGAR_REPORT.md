@@ -207,3 +207,15 @@ attributable to those 3 locks tasks.
 Config (`UA-N1ASYNC`): `UA-LOOPAWARE` + `Async refinement (Parallel CEGAR)=true`. Raw data:
 `run/results/results_eval_{la,async}.csv`; design + per-task evidence: `run/N1_RESULT.md`,
 `run/N0_PROFILE.md`.
+
+### N3 (reduce iteration count) — investigated, **rejected** (no code shipped)
+To help the worker-bound Loops (which N1 cannot), we tried to cut refinements-to-convergence by toggling
+existing Ultimate generalization/acceleration options (per the brief: toggle before coding). All fail in
+the parallel CEGAR: `Trace refinement strategy=ACCELERATED_INTERPOLATION` (loop acceleration) and
+`Interpolants consolidation=true` **hang even trivial tasks** (setup-phase hang — the per-worker
+transferred SMT-script/abstraction-snapshot does not provide the infrastructure these strategies need);
+`Interpolant automaton enhancement=EAGER` explodes (timeouts, no iteration reduction). The current
+`PREDICATE_ABSTRACTION` + `FPandBP` + `CAMEL` is the only working configuration. The custom
+`ACCELERATED_TRACE_CHECK` hook is therefore not viable either. Also, the loops are slow from per-iteration
+worker SMT on long traces, not from many iterations (already low: 17–31), so iteration reduction has
+little headroom. Detail: `run/N3_RESULT.md`.
