@@ -121,6 +121,10 @@ public final class TAPreferences {
 	private final int mMinimizationGrowthPercent;
 	private final boolean mLoopAwareMinimization;
 	private final boolean mAsyncRefinement;
+	private final boolean mLoopTargetedAcceleration;
+	private final int mLoopTargetedAccelThreshold;
+	private final int mLoopTargetedAccelBudgetMs;
+	private final int mLoopTargetedAccelMaxFires;
 	private final int mLoopAwareMinThreshold;
 
 	public enum Artifact {
@@ -267,6 +271,14 @@ public final class TAPreferences {
 				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_LOOP_AWARE_MIN_THRESHOLD);
 		mAsyncRefinement =
 				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_ASYNC_REFINEMENT);
+		mLoopTargetedAcceleration =
+				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_LOOP_TARGETED_ACCELERATION);
+		mLoopTargetedAccelThreshold =
+				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_LOOP_TARGETED_ACCEL_THRESHOLD);
+		mLoopTargetedAccelBudgetMs =
+				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_LOOP_TARGETED_ACCEL_BUDGET_MS);
+		mLoopTargetedAccelMaxFires =
+				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_LOOP_TARGETED_ACCEL_MAX_FIRES);
 	}
 
 	/**
@@ -742,5 +754,21 @@ public final class TAPreferences {
 
 	public boolean asyncRefinementEnabled() {
 		return mAsyncRefinement;
+	}
+
+	public boolean loopTargetedAccelerationEnabled() {
+		return mLoopTargetedAcceleration;
+	}
+
+	public int loopTargetedAccelerationThreshold() {
+		return mLoopTargetedAccelThreshold;
+	}
+
+	public int loopTargetedAccelerationBudgetMs() {
+		return mLoopTargetedAccelBudgetMs;
+	}
+
+	public int loopTargetedAccelerationMaxFires() {
+		return mLoopTargetedAccelMaxFires;
 	}
 }

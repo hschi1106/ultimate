@@ -41,6 +41,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -232,6 +233,11 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 	private long mStaleCancellationPrefilterChecks = 0;
 	// R4: cross-worker predicate sharing pool (null if disabled).
 	private final SharedPredicatePool mPredicatePool;
+	// Safe loop-targeted acceleration: path programs (keyed by their letter-set, as in PathProgramCache) whose
+	// accelerated trace check exceeded the time budget once -> never route them to ACCELERATED_TRACE_CHECK again
+	// (Jordan acceleration failed/was too costly for that loop; fall back to the default strategy). Shared across
+	// workers; concurrent because workers read/write it in parallel.
+	private final Set<Set<L>> mAccelBlacklist = ConcurrentHashMap.newKeySet();
 	// Lazy minimization: number of refinements whose abstraction minimization was skipped (still below threshold).
 	private long mLazyMinimizationSkips = 0;
 	// R1b: number of stale re-checks skipped because the Accepts cost exceeded the work budget.
@@ -367,6 +373,14 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 	/** R4: the shared cross-worker predicate pool for this run, or {@code null} if disabled. */
 	SharedPredicatePool getPredicatePool() {
 		return mPredicatePool;
+	}
+
+	/**
+	 * Safe loop-targeted acceleration: shared set of path programs (letter-sets) for which the accelerated trace
+	 * check proved too slow once and must not be retried with acceleration. Workers add to / read from it directly.
+	 */
+	Set<Set<L>> getAccelBlacklist() {
+		return mAccelBlacklist;
 	}
 
 	/** R4: the coordinator's (main) managed script, the canonical store for pooled predicates. */

@@ -589,6 +589,26 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 	private static final String DESC_LOOP_AWARE_MIN_THRESHOLD =
 			"Used only when 'Loop-aware minimization' is on: minimize once a refined counterexample's path program has been seen at least this many times (loop-unrolling signal). 2 = minimize as soon as a path program recurs; higher = require more repetition before minimizing (more NONE-like).";
 
+	public static final String LABEL_LOOP_TARGETED_ACCELERATION = "Loop-targeted acceleration (Parallel CEGAR)";
+	private static final boolean DEF_LOOP_TARGETED_ACCELERATION = false;
+	private static final String DESC_LOOP_TARGETED_ACCELERATION =
+			"Loops are worker-SMT-throughput-bound (4 workers saturated; Difference ~0 on the coordinator). This routes ONLY deeply-loop-recurring counterexamples — those whose path program has recurred at least the dedicated 'Loop-targeted acceleration recurrence threshold' (a deep-loop-unrolling signal) — to the ACCELERATED_TRACE_CHECK refinement strategy, which uses loop acceleration to capture an invariant and refute many unrollings at once (fewer worker trace-checks -> less coordinator wait). Diverse-trace programs (ECA/control-flow), and shallow loops that recur fewer times than the threshold, keep the default strategy (neutral by construction). Sound: the accelerated trace check still only refutes infeasible traces. OFF -> the configured strategy for every trace.";
+
+	public static final String LABEL_LOOP_TARGETED_ACCEL_THRESHOLD = "Loop-targeted acceleration recurrence threshold";
+	private static final int DEF_LOOP_TARGETED_ACCEL_THRESHOLD = 2;
+	private static final String DESC_LOOP_TARGETED_ACCEL_THRESHOLD =
+			"Used only when 'Loop-targeted acceleration' is on. Route a counterexample to ACCELERATED_TRACE_CHECK once its path program has been seen at least this many times. This is DECOUPLED from the loop-aware minimization threshold on purpose: minimization wants to trigger early (2) on any recurrence, but acceleration must trigger LATER, only on deeply-unrolling loops where collapsing many iterations outweighs the per-check acceleration cost. Too low (2-3) -> fires on shallow loops and ECA's event loop (regresses them); higher (4-6) -> fires only on deep loops. Must be >= 2.";
+
+	public static final String LABEL_LOOP_TARGETED_ACCEL_BUDGET_MS = "Loop-targeted acceleration time budget (ms)";
+	private static final int DEF_LOOP_TARGETED_ACCEL_BUDGET_MS = 1000;
+	private static final String DESC_LOOP_TARGETED_ACCEL_BUDGET_MS =
+			"Used only when 'Loop-targeted acceleration' is on. Jordan loop acceleration is a NET WIN on linear loops (closed form refutes all unrollings at once, e.g. string_concat -52%) but a NET LOSS on nonlinear/array loops where it fails or builds an expensive formula and falls back (e.g. gj2007, cohencu). This is the per-path-program payoff guard: when an accelerated trace check takes longer than this many ms, that path program is blacklisted and never accelerated again (it reverts to the default strategy). So the downside of a bad loop is bounded to ONE slow attempt; the wins (fast accelerated checks) keep firing. 0 = no guard (always accelerate above the recurrence threshold).";
+
+	public static final String LABEL_LOOP_TARGETED_ACCEL_MAX_FIRES = "Loop-targeted acceleration max fires";
+	private static final int DEF_LOOP_TARGETED_ACCEL_MAX_FIRES = 1;
+	private static final String DESC_LOOP_TARGETED_ACCEL_MAX_FIRES =
+			"Used only when 'Loop-targeted acceleration' is on. Accelerate a path program only while its recurrence count is in the window [threshold, threshold+maxFires); once it has recurred this many more times it is NO LONGER accelerated. Rationale: a loop that acceleration actually collapses STOPS recurring almost immediately (string_concat converges in ~3 accelerated iterations); a loop that keeps recurring despite acceleration is NOT being collapsed (invert_string fires 11x, cohencu many) -> stop wasting accelerated checks on it. So winners keep their window; losers are bounded to a few attempts. Must be >= 1 for acceleration to ever fire; 0 = unlimited (no fire cap).";
+
 	public static final String LABEL_ASYNC_REFINEMENT = "Async refinement (Parallel CEGAR)";
 	private static final boolean DEF_ASYNC_REFINEMENT = false;
 	private static final String DESC_ASYNC_REFINEMENT =
@@ -969,6 +989,14 @@ public class TraceAbstractionPreferenceInitializer extends UltimatePreferenceIni
 						DESC_LOOP_AWARE_MINIMIZATION, PreferenceType.Boolean),
 				new UltimatePreferenceItem<>(LABEL_LOOP_AWARE_MIN_THRESHOLD, DEF_LOOP_AWARE_MIN_THRESHOLD,
 						DESC_LOOP_AWARE_MIN_THRESHOLD, PreferenceType.Integer),
+				new UltimatePreferenceItem<>(LABEL_LOOP_TARGETED_ACCELERATION, DEF_LOOP_TARGETED_ACCELERATION,
+						DESC_LOOP_TARGETED_ACCELERATION, PreferenceType.Boolean),
+				new UltimatePreferenceItem<>(LABEL_LOOP_TARGETED_ACCEL_THRESHOLD, DEF_LOOP_TARGETED_ACCEL_THRESHOLD,
+						DESC_LOOP_TARGETED_ACCEL_THRESHOLD, PreferenceType.Integer),
+				new UltimatePreferenceItem<>(LABEL_LOOP_TARGETED_ACCEL_BUDGET_MS, DEF_LOOP_TARGETED_ACCEL_BUDGET_MS,
+						DESC_LOOP_TARGETED_ACCEL_BUDGET_MS, PreferenceType.Integer),
+				new UltimatePreferenceItem<>(LABEL_LOOP_TARGETED_ACCEL_MAX_FIRES, DEF_LOOP_TARGETED_ACCEL_MAX_FIRES,
+						DESC_LOOP_TARGETED_ACCEL_MAX_FIRES, PreferenceType.Integer),
 				new UltimatePreferenceItem<>(LABEL_ASYNC_REFINEMENT, DEF_ASYNC_REFINEMENT,
 						DESC_ASYNC_REFINEMENT, PreferenceType.Boolean),
 				new UltimatePreferenceItem<>(LABEL_RELATIVE_GROWTH_MINIMIZATION, DEF_RELATIVE_GROWTH_MINIMIZATION,

@@ -131,6 +131,9 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 	private StaleCancellationToken mCancellationToken;
 	// Portfolio race: strategy override carried by the current task (racer tasks set this; null = worker default).
 	private RefinementStrategy mCurrentTaskStrategy;
+	// Safe loop-targeted acceleration: set by strategyForThisWorker() when the current refinement uses
+	// ACCELERATED_TRACE_CHECK, read by isCounterexampleFeasible() to time it and blacklist over-budget loops.
+	private boolean mUsedAcceleration;
 
 	private final PathProgramCache<L> mProgramCache;
 
@@ -357,10 +360,35 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 	 * different strategies). Off → the single configured strategy (paper baseline).
 	 */
 	private RefinementStrategy strategyForThisWorker() {
+		mUsedAcceleration = false;
 		// Portfolio race: a racer task carries its own alternative strategy; primary tasks have no override and
 		// keep the (tuned) default so racing only ever ACCELERATES, never replaces the default's solving power.
 		if (mCurrentTaskStrategy != null) {
 			return mCurrentTaskStrategy;
+		}
+		// Loop-targeted acceleration: when this trace's path program has recurred at least the DEDICATED acceleration
+		// threshold (a deep-loop-unrolling signal), use the acceleration-based trace check to refute many unrollings at
+		// once. The threshold is decoupled from loop-aware minimization (which triggers at 2): acceleration must fire
+		// LATER, only on deeply-unrolling loops, so diverse-trace programs (ECA/control-flow) and shallow loops keep the
+		// default strategy (neutral by construction). See setUpStrategy. Jordan acceleration is a win on linear loops
+		// but a loss on nonlinear/array loops; the payoff guard (isCounterexampleFeasible) blacklists a path program
+		// after one over-budget accelerated check, so here we just skip already-blacklisted ones.
+		if (mPref.loopTargetedAccelerationEnabled() && mCounterexample != null) {
+			final int recurrence = mProgramCache.getPathProgramCount(mCounterexample.getWord());
+			final int threshold = mPref.loopTargetedAccelerationThreshold();
+			final int maxFires = mPref.loopTargetedAccelerationMaxFires();
+			// Fire only inside the window [threshold, threshold+maxFires): a loop that acceleration collapses stops
+			// recurring within a few iterations; one that keeps recurring is not being collapsed -> stop (maxFires<=0
+			// disables the cap). The time-budget guard (isCounterexampleFeasible) blacklists separately.
+			final boolean withinWindow = maxFires <= 0 || recurrence < threshold + maxFires;
+			final boolean blacklisted = mMainThread.getAccelBlacklist().contains(mCounterexample.getWord().asSet());
+			if (recurrence >= threshold && withinWindow && !blacklisted) {
+				mLogger.info("Loop-targeted acceleration: path program recurred " + recurrence + " times (window ["
+						+ threshold + "," + (maxFires <= 0 ? "inf" : threshold + maxFires)
+						+ ")) -> ACCELERATED_TRACE_CHECK");
+				mUsedAcceleration = true;
+				return RefinementStrategy.ACCELERATED_TRACE_CHECK;
+			}
 		}
 		if (!mPref.workerStrategyPortfolioEnabled()) {
 			return mPref.getRefinementStrategy();
@@ -395,9 +423,23 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 				throw new TaskCanceledException(UserDefinedLimit.PATH_PROGRAM_ATTEMPTS, getClass(), taskDescription);
 			}
 
+			final long accelStartNs = mUsedAcceleration ? System.nanoTime() : 0L;
 			final TraceAbstractionRefinementEngine<L> refinementEngine =
 					new TraceAbstractionRefinementEngine<>(getServices(), mLogger, strategy);
 			mRefinementResult = refinementEngine.getResult();
+			// Safe loop-targeted acceleration payoff guard: if this accelerated trace check exceeded the budget,
+			// blacklist its path program so it never gets accelerated again (Jordan acceleration failed/was too
+			// costly for this loop -> fall back to the default strategy). Bounds a bad loop's cost to one attempt.
+			if (mUsedAcceleration) {
+				final long elapsedMs = (System.nanoTime() - accelStartNs) / 1_000_000L;
+				final int budget = mPref.loopTargetedAccelerationBudgetMs();
+				final boolean over = budget > 0 && elapsedMs > budget;
+				if (over) {
+					mMainThread.getAccelBlacklist().add(mCounterexample.getWord().asSet());
+				}
+				mLogger.info("Loop-targeted acceleration: ACCEL_CHECK_MS=" + elapsedMs + " budget=" + budget
+						+ (over ? " -> OVER BUDGET, blacklisting path program (fall back to default)" : " -> kept"));
+			}
 
 		} catch (final ToolchainCanceledException | SMTLIBException tce) {
 			throw tce;
