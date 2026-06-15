@@ -20,7 +20,7 @@ avgPairwisePrefixLcaDivergence =
 If `min(d_u, d_v) == 0`, that pair contributes `0.0`. This treats a root-only path as an empty non-root prefix that is
 fully shared. If fewer than two paths were checked, the average is reported as `0.0`.
 
-Each pairwise contribution and `avgPairwisePrefixLcaDivergence` are in `[0, 1]`:
+Each pairwise contribution is intended to be in `[0, 1]`, and the reported average should normally be in that range:
 
 - `0.0` means the shorter path is fully shared with the longer path.
 - `1.0` means the recorded paths share no node below the root.
@@ -137,6 +137,7 @@ python3 trunk/examples/experiments/checked-path-divergence/run_svcomp_reachsafet
   --benchmarks-json /path/to/benchmarks_run.json \
   --svcomp-root /path/to/sv-benchmarks \
   --threads 4 \
+  --jobs 1 \
   --timeout 150 \
   --output-dir trunk/examples/experiments/checked-path-divergence/results/reachsafety189-t150-w4
 ```
@@ -186,7 +187,8 @@ The runner writes:
 - `total_pairwise_prefix_lca_divergence`: sum of normalized prefix-LCA divergence over all unordered checked-path
   pairs. The value can exceed `1.0`.
 - `avg_pairwise_prefix_lca_divergence`: average normalized prefix-LCA divergence over all unordered checked-path pairs.
-  It is in `[0, 1]`; higher values mean checked paths share less of their shorter prefixes.
+  Higher values mean checked paths share less of their shorter prefixes. Values outside `[0, 1]` indicate that the
+  underlying statistic aggregation should be inspected.
 - `refinements`: existing iteration/refinement count if reported by Ultimate.
 - `stale_paths`: existing stale/skipped-path count if reported by Ultimate; `0` means the current log did not expose such a counter.
 - `duplicate_freshness_failures`: BFS/DFS/PAPER/LCPS attempts that found an active duplicate instead of a fresh worker trace.

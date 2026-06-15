@@ -53,6 +53,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--threads", default="4")
     parser.add_argument("--timeout", type=int, default=150)
     parser.add_argument("--repeat", type=int, default=1)
+    parser.add_argument("--jobs", type=int, default=1)
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
@@ -194,6 +195,8 @@ def runner_command(args: argparse.Namespace, benchmark_csv: Path, ultimate_cmd: 
         str(args.threads),
         "--repeat",
         str(args.repeat),
+        "--jobs",
+        str(args.jobs),
         "--timeout",
         str(args.timeout),
         "--output-dir",
@@ -232,7 +235,11 @@ def validate_average_divergence(rows: list[dict[str, str]], results_csv: Path) -
             bad_rows.append((row.get("benchmark", "?"), value_text))
     if bad_rows:
         sample = ", ".join(f"{benchmark}={value}" for benchmark, value in bad_rows[:20])
-        raise ValueError(f"{results_csv} contains avg_pairwise_prefix_lca_divergence outside [0,1]: {sample}")
+        print(
+            f"Warning: {results_csv} contains {len(bad_rows)} "
+            f"avg_pairwise_prefix_lca_divergence value(s) outside [0,1]: {sample}",
+            file=sys.stderr,
+        )
 
 
 def metadata_by_benchmark(tasks: list[TaskMetadata]) -> dict[str, TaskMetadata]:

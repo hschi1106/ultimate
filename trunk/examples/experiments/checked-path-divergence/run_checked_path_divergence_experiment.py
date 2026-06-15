@@ -12,6 +12,7 @@ import signal
 import statistics
 import subprocess
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -207,6 +208,7 @@ def parse_args() -> argparse.Namespace:
                         help="CSV with columns name,input_file,toolchain,settings,rationale.")
     parser.add_argument("--timeout", type=int, default=900, help="Per-run timeout in seconds.")
     parser.add_argument("--repeat", type=int, default=1, help="Repeat each run N times.")
+    parser.add_argument("--jobs", type=int, default=1, help="Number of independent Ultimate runs to execute in parallel.")
     parser.add_argument("--include-basic", action="store_true", help="Also run BFS and DFS baselines.")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--extra-arg", action="append", default=[],
@@ -298,6 +300,17 @@ def ultimate_command(args: argparse.Namespace, benchmark: Benchmark, mode: str, 
     return command
 
 
+def ultimate_working_directory(command: list[str]) -> Path | None:
+    if not command:
+        return None
+    executable = Path(command[0]).expanduser()
+    if executable.name == "run-ultimate.sh":
+        resolved = executable.resolve()
+        if resolved.is_file():
+            return resolved.parent
+    return None
+
+
 def parse_last(patterns: list[re.Pattern], text: str, default: str = "0") -> str:
     matches = []
     for pattern in patterns:
@@ -375,6 +388,7 @@ def run_one(args: argparse.Namespace, benchmark: Benchmark, mode: str, threads: 
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        cwd=ultimate_working_directory(command),
         start_new_session=True,
     )
     try:
@@ -619,8 +633,9 @@ def write_markdown(output_dir: Path, rows: list[dict[str, str]], benchmarks: lis
         "This experiment compares the maintained parallel TraceAbstraction path-selection scope: PAPER, LCPS, "
         "BATCH_LCPS, ADAPTIVE_BATCH_LCPS, and optional BFS/DFS baselines.",
         "",
-        "Each unordered checked-path pair contributes normalized prefix-LCA divergence "
-        "`1 - depth(LCA(u, v)) / min(depth(u), depth(v))`.",
+        "The reported prefix-LCA divergence is intended to be a normalized checked-path diversity signal "
+        "`1 - depth(LCA(u, v)) / min(depth(u), depth(v))`; values outside `[0, 1]` indicate that the "
+        "underlying statistic aggregation should be inspected.",
         "",
     ]
     lines.extend(summary_section(rows))
@@ -645,12 +660,26 @@ def main() -> None:
     threads = selected_threads(args)
     include_repeat_suffix = args.repeat > 1
 
-    rows = []
-    for benchmark in benchmarks:
-        for mode in modes:
-            for repeat_index in range(args.repeat):
-                for thread_count in threads:
-                    rows.append(run_one(args, benchmark, mode, thread_count, repeat_index, include_repeat_suffix))
+    run_specs = [
+        (benchmark, mode, thread_count, repeat_index)
+        for benchmark in benchmarks
+        for mode in modes
+        for repeat_index in range(args.repeat)
+        for thread_count in threads
+    ]
+    rows_by_index: dict[int, dict[str, str]] = {}
+    if args.jobs <= 1 or args.dry_run:
+        for index, (benchmark, mode, thread_count, repeat_index) in enumerate(run_specs):
+            rows_by_index[index] = run_one(args, benchmark, mode, thread_count, repeat_index, include_repeat_suffix)
+    else:
+        with ThreadPoolExecutor(max_workers=args.jobs) as executor:
+            futures = {
+                executor.submit(run_one, args, benchmark, mode, thread_count, repeat_index, include_repeat_suffix): index
+                for index, (benchmark, mode, thread_count, repeat_index) in enumerate(run_specs)
+            }
+            for future in as_completed(futures):
+                rows_by_index[futures[future]] = future.result()
+    rows = [rows_by_index[index] for index in range(len(run_specs))]
 
     csv_path = write_csv(args.output_dir, rows)
     markdown_path = write_markdown(args.output_dir, rows, benchmarks)
