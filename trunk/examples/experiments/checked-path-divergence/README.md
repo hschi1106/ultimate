@@ -118,46 +118,115 @@ To run one benchmark:
 python3 trunk/examples/experiments/checked-path-divergence/run_checked_path_divergence_experiment.py --benchmark medium-loop
 ```
 
-## Running SV-COMP ReachSafety subset
+## Reproducing The SV-COMP ReachSafety Subset
 
-Use `run_svcomp_reachsafety_subset.py` when you have a JSON file with selected SV-COMP ReachSafety tasks. The JSON is
-expected to contain `categories -> subcategories -> tasks`, where each task path is relative to the SV-COMP repository's
-`c/` directory, for example `loops/array-1.c`.
+The maintained SV-COMP subset is tracked in the repository root as `benchmarks_run.json`. It contains 189 ReachSafety
+tasks in the shape `categories -> subcategories -> tasks`; every task path is relative to the SV-COMP repository's
+`c/` directory, for example `eca-rers2012/Problem01_label20.c`.
 
-The wrapper expands all tasks into a generated benchmark CSV and then calls
-`run_checked_path_divergence_experiment.py`. For SV-COMP C ReachSafety tasks it uses:
+Use this local layout:
+
+```text
+~/
+  ultimate/
+  sv-benchmarks/
+```
+
+Install the required host tools. Ultimate currently requires Java 21 or newer:
+
+```bash
+sudo apt update
+sudo apt install -y git python3 openjdk-21-jdk maven
+java -version
+mvn -version
+```
+
+Fetch the benchmark repository. The selected subset was prepared for the SV-COMP 2025 benchmark state:
+
+```bash
+cd ~
+git clone https://gitlab.com/sosy-lab/benchmarking/sv-benchmarks.git sv-benchmarks
+git -C sv-benchmarks checkout svcomp25-final
+```
+
+Build or point to a runnable Ultimate product. A full product build can be created with:
+
+```bash
+cd ~/ultimate/releaseScripts/default
+./makeFresh.sh
+```
+
+Then set the launcher path. If you already have a working Ultimate product, use that launcher instead:
+
+```bash
+cd ~/ultimate
+export SVCOMP_ROOT="$HOME/sv-benchmarks"
+export ULTIMATE_CMD="$PWD/releaseScripts/default/UAutomizer-linux/run-ultimate.sh"
+test -x "$ULTIMATE_CMD"
+```
+
+For quick code checks after local edits, the affected modules can be compiled without creating a product:
+
+```bash
+cd ~/ultimate
+python3 -m py_compile \
+  trunk/examples/experiments/checked-path-divergence/run_checked_path_divergence_experiment.py \
+  trunk/examples/experiments/checked-path-divergence/run_svcomp_reachsafety_subset.py \
+  trunk/examples/experiments/checked-path-divergence/discover_divergence_benchmarks.py \
+  trunk/examples/experiments/checked-path-divergence/plot_mode_volatility.py
+(cd trunk/source/TraceAbstraction && mvn -q -DskipTests package)
+(cd trunk/source/Library-Automata && mvn -q -DskipTests package)
+(cd trunk/source/Library-AutomataTest && mvn -q package)
+```
+
+The SV-COMP wrapper expands `benchmarks_run.json` into a generated benchmark CSV and then calls
+`run_checked_path_divergence_experiment.py`. For C ReachSafety tasks it uses:
 
 - toolchain: `trunk/examples/toolchains/AutomizerC.xml`
 - settings: `trunk/examples/Interactive/settings/SVCOMP2017/svcomp-Reach-32bit-Automizer_Default.epf`
 
-Example:
+First do a dry-run. This verifies that every selected task exists under `$SVCOMP_ROOT/c/`, writes the generated CSV, and
+prints the runner command without launching Ultimate:
 
 ```bash
+cd ~/ultimate
 python3 trunk/examples/experiments/checked-path-divergence/run_svcomp_reachsafety_subset.py \
-  --benchmarks-json /path/to/benchmarks_run.json \
-  --svcomp-root /path/to/sv-benchmarks \
+  --benchmarks-json benchmarks_run.json \
+  --svcomp-root "$SVCOMP_ROOT" \
+  --ultimate-cmd "$ULTIMATE_CMD" \
   --threads 4 \
   --jobs 1 \
   --timeout 150 \
-  --output-dir trunk/examples/experiments/checked-path-divergence/results/reachsafety189-t150-w4
-```
-
-Dry-run only generates the benchmark CSV and prints the runner command:
-
-```bash
-python3 trunk/examples/experiments/checked-path-divergence/run_svcomp_reachsafety_subset.py \
-  --benchmarks-json /path/to/benchmarks_run.json \
-  --svcomp-root /path/to/sv-benchmarks \
   --output-dir trunk/examples/experiments/checked-path-divergence/results/reachsafety189-t150-w4 \
   --dry-run
 ```
 
+Run the 4-worker reproduction experiment with the maintained modes:
+
+```bash
+cd ~/ultimate
+python3 trunk/examples/experiments/checked-path-divergence/run_svcomp_reachsafety_subset.py \
+  --benchmarks-json benchmarks_run.json \
+  --svcomp-root "$SVCOMP_ROOT" \
+  --ultimate-cmd "$ULTIMATE_CMD" \
+  --modes PAPER,LCPS,BATCH_LCPS,ADAPTIVE_BATCH_LCPS \
+  --threads 4 \
+  --jobs 1 \
+  --repeat 1 \
+  --timeout 150 \
+  --output-dir trunk/examples/experiments/checked-path-divergence/results/reachsafety189-t150-w4
+```
+
 The wrapper writes:
 
-- `generated/reachsafety-subset-benchmarks.csv`: generated runner benchmark list
-- `checked-path-divergence-results.enriched.csv`: runner CSV enriched with `category`, `subcategory`, `task`, and
-  `expected_result`
-- `svcomp-reachsafety-subset-summary.md`: compact aggregate summary
+- `results/reachsafety189-t150-w4/generated/reachsafety-subset-benchmarks.csv`: generated runner benchmark list.
+- `results/reachsafety189-t150-w4/checked-path-divergence-results.csv`: raw runner output.
+- `results/reachsafety189-t150-w4/checked-path-divergence-results.enriched.csv`: runner CSV enriched with `category`,
+  `subcategory`, `task`, and `expected_result`.
+- `results/reachsafety189-t150-w4/svcomp-reachsafety-subset-summary.md`: compact aggregate summary.
+
+The summary is the fastest place to compare `ADAPTIVE_BATCH_LCPS` against `PAPER`. The enriched CSV is the input to use
+for per-category or per-subcategory analysis.
 
 ## Outputs
 

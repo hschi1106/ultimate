@@ -1,0 +1,315 @@
+{
+  "description": "SV-COMP ReachSafety benchmark tasks run in FM_final (full sweep = tasks_all.txt, executed by the loop-aware PAR-4 config; raw results in run/results/results_loopaware.csv).",
+  "arch": "32bit (ILP32)",
+  "total_tasks": 189,
+  "categories": {
+    "ReachSafety-ECA": {
+      "total": 50,
+      "expected_true": 23,
+      "expected_false": 27,
+      "subcategories": {
+        "eca-programs": {
+          "count": 5,
+          "expected_true": 1,
+          "expected_false": 4,
+          "tasks": [
+            "eca-programs/Problem101_label00.c",
+            "eca-programs/Problem102_label01.c",
+            "eca-programs/Problem102_label26.c",
+            "eca-programs/Problem102_label51.c",
+            "eca-programs/Problem103_label55.c"
+          ]
+        },
+        "eca-rers2012": {
+          "count": 45,
+          "expected_true": 22,
+          "expected_false": 23,
+          "tasks": [
+            "eca-rers2012/Problem01_label20.c",
+            "eca-rers2012/Problem01_label45.c",
+            "eca-rers2012/Problem02_label10.c",
+            "eca-rers2012/Problem02_label36.c",
+            "eca-rers2012/Problem03_label01.c",
+            "eca-rers2012/Problem03_label26.c",
+            "eca-rers2012/Problem03_label51.c",
+            "eca-rers2012/Problem04_label17.c",
+            "eca-rers2012/Problem04_label42.c",
+            "eca-rers2012/Problem05_label07.c",
+            "eca-rers2012/Problem05_label32.c",
+            "eca-rers2012/Problem05_label58.c",
+            "eca-rers2012/Problem06_label23.c",
+            "eca-rers2012/Problem06_label48.c",
+            "eca-rers2012/Problem07_label13.c",
+            "eca-rers2012/Problem07_label39.c",
+            "eca-rers2012/Problem08_label04.c",
+            "eca-rers2012/Problem08_label29.c",
+            "eca-rers2012/Problem08_label54.c",
+            "eca-rers2012/Problem09_label20.c",
+            "eca-rers2012/Problem09_label45.c",
+            "eca-rers2012/Problem10_label10.c",
+            "eca-rers2012/Problem10_label36.c",
+            "eca-rers2012/Problem11_label01.c",
+            "eca-rers2012/Problem11_label26.c",
+            "eca-rers2012/Problem11_label51.c",
+            "eca-rers2012/Problem12_label17.c",
+            "eca-rers2012/Problem12_label42.c",
+            "eca-rers2012/Problem13_label07.c",
+            "eca-rers2012/Problem13_label32.c",
+            "eca-rers2012/Problem13_label58.c",
+            "eca-rers2012/Problem14_label23.c",
+            "eca-rers2012/Problem14_label48.c",
+            "eca-rers2012/Problem15_label13.c",
+            "eca-rers2012/Problem15_label39.c",
+            "eca-rers2012/Problem16_label04.c",
+            "eca-rers2012/Problem16_label29.c",
+            "eca-rers2012/Problem16_label54.c",
+            "eca-rers2012/Problem17_label20.c",
+            "eca-rers2012/Problem17_label45.c",
+            "eca-rers2012/Problem18_label10.c",
+            "eca-rers2012/Problem18_label35.c",
+            "eca-rers2012/Problem19_label01.c",
+            "eca-rers2012/Problem19_label26.c",
+            "eca-rers2012/Problem19_label51.c"
+          ]
+        }
+      }
+    },
+    "ReachSafety-ControlFlow": {
+      "total": 39,
+      "expected_true": 30,
+      "expected_false": 9,
+      "subcategories": {
+        "infeasible-control-flow": {
+          "count": 10,
+          "expected_true": 10,
+          "expected_false": 0,
+          "tasks": [
+            "infeasible-control-flow/conflict_branch1.c",
+            "infeasible-control-flow/conflict_branch2.c",
+            "infeasible-control-flow/conflict_branch3.c",
+            "infeasible-control-flow/conflict_branch4.c",
+            "infeasible-control-flow/conflict_branch5.c",
+            "infeasible-control-flow/unreach_branch1.c",
+            "infeasible-control-flow/unreach_branch2.c",
+            "infeasible-control-flow/unreach_branch3.c",
+            "infeasible-control-flow/unreach_branch4.c",
+            "infeasible-control-flow/unreach_branch5.c"
+          ]
+        },
+        "locks": {
+          "count": 13,
+          "expected_true": 11,
+          "expected_false": 2,
+          "tasks": [
+            "locks/test_locks_10.c",
+            "locks/test_locks_11.c",
+            "locks/test_locks_12.c",
+            "locks/test_locks_13.c",
+            "locks/test_locks_14-1.c",
+            "locks/test_locks_14-2.c",
+            "locks/test_locks_15-1.c",
+            "locks/test_locks_15-2.c",
+            "locks/test_locks_5.c",
+            "locks/test_locks_6.c",
+            "locks/test_locks_7.c",
+            "locks/test_locks_8.c",
+            "locks/test_locks_9.c"
+          ]
+        },
+        "memory-model": {
+          "count": 2,
+          "expected_true": 0,
+          "expected_false": 2,
+          "tasks": [
+            "memory-model/2SB.i",
+            "memory-model/4SB.i"
+          ]
+        },
+        "ntdrivers": {
+          "count": 8,
+          "expected_true": 3,
+          "expected_false": 5,
+          "tasks": [
+            "ntdrivers/cdaudio.i.cil-1.c",
+            "ntdrivers/diskperf.i.cil-1.c",
+            "ntdrivers/diskperf.i.cil-2.c",
+            "ntdrivers/floppy.i.cil-1.c",
+            "ntdrivers/floppy.i.cil-3.c",
+            "ntdrivers/kbfiltr.i.cil-2.c",
+            "ntdrivers/parport.i.cil-1.c",
+            "ntdrivers/parport.i.cil-2.c"
+          ]
+        },
+        "openssl-simplified": {
+          "count": 1,
+          "expected_true": 1,
+          "expected_false": 0,
+          "tasks": [
+            "openssl-simplified/s3_srvr_1b.cil.c"
+          ]
+        },
+        "unsignedintegeroverflow-sas23": {
+          "count": 5,
+          "expected_true": 5,
+          "expected_false": 0,
+          "tasks": [
+            "unsignedintegeroverflow-sas23/bilinear_interpolation.i",
+            "unsignedintegeroverflow-sas23/cancel_var_through_overflow.i",
+            "unsignedintegeroverflow-sas23/distance_through_overflow.i",
+            "unsignedintegeroverflow-sas23/linear_interpolation.i",
+            "unsignedintegeroverflow-sas23/linear_interpolation_2.i"
+          ]
+        }
+      }
+    },
+    "ReachSafety-Loops": {
+      "total": 100,
+      "expected_true": 74,
+      "expected_false": 26,
+      "subcategories": {
+        "loop-invariants": {
+          "count": 4,
+          "expected_true": 3,
+          "expected_false": 1,
+          "tasks": [
+            "loop-invariants/bin-suffix-5.c",
+            "loop-invariants/eq2.c",
+            "loop-invariants/linear-inequality-inv-b.c",
+            "loop-invariants/odd.c"
+          ]
+        },
+        "loop-invgen": {
+          "count": 9,
+          "expected_true": 9,
+          "expected_false": 0,
+          "tasks": [
+            "loop-invgen/SpamAssassin-loop.i",
+            "loop-invgen/apache-escape-absolute.i.v+cfa-reducer.c",
+            "loop-invgen/apache-get-tag.i.p+nlh-reducer.c",
+            "loop-invgen/apache-get-tag.i.v+nlh-reducer.c",
+            "loop-invgen/half_2.i",
+            "loop-invgen/id_build.i.p+nlh-reducer.c",
+            "loop-invgen/large_const.i",
+            "loop-invgen/nested9.i",
+            "loop-invgen/string_concat-noarr.i"
+          ]
+        },
+        "loop-lit": {
+          "count": 10,
+          "expected_true": 10,
+          "expected_false": 0,
+          "tasks": [
+            "loop-lit/as2013-hybrid.i",
+            "loop-lit/bh2017-ex3.i",
+            "loop-lit/cggmp2005_variant.i",
+            "loop-lit/ddlm2013.i",
+            "loop-lit/gj2007.i",
+            "loop-lit/gsv2008.c.i.p+cfa-reducer.c",
+            "loop-lit/gsv2008.i",
+            "loop-lit/hhk2008.i",
+            "loop-lit/jm2006_variant.i",
+            "loop-lit/mine2017-ex4.6.i"
+          ]
+        },
+        "loops": {
+          "count": 50,
+          "expected_true": 30,
+          "expected_false": 20,
+          "tasks": [
+            "loops/array-1.c",
+            "loops/array-2.c",
+            "loops/bubble_sort-2.i",
+            "loops/compact.c",
+            "loops/count_up_down-2.c",
+            "loops/eureka_01-2.c",
+            "loops/eureka_05.i",
+            "loops/for_bounded_loop1.c",
+            "loops/for_infinite_loop_2.c",
+            "loops/heavy-1.c",
+            "loops/heavy-2.c",
+            "loops/insertion_sort-1-2.c",
+            "loops/invert_string-1.c",
+            "loops/invert_string-3.c",
+            "loops/linear_sea.ch.c",
+            "loops/linear_search.c",
+            "loops/ludcmp.c",
+            "loops/matrix-1.c",
+            "loops/matrix-2-2.c",
+            "loops/n.c11.c",
+            "loops/n.c40.c",
+            "loops/nec11.c",
+            "loops/nec20.c",
+            "loops/nec40.c",
+            "loops/string-2.i",
+            "loops/sum01-2.i",
+            "loops/sum01_bug02.i",
+            "loops/sum03-2.i",
+            "loops/sum04-1.i",
+            "loops/sum04-2.i",
+            "loops/sum_array-2-2.i",
+            "loops/terminator_02-2.c",
+            "loops/terminator_02-2_abstracted.c",
+            "loops/terminator_03-2.i",
+            "loops/terminator_03-2_abstracted.i",
+            "loops/trex01-2.i",
+            "loops/trex02-1.c",
+            "loops/trex02-2.c",
+            "loops/trex03-1.c",
+            "loops/trex03-2_abstracted.c",
+            "loops/trex04.c",
+            "loops/trex04_abstracted.c",
+            "loops/veris.c_NetBSD-libc_loop.i",
+            "loops/veris.c_sendmail_tTflag_arr_one_loop.c",
+            "loops/verisec_NetBSD-libc_loop.i",
+            "loops/verisec_OpenSER_cases1_stripFullBoth_arr.i",
+            "loops/vogal-1.i",
+            "loops/while_infinite_loop_1.c",
+            "loops/while_infinite_loop_2.c",
+            "loops/while_infinite_loop_3.c"
+          ]
+        },
+        "loops-crafted-1": {
+          "count": 18,
+          "expected_true": 15,
+          "expected_false": 3,
+          "tasks": [
+            "loops-crafted-1/Mono1_1-1.c",
+            "loops-crafted-1/Mono4_1.c",
+            "loops-crafted-1/discover_list.c",
+            "loops-crafted-1/in-de31.c",
+            "loops-crafted-1/in-de42.c",
+            "loops-crafted-1/in-de61.c",
+            "loops-crafted-1/loopv2.c",
+            "loops-crafted-1/mono-crafted_11.c",
+            "loops-crafted-1/mono-crafted_14.c",
+            "loops-crafted-1/mono-crafted_7.c",
+            "loops-crafted-1/nested3-1.c",
+            "loops-crafted-1/nested3-2_abstracted.c",
+            "loops-crafted-1/nested_delay_nd.c",
+            "loops-crafted-1/sum_by_3.c",
+            "loops-crafted-1/sumt2.c",
+            "loops-crafted-1/sumt5.c",
+            "loops-crafted-1/sumt8.c",
+            "loops-crafted-1/vnew2.c"
+          ]
+        },
+        "nla-digbench": {
+          "count": 9,
+          "expected_true": 7,
+          "expected_false": 2,
+          "tasks": [
+            "nla-digbench/cohencu-ll.c",
+            "nla-digbench/divbin.i",
+            "nla-digbench/egcd2-ll.c",
+            "nla-digbench/fermat2-ll.c",
+            "nla-digbench/geo2-ll.c",
+            "nla-digbench/hard-u.c",
+            "nla-digbench/lcm2.c",
+            "nla-digbench/prodbin-ll.c",
+            "nla-digbench/ps4-ll.c"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -21,7 +21,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[4]
 EXPERIMENT_DIR = Path(__file__).resolve().parent
 RUNNER = EXPERIMENT_DIR / "run_checked_path_divergence_experiment.py"
-DEFAULT_BENCHMARKS_JSON = REPO_ROOT / "notes/benchmarks_run.json"
+DEFAULT_BENCHMARKS_JSON = REPO_ROOT / "benchmarks_run.json"
 DEFAULT_OUTPUT_DIR = EXPERIMENT_DIR / "results/svcomp-reachsafety-subset"
 TOOLCHAIN = REPO_ROOT / "trunk/examples/toolchains/AutomizerC.xml"
 SETTINGS = REPO_ROOT / "trunk/examples/Interactive/settings/SVCOMP2017/svcomp-Reach-32bit-Automizer_Default.epf"
