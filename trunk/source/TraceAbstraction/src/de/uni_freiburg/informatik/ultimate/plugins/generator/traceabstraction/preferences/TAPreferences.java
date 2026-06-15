@@ -29,6 +29,7 @@ package de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.p
 
 import de.uni_freiburg.informatik.ultimate.automata.AutomatonDefinitionPrinter.Format;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.IsEmptyHeuristic.AStarHeuristic;
+import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.TraceSearchSelectionMode;
 import de.uni_freiburg.informatik.ultimate.automata.petrinet.unfolding.PetriNetUnfolder.EventOrderEnum;
 import de.uni_freiburg.informatik.ultimate.core.model.preferences.IPreferenceProvider;
 import de.uni_freiburg.informatik.ultimate.core.model.services.IUltimateServiceProvider;
@@ -126,6 +127,12 @@ public final class TAPreferences {
 	private final int mLoopTargetedAccelBudgetMs;
 	private final int mLoopTargetedAccelMaxFires;
 	private final int mLoopAwareMinThreshold;
+	private final TraceSearchSelectionMode mParallelTraceSearchSelectionMode;
+	private final boolean mParallelTraceSearchUseInitialBfs;
+	private final boolean mParallelTraceSearchTrackStalePrefixes;
+	private final int mBatchLcpsCandidateMultiplier;
+	private final int mBatchLcpsCandidateCap;
+	private final int mAdaptiveBatchMinAvailableSlots;
 
 	public enum Artifact {
 		ABSTRACTION, INTERPOLANT_AUTOMATON, NEG_INTERPOLANT_AUTOMATON, RCFG
@@ -279,6 +286,18 @@ public final class TAPreferences {
 				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_LOOP_TARGETED_ACCEL_BUDGET_MS);
 		mLoopTargetedAccelMaxFires =
 				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_LOOP_TARGETED_ACCEL_MAX_FIRES);
+		mParallelTraceSearchSelectionMode = mPrefs.getEnum(
+				TraceAbstractionPreferenceInitializer.LABEL_PARALLEL_TRACE_SEARCH_SELECTION_MODE,
+				TraceSearchSelectionMode.class);
+		mParallelTraceSearchUseInitialBfs =
+				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_PARALLEL_TRACE_SEARCH_USE_INITIAL_BFS);
+		mParallelTraceSearchTrackStalePrefixes =
+				mPrefs.getBoolean(TraceAbstractionPreferenceInitializer.LABEL_PARALLEL_TRACE_SEARCH_TRACK_STALE_PREFIXES);
+		mBatchLcpsCandidateMultiplier =
+				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_BATCH_LCPS_CANDIDATE_MULTIPLIER);
+		mBatchLcpsCandidateCap = mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_BATCH_LCPS_CANDIDATE_CAP);
+		mAdaptiveBatchMinAvailableSlots =
+				mPrefs.getInt(TraceAbstractionPreferenceInitializer.LABEL_ADAPTIVE_BATCH_MIN_AVAILABLE_SLOTS);
 	}
 
 	/**
@@ -770,5 +789,29 @@ public final class TAPreferences {
 
 	public int loopTargetedAccelerationMaxFires() {
 		return mLoopTargetedAccelMaxFires;
+	}
+
+	public TraceSearchSelectionMode getParallelTraceSearchSelectionMode() {
+		return mParallelTraceSearchSelectionMode;
+	}
+
+	public boolean useInitialBfsInParallelTraceSearch() {
+		return mParallelTraceSearchUseInitialBfs;
+	}
+
+	public boolean trackStalePrefixesInParallelTraceSearch() {
+		return mParallelTraceSearchTrackStalePrefixes;
+	}
+
+	public int getBatchLcpsCandidateMultiplier() {
+		return mBatchLcpsCandidateMultiplier;
+	}
+
+	public int getBatchLcpsCandidateCap() {
+		return mBatchLcpsCandidateCap;
+	}
+
+	public int getAdaptiveBatchMinAvailableSlots() {
+		return mAdaptiveBatchMinAvailableSlots;
 	}
 }

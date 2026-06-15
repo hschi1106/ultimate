@@ -336,3 +336,5 @@ trunk/source/WebsiteStatic/webinterface/workers/*.json
 releaseScripts/default/sv-benchmarks
 releaseScripts/default/svcomp/*token
 releaseScripts/default/svcomp/zulip_state.json
+
+notes/

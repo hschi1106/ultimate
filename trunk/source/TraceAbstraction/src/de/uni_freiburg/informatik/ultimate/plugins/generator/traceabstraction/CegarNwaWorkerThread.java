@@ -313,6 +313,7 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 				cancellationToken.clearWorkerThread(Thread.currentThread());
 			}
 			mCancellationToken = null;
+			mCurrentTaskStrategy = null;
 			mMainThreadCounterexample = null;
 		}
 	}
@@ -423,6 +424,8 @@ public class CegarNwaWorkerThread<L extends IIcfgTransition<?>, A extends IAutom
 				throw new TaskCanceledException(UserDefinedLimit.PATH_PROGRAM_ATTEMPTS, getClass(), taskDescription);
 			}
 
+			// Measures how dispersed the paths that actually reach the verifier are in the exploration tree.
+			mMainThread.reportCheckedCounterexample(mMainThreadCounterexample);
 			final long accelStartNs = mUsedAcceleration ? System.nanoTime() : 0L;
 			final TraceAbstractionRefinementEngine<L> refinementEngine =
 					new TraceAbstractionRefinementEngine<>(getServices(), mLogger, strategy);

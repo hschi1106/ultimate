@@ -27,6 +27,7 @@
 package de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction;
 
 import java.util.Collection;
+import java.util.List;
 
 import de.uni_freiburg.informatik.ultimate.lib.tracecheckerutils.CoverageAnalysis.BackwardCoveringInformation;
 import de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction.CegarStatisticsType.SizeIterationPair;
@@ -50,6 +51,8 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 	private final StatisticsData mPathInvariantsStatistics = new StatisticsData();
 	private final StatisticsData mRefinementEngineStatistics = new StatisticsData();
 	private final StatisticsData mConComCheckerStatistics = new StatisticsData();
+	private final CheckedPathPrefixLcaDivergenceTracker mCheckedPathPrefixLcaDivergenceTracker =
+			new CheckedPathPrefixLcaDivergenceTracker();
 
 	private int mIterations = 0;
 	private SizeIterationPair mBiggestAbstraction = new SizeIterationPair(-1, -1);
@@ -57,6 +60,31 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 	private int mTraceHistogramMaximum = 0;
 	private int mInterpolantAutomatonStates = 0;
 	private int mPathProgramHistogramMaximum = 0;
+	private String mParallelSearchMode = "n/a";
+	private int mParallelDuplicateFreshnessFailures = 0;
+	private int mParallelFailedToFindCounterexamples = 0;
+	private int mParallelStalePaths = 0;
+	private int mLcpsCheckedPrefixQueries = 0;
+	private int mLcpsStalePrefixQueries = 0;
+	private int mLcpsCheckedPrefixHits = 0;
+	private int mLcpsStalePrefixHits = 0;
+	private int mLcpsSearchInvocations = 0;
+	private int mLcpsEffectivePriorityDecisions = 0;
+	private int mBatchLcpsInvocations = 0;
+	private int mBatchLcpsAvailableSlotsTotal = 0;
+	private int mBatchLcpsCandidatesGenerated = 0;
+	private int mBatchLcpsCandidatesSelected = 0;
+	private int mBatchLcpsCandidateGenerationFailures = 0;
+	private double mBatchLcpsAvgCandidatePoolSize = 0.0;
+	private double mBatchLcpsAvgSelectedBatchSize = 0.0;
+	private int mBatchLcpsEffectiveBatchDecisions = 0;
+	private long mBatchLcpsCandidateGenerationTimeMs = 0;
+	private long mBatchLcpsSelectionTimeMs = 0;
+	private int mAdaptiveBatchInvocations = 0;
+	private int mAdaptiveBatchFallbacks = 0;
+	private int mAdaptiveTriggeredByStale = 0;
+	private int mAdaptiveTriggeredByFirstFill = 0;
+	private int mAdaptiveMinAvailableSlots = 0;
 
 	@Override
 	public Collection<String> getKeys() {
@@ -130,8 +158,51 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 		}
 	}
 
+	public void reportCheckedPath(final List<?> rootToNodePath) {
+		mCheckedPathPrefixLcaDivergenceTracker.recordCheckedPath(rootToNodePath);
+	}
+
 	public void reportInterpolantAutomatonStates(final int count) {
 		mInterpolantAutomatonStates += count;
+	}
+
+	public void reportParallelTraceSearchStatistics(final String searchMode, final int duplicateFreshnessFailures,
+			final int failedToFindCounterexamples, final int stalePaths, final int lcpsCheckedPrefixQueries,
+			final int lcpsStalePrefixQueries, final int lcpsCheckedPrefixHits, final int lcpsStalePrefixHits,
+			final int lcpsSearchInvocations, final int lcpsEffectivePriorityDecisions,
+			final int batchLcpsInvocations, final int batchLcpsAvailableSlotsTotal,
+			final int batchLcpsCandidatesGenerated, final int batchLcpsCandidatesSelected,
+			final int batchLcpsCandidateGenerationFailures, final double batchLcpsAvgCandidatePoolSize,
+			final double batchLcpsAvgSelectedBatchSize, final int batchLcpsEffectiveBatchDecisions,
+			final long batchLcpsCandidateGenerationTimeMs, final long batchLcpsSelectionTimeMs,
+			final int adaptiveBatchInvocations, final int adaptiveBatchFallbacks,
+			final int adaptiveTriggeredByFirstFill, final int adaptiveTriggeredByStale,
+			final int adaptiveMinAvailableSlots) {
+		mParallelSearchMode = searchMode;
+		mParallelDuplicateFreshnessFailures = duplicateFreshnessFailures;
+		mParallelFailedToFindCounterexamples = failedToFindCounterexamples;
+		mParallelStalePaths = stalePaths;
+		mLcpsCheckedPrefixQueries = lcpsCheckedPrefixQueries;
+		mLcpsStalePrefixQueries = lcpsStalePrefixQueries;
+		mLcpsCheckedPrefixHits = lcpsCheckedPrefixHits;
+		mLcpsStalePrefixHits = lcpsStalePrefixHits;
+		mLcpsSearchInvocations = lcpsSearchInvocations;
+		mLcpsEffectivePriorityDecisions = lcpsEffectivePriorityDecisions;
+		mBatchLcpsInvocations = batchLcpsInvocations;
+		mBatchLcpsAvailableSlotsTotal = batchLcpsAvailableSlotsTotal;
+		mBatchLcpsCandidatesGenerated = batchLcpsCandidatesGenerated;
+		mBatchLcpsCandidatesSelected = batchLcpsCandidatesSelected;
+		mBatchLcpsCandidateGenerationFailures = batchLcpsCandidateGenerationFailures;
+		mBatchLcpsAvgCandidatePoolSize = batchLcpsAvgCandidatePoolSize;
+		mBatchLcpsAvgSelectedBatchSize = batchLcpsAvgSelectedBatchSize;
+		mBatchLcpsEffectiveBatchDecisions = batchLcpsEffectiveBatchDecisions;
+		mBatchLcpsCandidateGenerationTimeMs = batchLcpsCandidateGenerationTimeMs;
+		mBatchLcpsSelectionTimeMs = batchLcpsSelectionTimeMs;
+		mAdaptiveBatchInvocations = adaptiveBatchInvocations;
+		mAdaptiveBatchFallbacks = adaptiveBatchFallbacks;
+		mAdaptiveTriggeredByFirstFill = adaptiveTriggeredByFirstFill;
+		mAdaptiveTriggeredByStale = adaptiveTriggeredByStale;
+		mAdaptiveMinAvailableSlots = adaptiveMinAvailableSlots;
 	}
 
 	@Override
@@ -156,6 +227,35 @@ public class CegarLoopStatisticsGenerator extends StatisticsGeneratorWithStopwat
 		case OverallIterations -> mIterations;
 		case TraceHistogramMax -> mTraceHistogramMaximum;
 		case PathProgramHistogramMax -> mPathProgramHistogramMaximum;
+		case CheckedPaths -> mCheckedPathPrefixLcaDivergenceTracker.getCheckedPathCount();
+		case TotalPairwisePrefixLcaDivergence ->
+			mCheckedPathPrefixLcaDivergenceTracker.getTotalPairwisePrefixLcaDivergence();
+		case AvgPairwisePrefixLcaDivergence -> mCheckedPathPrefixLcaDivergenceTracker.getSummary();
+		case SearchMode -> mParallelSearchMode;
+		case DuplicateFreshnessFailures -> mParallelDuplicateFreshnessFailures;
+		case FailedToFindCounterexamples -> mParallelFailedToFindCounterexamples;
+		case StalePaths -> mParallelStalePaths;
+		case LcpsCheckedPrefixQueries -> mLcpsCheckedPrefixQueries;
+		case LcpsStalePrefixQueries -> mLcpsStalePrefixQueries;
+		case LcpsCheckedPrefixHits -> mLcpsCheckedPrefixHits;
+		case LcpsStalePrefixHits -> mLcpsStalePrefixHits;
+		case LcpsSearchInvocations -> mLcpsSearchInvocations;
+		case LcpsEffectivePriorityDecisions -> mLcpsEffectivePriorityDecisions;
+		case BatchLcpsInvocations -> mBatchLcpsInvocations;
+		case BatchLcpsAvailableSlotsTotal -> mBatchLcpsAvailableSlotsTotal;
+		case BatchLcpsCandidatesGenerated -> mBatchLcpsCandidatesGenerated;
+		case BatchLcpsCandidatesSelected -> mBatchLcpsCandidatesSelected;
+		case BatchLcpsCandidateGenerationFailures -> mBatchLcpsCandidateGenerationFailures;
+		case BatchLcpsAvgCandidatePoolSize -> mBatchLcpsAvgCandidatePoolSize;
+		case BatchLcpsAvgSelectedBatchSize -> mBatchLcpsAvgSelectedBatchSize;
+		case BatchLcpsEffectiveBatchDecisions -> mBatchLcpsEffectiveBatchDecisions;
+		case BatchLcpsCandidateGenerationTimeMs -> mBatchLcpsCandidateGenerationTimeMs;
+		case BatchLcpsSelectionTimeMs -> mBatchLcpsSelectionTimeMs;
+		case AdaptiveBatchInvocations -> mAdaptiveBatchInvocations;
+		case AdaptiveBatchFallbacks -> mAdaptiveBatchFallbacks;
+		case AdaptiveTriggeredByStale -> mAdaptiveTriggeredByStale;
+		case AdaptiveTriggeredByFirstFill -> mAdaptiveTriggeredByFirstFill;
+		case AdaptiveMinAvailableSlots -> mAdaptiveMinAvailableSlots;
 		case BiggestAbstraction -> mBiggestAbstraction;
 		case InterpolantAutomatonStates -> mInterpolantAutomatonStates;
 		case InterpolantCoveringCapability -> mBCI;

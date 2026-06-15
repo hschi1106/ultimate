@@ -27,13 +27,15 @@
  */
 package de.uni_freiburg.informatik.ultimate.plugins.generator.traceabstraction;
 
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CancellationException;
@@ -64,7 +66,10 @@ import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.Accept
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.Difference;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.IsEmpty;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.IsEmptyParallel;
+import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.PathStepKey;
+import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.PrefixCoverageCache;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.PowersetDeterminizer;
+import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.TraceSearchSelectionMode;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.operations.oldapi.IOpWithDelayedDeadEndRemoval;
 import de.uni_freiburg.informatik.ultimate.automata.nestedword.senwa.DifferenceSenwa;
 import de.uni_freiburg.informatik.ultimate.core.lib.exceptions.ToolchainCanceledException;
@@ -123,6 +128,13 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 	public final HashMap<Integer, NestedRun<L, ?>> mActiveCounterexamples = new HashMap<>();
 	private final Map<Integer, StaleCancellationToken> mActiveCancellationTokens = new HashMap<>();
 	private final Set<Integer> mCounterexamplesToBeRemovedFromActiveCexMap = new HashSet<>();
+	private final PrefixCoverageCache<L, IPredicate> mPrefixCoverageCache = new PrefixCoverageCache<>();
+	private final TraceSearchSelectionMode mTraceSearchSelectionMode;
+	private final boolean mUseInitialBfsInParallelTraceSearch;
+	private final boolean mTrackStalePrefixesInParallelTraceSearch;
+	private final int mBatchLcpsCandidateMultiplier;
+	private final int mBatchLcpsCandidateCap;
+	private final int mAdaptiveBatchMinAvailableSlots;
 	protected InterpolationTechnique mInterpolationTechnique;
 
 	protected Class<L> mTransitionClazz;
@@ -133,8 +145,25 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 	private final Integer mCountTimeoutsInSearch = 0;
 	private final Integer mCountFailedRunConstructions = 0;
 	private Integer mCountFailedToFindCex = 0;
+	private Integer mCountDuplicateFreshnessFailures = 0;
 	private Integer mCountBfsFoundCex = 1;
-	private final Integer mCountIsEmptyParallel = 0;
+	private Integer mCountIsEmptyParallel = 0;
+	private Integer mLcpsSearchInvocations = 0;
+	private Integer mLcpsEffectivePriorityDecisions = 0;
+	private Integer mBatchLcpsInvocations = 0;
+	private Integer mBatchLcpsAvailableSlotsTotal = 0;
+	private Integer mBatchLcpsCandidatesGenerated = 0;
+	private Integer mBatchLcpsCandidatesSelected = 0;
+	private Integer mBatchLcpsCandidateGenerationFailures = 0;
+	private Integer mBatchLcpsEffectiveBatchDecisions = 0;
+	private long mBatchLcpsCandidateGenerationTimeMs = 0;
+	private long mBatchLcpsSelectionTimeMs = 0;
+	private boolean mStaleTriggerSinceLastDispatch;
+	private boolean mFirstDispatchInCurrentAbstraction = true;
+	private Integer mAdaptiveBatchInvocations = 0;
+	private Integer mAdaptiveBatchFallbacks = 0;
+	private Integer mAdaptiveTriggeredByStale = 0;
+	private Integer mAdaptiveTriggeredByFirstFill = 0;
 	private Integer maxActiveThreads = 0;
 	private final Integer mActiveExecutors = 0;
 	private long mSearchTime = 0;
@@ -310,6 +339,12 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 			final PredicateFactoryRefinement stateFactoryForRefinement) {
 		super(name, initialAbstraction, rootNode, csToolkit, predicateFactory, taPrefs, errorLocs, proofProducer,
 				services, transitionClazz, stateFactoryForRefinement);
+		mTraceSearchSelectionMode = mPref.getParallelTraceSearchSelectionMode();
+		mUseInitialBfsInParallelTraceSearch = mPref.useInitialBfsInParallelTraceSearch();
+		mTrackStalePrefixesInParallelTraceSearch = mPref.trackStalePrefixesInParallelTraceSearch();
+		mBatchLcpsCandidateMultiplier = mPref.getBatchLcpsCandidateMultiplier();
+		mBatchLcpsCandidateCap = mPref.getBatchLcpsCandidateCap();
+		mAdaptiveBatchMinAvailableSlots = mPref.getAdaptiveBatchMinAvailableSlots();
 		// Start thread pool
 		mThreadLimit = mPref.getThreadLimit();
 		if (mThreadLimit == 0) { // maximum of available cores
@@ -425,6 +460,7 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 				final INestedWordAutomaton<L, IPredicate> latest = mPublishedAbstraction.get();
 				if (latest != mAbstraction) {
 					mAbstraction = latest;
+					mFirstDispatchInCurrentAbstraction = true;
 					didntFindCexLastIteration = false;
 				}
 				// Release avoid-set entries whose refinement the helper has now applied (FIFO == apply order), so the
@@ -465,6 +501,7 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 						if (mPref.stopAfterFirstViolation()
 								&& workerResult.getAutomatonType().equals(AutomatonType.ERROR)) {
 							shutDownAndDestroy(mDestroyEverything);
+							mLogger.info("Result: " + Result.UNSAFE);
 							updateAndPrintStatistics(true);
 							return;
 						}
@@ -484,6 +521,7 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 						}
 
 						mLogger.info("Worker Automaton Type: " + workerResult.getAutomatonType());
+						recordStaleCounterexampleIfNoLongerAccepted(workerResult.getCounterexample());
 						mLogger.info("Refining Abstraction");
 						refinement(workerResult);
 						mRefinementsDone += 1;
@@ -543,36 +581,19 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 				didntFindCexLastIteration = false;
 			}
 
-			/*
-			 * In the first iteration we search via BFS, then we use IsEmptyParallel
-			 */
-			boolean firstIteration = true;
-			while (mRunningThreads < mThreadLimit && !didntFindCexLastIteration) {
-				assert mRunningThreads >= 0;
+			if (!didntFindCexLastIteration) {
 				final long emptinessStart = System.nanoTime();
-				mCounterexample = searchForErrorTrace(!firstIteration);
-				mEmptinessTimeMs += (System.nanoTime() - emptinessStart) / 1000000;
-				if (mCounterexample == null) {
-					didntFindCexLastIteration = true;
-					break;
+				try {
+					if (mTraceSearchSelectionMode == TraceSearchSelectionMode.BATCH_LCPS) {
+						didntFindCexLastIteration = dispatchBatchLcps();
+					} else if (mTraceSearchSelectionMode == TraceSearchSelectionMode.ADAPTIVE_BATCH_LCPS) {
+						didntFindCexLastIteration = dispatchAdaptiveBatchLcps();
+					} else {
+						didntFindCexLastIteration = dispatchOneByOne(mTraceSearchSelectionMode);
+					}
+				} finally {
+					mEmptinessTimeMs += (System.nanoTime() - emptinessStart) / 1_000_000;
 				}
-				// S3 (adaptive worker scaling): do not activate an additional worker when the selected
-				// trace's path program is already being analysed by an in-flight worker. Spending a worker
-				// on a duplicate infeasibility reason is the overhead behind the PAR-6 < PAR-4 regression.
-				// The trace is only deferred (not added to the assigned set), so it is re-selected once the
-				// duplicate worker finishes; soundness/termination are preserved (the verdict still rests on
-				// L(A)=emptyset and every trace is eventually dispatched).
-				if (mPref.isAdaptiveWorkerScalingEnabled() && mRunningThreads >= 1
-						&& !addsDistinctInFlightPathProgram((NestedRun<L, ?>) mCounterexample)) {
-					mAdaptiveScalingGated += 1;
-					mLogger.info("AdaptiveScaling: withholding worker; selected trace duplicates an in-flight "
-							+ "path program (runningThreads=" + mRunningThreads + ")");
-					break;
-				}
-				if (mCounterexample != null) {
-					startWorker();
-				}
-				firstIteration = false;
 			}
 			// Portfolio race: no fresh trace to dispatch but workers idle -> re-dispatch the bottleneck
 			// (longest) in-flight trace to the idle workers so they race it with diverse strategies.
@@ -602,11 +623,99 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		if (mApplyExecutor != null) {
 			mApplyExecutor.shutdownNow();
 		}
+		mLogger.info("Result: " + Result.USER_LIMIT_ITERATIONS);
+		updateAndPrintStatistics(true);
 		mResultBuilder.addResultForAllRemaining(Result.USER_LIMIT_ITERATIONS);
 
 	}
 
+	private boolean dispatchBatchLcps() throws AutomataOperationCanceledException {
+		final int availableSlots = mThreadLimit - mRunningThreads;
+		if (availableSlots <= 0) {
+			return false;
+		}
+		final List<NestedRun<L, IPredicate>> batch = searchBatchForErrorTraces(availableSlots);
+		if (batch.isEmpty()) {
+			return true;
+		}
+		startWorkersForBatch(batch);
+		return false;
+	}
+
+	private boolean dispatchAdaptiveBatchLcps() throws AutomataOperationCanceledException {
+		final int availableSlots = mThreadLimit - mRunningThreads;
+		if (availableSlots <= 0) {
+			return false;
+		}
+		final AdaptiveBatchDecision decision = decideAdaptiveBatch(mFirstDispatchInCurrentAbstraction,
+				mStaleTriggerSinceLastDispatch, availableSlots, mAdaptiveBatchMinAvailableSlots);
+		mFirstDispatchInCurrentAbstraction = false;
+		if (decision.shouldUseBatch()) {
+			mAdaptiveBatchInvocations += 1;
+			if (decision.triggeredByFirstFill()) {
+				mAdaptiveTriggeredByFirstFill += 1;
+			}
+			if (decision.triggeredByStale()) {
+				mAdaptiveTriggeredByStale += 1;
+			}
+			mStaleTriggerSinceLastDispatch = false;
+			final List<NestedRun<L, IPredicate>> batch = searchBatchForErrorTraces(availableSlots);
+			if (!batch.isEmpty()) {
+				startWorkersForBatch(batch);
+				return false;
+			}
+			mAdaptiveBatchFallbacks += 1;
+		} else {
+			mAdaptiveBatchFallbacks += 1;
+		}
+		return dispatchOneByOne(TraceSearchSelectionMode.PAPER);
+	}
+
+	private boolean dispatchOneByOne(final TraceSearchSelectionMode searchMode) throws AutomataOperationCanceledException {
+		/*
+		 * Selection mode controls whether we use BFS/DFS directly or the parallel selector. PAPER/LCPS may keep one
+		 * initial BFS attempt per abstraction for backwards-compatible experiments.
+		 */
+		boolean firstIteration = true;
+		while (mRunningThreads < mThreadLimit) {
+			assert mRunningThreads >= 0;
+			mCounterexample = searchForErrorTrace(!firstIteration, searchMode);
+			if (mCounterexample == null) {
+				return true;
+			}
+			// S3 (adaptive worker scaling): do not activate an additional worker when the selected trace's
+			// path program is already being analysed by an in-flight worker.
+			if (mPref.isAdaptiveWorkerScalingEnabled() && mRunningThreads >= 1
+					&& !addsDistinctInFlightPathProgram((NestedRun<L, ?>) mCounterexample)) {
+				mAdaptiveScalingGated += 1;
+				mLogger.info("AdaptiveScaling: withholding worker; selected trace duplicates an in-flight "
+						+ "path program (runningThreads=" + mRunningThreads + ")");
+				return false;
+			}
+			startWorker();
+			firstIteration = false;
+		}
+		return false;
+	}
+
+	private void startWorkersForBatch(final List<NestedRun<L, IPredicate>> batch) {
+		for (final NestedRun<L, IPredicate> run : batch) {
+			mCounterexample = run;
+			startWorker();
+		}
+	}
+
+	static AdaptiveBatchDecision decideAdaptiveBatch(final boolean firstDispatchInCurrentAbstraction,
+			final boolean staleTriggerSinceLastDispatch, final int availableSlots, final int minAvailableSlots) {
+		final boolean enoughSlots = availableSlots >= minAvailableSlots;
+		final boolean shouldUseBatch =
+				enoughSlots && (firstDispatchInCurrentAbstraction || staleTriggerSinceLastDispatch);
+		return new AdaptiveBatchDecision(shouldUseBatch, shouldUseBatch && firstDispatchInCurrentAbstraction,
+				shouldUseBatch && staleTriggerSinceLastDispatch);
+	}
+
 	private void updateAndPrintStatistics(final boolean printStatistics) {
+		reportParallelTraceSearchStatistics();
 
 		if (mRunningThreads > maxActiveThreads) {
 			maxActiveThreads = mRunningThreads;
@@ -619,11 +728,14 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		}
 		if (printStatistics) {
 			mLogger.info("Iteration " + getIteration());
+			mLogger.info("SearchMode: " + mTraceSearchSelectionMode);
 			mLogger.info("Refinements: " + mRefinementsDone);
 			mLogger.info("Counterexamples: " + mCounterexamplesChecked);
 			mLogger.info("SearchTimeout: " + mCountTimeoutsInSearch);
 			mLogger.info("RunConstructionFailed: " + mCountFailedRunConstructions);
 			mLogger.info("SearchFailed: " + mCountFailedToFindCex);
+			mLogger.info("Duplicate freshness failures: " + mCountDuplicateFreshnessFailures);
+			mLogger.info("DuplicateFreshnessFailures: " + mCountDuplicateFreshnessFailures);
 			mLogger.info("BFS: " + mCountBfsFoundCex);
 			mLogger.info("IsEmptyParallel: " + mCountIsEmptyParallel);
 			mLogger.info("ActiveThreads: " + maxActiveThreads);
@@ -684,7 +796,60 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 			mLogger.info("StaleThreadInterruptRequests: " + mStaleThreadInterruptRequests);
 			mLogger.info("StaleImmediateStopNoThread: " + mStaleImmediateStopNoThread);
 			mLogger.info("StaleImmediateStopFailures: " + mStaleImmediateStopFailures);
+			mLogger.info("Prefix cache checked paths: " + mPrefixCoverageCache.getCheckedRunCount());
+			mLogger.info("Prefix cache stale paths: " + mPrefixCoverageCache.getStaleRunCount());
+			mLogger.info("Stale paths: " + mPrefixCoverageCache.getStaleRunCount());
+			mLogger.info("LcpsCheckedPrefixQueries: " + mPrefixCoverageCache.getCheckedPrefixQueries());
+			mLogger.info("LcpsStalePrefixQueries: " + mPrefixCoverageCache.getStalePrefixQueries());
+			mLogger.info("LcpsCheckedPrefixHits: " + mPrefixCoverageCache.getCheckedPrefixHits());
+			mLogger.info("LcpsStalePrefixHits: " + mPrefixCoverageCache.getStalePrefixHits());
+			mLogger.info("LcpsSearchInvocations: " + mLcpsSearchInvocations);
+			mLogger.info("LcpsEffectivePriorityDecisions: " + mLcpsEffectivePriorityDecisions);
+			mLogger.info("BatchLcpsInvocations: " + mBatchLcpsInvocations);
+			mLogger.info("BatchLcpsAvailableSlotsTotal: " + mBatchLcpsAvailableSlotsTotal);
+			mLogger.info("BatchLcpsCandidatesGenerated: " + mBatchLcpsCandidatesGenerated);
+			mLogger.info("BatchLcpsCandidatesSelected: " + mBatchLcpsCandidatesSelected);
+			mLogger.info("BatchLcpsCandidateGenerationFailures: " + mBatchLcpsCandidateGenerationFailures);
+			mLogger.info("BatchLcpsAvgCandidatePoolSize: " + getBatchLcpsAvgCandidatePoolSize());
+			mLogger.info("BatchLcpsAvgSelectedBatchSize: " + getBatchLcpsAvgSelectedBatchSize());
+			mLogger.info("BatchLcpsEffectiveBatchDecisions: " + mBatchLcpsEffectiveBatchDecisions);
+			mLogger.info("BatchLcpsCandidateGenerationTimeMs: " + mBatchLcpsCandidateGenerationTimeMs);
+			mLogger.info("BatchLcpsSelectionTimeMs: " + mBatchLcpsSelectionTimeMs);
+			mLogger.info("AdaptiveBatchInvocations: " + mAdaptiveBatchInvocations);
+			mLogger.info("AdaptiveBatchFallbacks: " + mAdaptiveBatchFallbacks);
+			mLogger.info("AdaptiveTriggeredByStale: " + mAdaptiveTriggeredByStale);
+			mLogger.info("AdaptiveTriggeredByFirstFill: " + mAdaptiveTriggeredByFirstFill);
+			mLogger.info("AdaptiveMinAvailableSlots: " + mAdaptiveBatchMinAvailableSlots);
+			final var checkedPathSummary = (CheckedPathPrefixLcaDivergenceTracker.Summary) mCegarLoopBenchmark
+					.getValue(CegarLoopStatisticsDefinitions.AvgPairwisePrefixLcaDivergence.toString());
+			mLogger.info("Checked paths: " + checkedPathSummary.getCheckedPathCount());
+			mLogger.info("Total pairwise prefix-LCA divergence: "
+					+ checkedPathSummary.getTotalPairwisePrefixLcaDivergence());
+			mLogger.info("Avg pairwise prefix-LCA divergence: "
+					+ checkedPathSummary.getAveragePairwisePrefixLcaDivergence());
 		}
+	}
+
+	private void reportParallelTraceSearchStatistics() {
+		mCegarLoopBenchmark.reportParallelTraceSearchStatistics(mTraceSearchSelectionMode.toString(),
+				mCountDuplicateFreshnessFailures, mCountFailedToFindCex, mPrefixCoverageCache.getStaleRunCount(),
+				mPrefixCoverageCache.getCheckedPrefixQueries(), mPrefixCoverageCache.getStalePrefixQueries(),
+				mPrefixCoverageCache.getCheckedPrefixHits(), mPrefixCoverageCache.getStalePrefixHits(),
+				mLcpsSearchInvocations, mLcpsEffectivePriorityDecisions, mBatchLcpsInvocations,
+				mBatchLcpsAvailableSlotsTotal, mBatchLcpsCandidatesGenerated, mBatchLcpsCandidatesSelected,
+				mBatchLcpsCandidateGenerationFailures, getBatchLcpsAvgCandidatePoolSize(),
+				getBatchLcpsAvgSelectedBatchSize(), mBatchLcpsEffectiveBatchDecisions,
+				mBatchLcpsCandidateGenerationTimeMs, mBatchLcpsSelectionTimeMs, mAdaptiveBatchInvocations,
+				mAdaptiveBatchFallbacks, mAdaptiveTriggeredByFirstFill, mAdaptiveTriggeredByStale,
+				mAdaptiveBatchMinAvailableSlots);
+	}
+
+	private double getBatchLcpsAvgCandidatePoolSize() {
+		return mBatchLcpsInvocations == 0 ? 0.0 : (double) mBatchLcpsCandidatesGenerated / mBatchLcpsInvocations;
+	}
+
+	private double getBatchLcpsAvgSelectedBatchSize() {
+		return mBatchLcpsInvocations == 0 ? 0.0 : (double) mBatchLcpsCandidatesSelected / mBatchLcpsInvocations;
 	}
 
 	private boolean isSafeThenTerminate() throws AutomataOperationCanceledException {
@@ -693,6 +858,7 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		mLogger.info("Checking if program is safe");
 		if (super.isAbstractionEmpty() || mAbstraction.size() == 0) {
 			mResultBuilder.addResultForAllRemaining(Result.SAFE);
+			mLogger.info("Result: " + Result.SAFE);
 			shutDownAndDestroy(mDestroyEverything);
 			return true;
 		}
@@ -903,6 +1069,7 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 				computeAutomataDifference(mAbstraction, threadResult, stateFactoryForRefinement);
 
 		mAbstraction = diff.getResult();
+		mFirstDispatchInCurrentAbstraction = true;
 		final long thisDiffMs = (System.nanoTime() - diffStart) / 1000000;
 		mDiffTimeMs += thisDiffMs;
 		diagnoseIncrementalMembership(diff);
@@ -1463,23 +1630,197 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		return mAbstraction;
 	}
 
+	public void reportCheckedCounterexample(final IRun<L, ?> counterexample) {
+		mCegarLoopBenchmark.reportCheckedPath(counterexample.getStateSequence());
+		recordCheckedRunInPrefixCoverageCache(counterexample);
+		reportParallelTraceSearchStatistics();
+	}
+
+	@SuppressWarnings("unchecked")
+	private void recordCheckedRunInPrefixCoverageCache(final IRun<L, ?> counterexample) {
+		if (counterexample instanceof NestedRun<?, ?>) {
+			mPrefixCoverageCache.recordCheckedRun((NestedRun<L, ?>) counterexample);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void recordStaleRunInPrefixCoverageCache(final IRun<L, ?> counterexample) {
+		if (counterexample instanceof NestedRun<?, ?>) {
+			mPrefixCoverageCache.recordStaleRun((NestedRun<L, ?>) counterexample);
+			reportParallelTraceSearchStatistics();
+		}
+	}
+
+	private void recordStaleCounterexampleIfNoLongerAccepted(final IRun<L, ?> counterexample)
+			throws AutomataOperationCanceledException {
+		if (!mTrackStalePrefixesInParallelTraceSearch || counterexample == null) {
+			return;
+		}
+		final boolean stillAccepted = accepts(getServices(), mAbstraction, counterexample.getWord(), false);
+		if (!stillAccepted) {
+			recordStaleRunInPrefixCoverageCache(counterexample);
+			mStaleTriggerSinceLastDispatch = true;
+			mLogger.info("Recorded stale counterexample prefix coverage.");
+		}
+	}
+
 	private IsEmpty<L, IPredicate> getSearch(final IsEmpty.SearchStrategy strategy,
 			final Set<IPredicate> possibleEndPoints) throws AutomataOperationCanceledException {
+		return getSearch(strategy, possibleEndPoints, mActiveCounterexamples, mTraceSearchSelectionMode);
+	}
+
+	private IsEmpty<L, IPredicate> getSearch(final IsEmpty.SearchStrategy strategy,
+			final Set<IPredicate> possibleEndPoints, final HashMap<Integer, NestedRun<L, ?>> activeCounterexamples,
+			final TraceSearchSelectionMode searchMode) throws AutomataOperationCanceledException {
 		switch (strategy) {
 		case PARALLEL:
 			return new IsEmptyParallel<>(new AutomataLibraryServices(mServices), mAbstraction,
 					mAbstraction.getInitialStates(), Collections.emptySet(), possibleEndPoints,
-					possibleEndPoints == null, IsEmpty.SearchStrategy.BFS, mActiveCounterexamples,
-					mPref.getSearchLoopBound());
+					possibleEndPoints == null, IsEmpty.SearchStrategy.BFS, activeCounterexamples,
+					mPref.getSearchLoopBound(), searchMode, mPrefixCoverageCache);
 		default:
 			return new IsEmpty<>(new AutomataLibraryServices(getServices()), mAbstraction, strategy);
 		}
 	}
 
-	// If search was BFS, the counterexample might not be fresh.
-	private boolean isSearchCorrectAndTraceFresh(final IsEmpty<L, IPredicate> search) {
+	private List<NestedRun<L, IPredicate>> searchBatchForErrorTraces(final int availableSlots)
+			throws AutomataOperationCanceledException {
+		final long time = System.nanoTime() / 1000000000;
+		try {
+			mBatchLcpsInvocations += 1;
+			mBatchLcpsAvailableSlotsTotal += availableSlots;
+			final long generationStart = System.nanoTime();
+			final List<NestedRun<L, IPredicate>> candidates = generateCandidatePool(availableSlots,
+					mBatchLcpsCandidateMultiplier, mBatchLcpsCandidateCap);
+			mBatchLcpsCandidateGenerationTimeMs += (System.nanoTime() - generationStart) / 1_000_000;
+			final long selectionStart = System.nanoTime();
+			final List<NestedRun<L, IPredicate>> selected = selectBatchFromCandidates(candidates, availableSlots);
+			mBatchLcpsSelectionTimeMs += (System.nanoTime() - selectionStart) / 1_000_000;
+			mBatchLcpsCandidatesGenerated += candidates.size();
+			mBatchLcpsCandidatesSelected += selected.size();
+			if (isEffectiveBatchDecision(candidates, selected)) {
+				mBatchLcpsEffectiveBatchDecisions += 1;
+			}
+			if (selected.isEmpty()) {
+				mCountFailedToFindCex += 1;
+				mLogger.info("BATCH_LCPS did not find a fresh counterexample batch.");
+			}
+			return selected;
+		} finally {
+			mSearchTime += ((System.nanoTime() / 1000000000) - time);
+			reportParallelTraceSearchStatistics();
+		}
+	}
+
+	private List<NestedRun<L, IPredicate>> generateCandidatePool(final int availableSlots,
+			final int candidateMultiplier, final int candidateCap) throws AutomataOperationCanceledException {
+		final int targetCandidates = Math.min(candidateCap, availableSlots * candidateMultiplier);
+		final HashMap<Integer, NestedRun<L, ?>> virtualActiveCounterexamples = new HashMap<>(mActiveCounterexamples);
+		final Set<Integer> candidateHashes = new HashSet<>();
+		final List<NestedRun<L, IPredicate>> candidates = new ArrayList<>();
+		final Set<IPredicate> possibleEndPoints = null;
+		for (int i = 0; i < targetCandidates; i++) {
+			final IsEmpty<L, IPredicate> search = getSearch(IsEmpty.SearchStrategy.PARALLEL, possibleEndPoints,
+					virtualActiveCounterexamples, TraceSearchSelectionMode.PAPER);
+			final SearchValidationResult validationResult =
+					validateSearch(search, virtualActiveCounterexamples, candidateHashes);
+			if (validationResult != SearchValidationResult.FRESH) {
+				mBatchLcpsCandidateGenerationFailures += 1;
+				break;
+			}
+			final NestedRun<L, IPredicate> run = search.getNestedRun();
+			final int traceHash = run.getWord().asList().hashCode();
+			candidates.add(run);
+			candidateHashes.add(traceHash);
+			virtualActiveCounterexamples.put(traceHash, run);
+		}
+		return candidates;
+	}
+
+	private List<NestedRun<L, IPredicate>> selectBatchFromCandidates(final List<NestedRun<L, IPredicate>> candidates,
+			final int availableSlots) {
+		final List<NestedRun<L, IPredicate>> remaining = new ArrayList<>(candidates);
+		final List<NestedRun<L, IPredicate>> selected = new ArrayList<>();
+		while (selected.size() < availableSlots && !remaining.isEmpty()) {
+			final NestedRun<L, IPredicate> best = remaining.stream()
+					.min(Comparator.comparing(candidate -> makeBatchPriority(candidate, selected))).orElseThrow();
+			selected.add(best);
+			remaining.remove(best);
+		}
+		return selected;
+	}
+
+	private BatchPriority makeBatchPriority(final NestedRun<L, IPredicate> candidate,
+			final List<NestedRun<L, IPredicate>> selected) {
+		return new BatchPriority(maxSimilarityToActiveOrSelected(candidate, selected),
+				mPrefixCoverageCache.getCheckedCoverageForRun(candidate),
+				mPrefixCoverageCache.getStaleCoverageForRun(candidate), candidate.getLength(),
+				candidate.getWord().asList().hashCode());
+	}
+
+	private double maxSimilarityToActiveOrSelected(final NestedRun<L, IPredicate> candidate,
+			final List<NestedRun<L, IPredicate>> selected) {
+		double maxSimilarity = 0.0;
+		boolean hasReferenceRun = false;
+		for (final NestedRun<L, ?> activeRun : mActiveCounterexamples.values()) {
+			hasReferenceRun = true;
+			maxSimilarity = Math.max(maxSimilarity, prefixLcaSimilarity(candidate, activeRun));
+		}
+		for (final NestedRun<L, IPredicate> selectedRun : selected) {
+			hasReferenceRun = true;
+			maxSimilarity = Math.max(maxSimilarity, prefixLcaSimilarity(candidate, selectedRun));
+		}
+		return hasReferenceRun ? maxSimilarity : 0.0;
+	}
+
+	private double prefixLcaSimilarity(final NestedRun<L, ?> first, final NestedRun<L, ?> second) {
+		final int firstDepth = Math.max(0, first.getLength() - 1);
+		final int secondDepth = Math.max(0, second.getLength() - 1);
+		final int minDepth = Math.min(firstDepth, secondDepth);
+		if (minDepth == 0) {
+			// Empty/root-only paths have no meaningful divergence signal, so treat them as maximally similar.
+			return 1.0;
+		}
+		int lcaDepth = 0;
+		for (int i = 0; i < minDepth; i++) {
+			final PathStepKey<L, IPredicate> firstKey =
+					new PathStepKey<>(first.getSymbol(i), (IPredicate) first.getStateAtPosition(i + 1));
+			final PathStepKey<L, IPredicate> secondKey =
+					new PathStepKey<>(second.getSymbol(i), (IPredicate) second.getStateAtPosition(i + 1));
+			if (!Objects.equals(firstKey, secondKey)) {
+				break;
+			}
+			lcaDepth++;
+		}
+		return (double) lcaDepth / minDepth;
+	}
+
+	private boolean isEffectiveBatchDecision(final List<NestedRun<L, IPredicate>> candidates,
+			final List<NestedRun<L, IPredicate>> selected) {
+		final int selectedCount = selected.size();
+		if (selectedCount == 0 || candidates.size() <= selectedCount) {
+			return false;
+		}
+		final Set<Integer> naiveFirstKHashes = new HashSet<>();
+		for (int i = 0; i < selectedCount; i++) {
+			naiveFirstKHashes.add(candidates.get(i).getWord().asList().hashCode());
+		}
+		final Set<Integer> selectedHashes = selected.stream().map(run -> run.getWord().asList().hashCode())
+				.collect(Collectors.toSet());
+		return !Objects.equals(naiveFirstKHashes, selectedHashes);
+	}
+
+	private enum SearchValidationResult {
+		FRESH, DUPLICATE, NO_RUN, INCORRECT
+	}
+
+	private SearchValidationResult validateSearch(final IsEmpty<L, IPredicate> search) {
+		return validateSearch(search, mActiveCounterexamples, Collections.emptySet());
+	}
+
+	private SearchValidationResult validateSearch(final IsEmpty<L, IPredicate> search,
+			final Map<Integer, NestedRun<L, ?>> activeCounterexamples, final Set<Integer> candidateHashes) {
 		boolean correct = false;
-		boolean fresh = true;
 		try {
 			correct = search.checkResult(mStateFactoryForRefinement);
 		} catch (final AutomataLibraryException e) {
@@ -1488,68 +1829,164 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		}
 
 		final NestedRun<L, IPredicate> run = search.getNestedRun();
-		if (run != null) {
-			final List<L> trace = run.getWord().asList();
-			final int traceHash = trace.hashCode();
-			if (mActiveCounterexamples.containsKey(traceHash)) {
-				fresh = false;
-			}
-			return correct && fresh;
+		if (run == null) {
+			return SearchValidationResult.NO_RUN;
 		}
-		return false;
+		final List<L> trace = run.getWord().asList();
+		final int traceHash = trace.hashCode();
+		if (activeCounterexamples.containsKey(traceHash) || candidateHashes.contains(traceHash)) {
+			return SearchValidationResult.DUPLICATE;
+		}
+		return correct ? SearchValidationResult.FRESH : SearchValidationResult.INCORRECT;
+	}
+
+	private static final class BatchPriority implements Comparable<BatchPriority> {
+		private final double mMaxSimilarityToActiveOrSelected;
+		private final int mCheckedPrefixCoverage;
+		private final int mStalePrefixCoverage;
+		private final int mPathLength;
+		private final int mWordHash;
+
+		BatchPriority(final double maxSimilarityToActiveOrSelected, final int checkedPrefixCoverage,
+				final int stalePrefixCoverage, final int pathLength, final int wordHash) {
+			mMaxSimilarityToActiveOrSelected = maxSimilarityToActiveOrSelected;
+			mCheckedPrefixCoverage = checkedPrefixCoverage;
+			mStalePrefixCoverage = stalePrefixCoverage;
+			mPathLength = pathLength;
+			mWordHash = wordHash;
+		}
+
+		@Override
+		public int compareTo(final BatchPriority other) {
+			return Comparator.comparingDouble((BatchPriority priority) -> priority.mMaxSimilarityToActiveOrSelected)
+					.thenComparingInt(priority -> priority.mCheckedPrefixCoverage)
+					.thenComparingInt(priority -> priority.mStalePrefixCoverage)
+					.thenComparingInt(priority -> priority.mPathLength)
+					.thenComparingInt(priority -> priority.mWordHash).compare(this, other);
+		}
+	}
+
+	static final class AdaptiveBatchDecision {
+		private final boolean mShouldUseBatch;
+		private final boolean mTriggeredByFirstFill;
+		private final boolean mTriggeredByStale;
+
+		AdaptiveBatchDecision(final boolean shouldUseBatch, final boolean triggeredByFirstFill,
+				final boolean triggeredByStale) {
+			mShouldUseBatch = shouldUseBatch;
+			mTriggeredByFirstFill = triggeredByFirstFill;
+			mTriggeredByStale = triggeredByStale;
+		}
+
+		boolean shouldUseBatch() {
+			return mShouldUseBatch;
+		}
+
+		boolean triggeredByFirstFill() {
+			return mTriggeredByFirstFill;
+		}
+
+		boolean triggeredByStale() {
+			return mTriggeredByStale;
+		}
 	}
 
 	/*
-	 * Search for an error trace in the current mAbstraction. First time with a new abstraction we try BFS, then
-	 * IsEmptyParallel
+	 * Search for an error trace in the current mAbstraction. PAPER/LCPS may try BFS once per abstraction first, matching
+	 * the previous parallel behavior.
 	 */
-	private NestedRun<L, IPredicate> searchForErrorTrace(final boolean onlyDoIsEmptyParallel)
+	private NestedRun<L, IPredicate> searchForErrorTrace(final boolean skipInitialBfs)
 			throws AutomataOperationCanceledException {
+		return searchForErrorTrace(skipInitialBfs, mTraceSearchSelectionMode);
+	}
+
+	private NestedRun<L, IPredicate> searchForErrorTrace(final boolean skipInitialBfs,
+			final TraceSearchSelectionMode searchMode) throws AutomataOperationCanceledException {
 		final long time = System.nanoTime() / 1000000000;
 		final Set<IPredicate> possibleEndPoints = null;
+		try {
+			final NestedRun<L, IPredicate> run = switch (searchMode) {
+			case BFS -> searchWithFreshnessCheck(IsEmpty.SearchStrategy.BFS, possibleEndPoints, "BFS");
+			case DFS -> searchWithFreshnessCheck(IsEmpty.SearchStrategy.DFS, possibleEndPoints, "DFS");
+			case PAPER, LCPS, BATCH_LCPS, ADAPTIVE_BATCH_LCPS ->
+				searchForErrorTraceWithParallelSelector(skipInitialBfs, possibleEndPoints, searchMode);
+			};
+			if (run != null) {
+				return run;
+			}
+			mLogger.info("Did not Find a Counterexample!");
+			mCountFailedToFindCex += 1;
+			assert mRunningThreads > 0;
 
-		IsEmpty<L, IPredicate> search;
-		if (!onlyDoIsEmptyParallel) {
-			search = getSearch(IsEmpty.SearchStrategy.BFS, possibleEndPoints);
-			if (isSearchCorrectAndTraceFresh(search)) {
+			return null;
+		} finally {
+			mSearchTime += ((System.nanoTime() / 1000000000) - time);
+			reportParallelTraceSearchStatistics();
+		}
+	}
+
+	private NestedRun<L, IPredicate> searchForErrorTraceWithParallelSelector(final boolean skipInitialBfs,
+			final Set<IPredicate> possibleEndPoints, final TraceSearchSelectionMode searchMode)
+			throws AutomataOperationCanceledException {
+		if (!skipInitialBfs && mUseInitialBfsInParallelTraceSearch) {
+			final NestedRun<L, IPredicate> bfsRun =
+					searchWithFreshnessCheck(IsEmpty.SearchStrategy.BFS, possibleEndPoints, "BFS");
+			if (bfsRun != null) {
+				return bfsRun;
+			}
+		}
+		if (searchMode == TraceSearchSelectionMode.PAPER) {
+			// A2: keep the older path-program/diversity selectors scoped to PAPER so explicit LCPS/BATCH modes remain
+			// controlled by the parallel trace-search selection mode.
+			if (mPref.getTraceSelectionStrategy() == TraceSelectionStrategy.DPPI) {
+				return searchForErrorTraceDppi(possibleEndPoints);
+			}
+			if (mPref.getTraceSelectionStrategy() == TraceSelectionStrategy.DIVERSITY) {
+				return searchForErrorTraceDiversity(possibleEndPoints);
+			}
+		}
+		return searchWithFreshnessCheck(IsEmpty.SearchStrategy.PARALLEL, possibleEndPoints,
+				"IsEmptyParallel " + searchMode, searchMode);
+	}
+
+	private NestedRun<L, IPredicate> searchWithFreshnessCheck(final IsEmpty.SearchStrategy strategy,
+			final Set<IPredicate> possibleEndPoints, final String searchDescription)
+			throws AutomataOperationCanceledException {
+		return searchWithFreshnessCheck(strategy, possibleEndPoints, searchDescription, mTraceSearchSelectionMode);
+	}
+
+	private NestedRun<L, IPredicate> searchWithFreshnessCheck(final IsEmpty.SearchStrategy strategy,
+			final Set<IPredicate> possibleEndPoints, final String searchDescription,
+			final TraceSearchSelectionMode searchMode) throws AutomataOperationCanceledException {
+		if (strategy == IsEmpty.SearchStrategy.PARALLEL && searchMode.usesPrefixCoverage()) {
+			mLcpsSearchInvocations += 1;
+		}
+		final IsEmpty<L, IPredicate> search = getSearch(strategy, possibleEndPoints, mActiveCounterexamples, searchMode);
+		if (search instanceof IsEmptyParallel<?, ?> parallelSearch) {
+			mLcpsEffectivePriorityDecisions += parallelSearch.getLcpsEffectivePriorityDecisions();
+		}
+		final SearchValidationResult validationResult = validateSearch(search);
+		switch (validationResult) {
+		case FRESH:
+			if (strategy == IsEmpty.SearchStrategy.BFS) {
 				mCountBfsFoundCex += 1;
-				mLogger.info("Found new Counterexample via BFS!");
-				return search.getNestedRun();
+			} else if (strategy == IsEmpty.SearchStrategy.PARALLEL) {
+				mCountIsEmptyParallel += 1;
 			}
-		}
-		// A2: route trace selection to DPPI when configured. Alg. 4 (the ALG4_PREFIX path below) is left intact.
-		if (mPref.getTraceSelectionStrategy() == TraceSelectionStrategy.DPPI) {
-			final NestedRun<L, IPredicate> dppiRun = searchForErrorTraceDppi(possibleEndPoints);
-			mSearchTime += ((System.nanoTime() / 1000000000) - time);
-			if (dppiRun != null) {
-				return dppiRun;
-			}
-			mLogger.info("Did not Find a Counterexample (DPPI)!");
-			mCountFailedToFindCex += 1;
-			return null;
-		}
-		// DIVERSITY: IDF-weighted-novelty trace selection (the derived diversity metric). Alg.4 path left intact.
-		if (mPref.getTraceSelectionStrategy() == TraceSelectionStrategy.DIVERSITY) {
-			final NestedRun<L, IPredicate> divRun = searchForErrorTraceDiversity(possibleEndPoints);
-			mSearchTime += ((System.nanoTime() / 1000000000) - time);
-			if (divRun != null) {
-				return divRun;
-			}
-			mLogger.info("Did not Find a Counterexample (DIVERSITY)!");
-			mCountFailedToFindCex += 1;
-			return null;
-		}
-		search = getSearch(IsEmpty.SearchStrategy.PARALLEL, possibleEndPoints);
-		if (isSearchCorrectAndTraceFresh(search)) {
-			mLogger.info("Found new Counterexample via IsEmptyParallel!");
+			mLogger.info("Found new Counterexample via " + searchDescription + "!");
 			return search.getNestedRun();
+		case DUPLICATE:
+			mCountDuplicateFreshnessFailures += 1;
+			mLogger.info(searchDescription + " found an active duplicate counterexample.");
+			return null;
+		case INCORRECT:
+			mLogger.warn(searchDescription + " produced an incorrect search result.");
+			return null;
+		case NO_RUN:
+			return null;
+		default:
+			throw new AssertionError("Unknown search validation result: " + validationResult);
 		}
-		mLogger.info("Did not Find a Counterexample!");
-		mCountFailedToFindCex += 1;
-		assert mRunningThreads > 0;
-
-		mSearchTime += ((System.nanoTime() / 1000000000) - time);
-		return null;
 	}
 
 	/*
@@ -1572,10 +2009,9 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		int bestOverlap = Integer.MAX_VALUE;
 		int bestLength = Integer.MAX_VALUE;
 		for (int k = 0; k < DPPI_MAX_CANDIDATES; k++) {
-			final IsEmpty<L, IPredicate> search = new IsEmptyParallel<>(new AutomataLibraryServices(mServices),
-					mAbstraction, mAbstraction.getInitialStates(), Collections.emptySet(), possibleEndPoints,
-					possibleEndPoints == null, IsEmpty.SearchStrategy.BFS, avoid, mPref.getSearchLoopBound());
-			if (!isSearchCorrectAndTraceFresh(search)) {
+			final IsEmpty<L, IPredicate> search = getSearch(IsEmpty.SearchStrategy.PARALLEL, possibleEndPoints,
+					avoid, TraceSearchSelectionMode.PAPER);
+			if (validateSearch(search, avoid, Collections.emptySet()) != SearchValidationResult.FRESH) {
 				break;
 			}
 			final NestedRun<L, IPredicate> cand = search.getNestedRun();
@@ -1690,10 +2126,9 @@ public class ParallelNwaCegarLoop<L extends IIcfgTransition<?>, A extends IAutom
 		NestedRun<L, IPredicate> best = null;
 		double bestNovelty = -1.0;
 		for (int k = 0; k < DPPI_MAX_CANDIDATES; k++) {
-			final IsEmpty<L, IPredicate> search = new IsEmptyParallel<>(new AutomataLibraryServices(mServices),
-					mAbstraction, mAbstraction.getInitialStates(), Collections.emptySet(), possibleEndPoints,
-					possibleEndPoints == null, IsEmpty.SearchStrategy.BFS, avoid, mPref.getSearchLoopBound());
-			if (!isSearchCorrectAndTraceFresh(search)) {
+			final IsEmpty<L, IPredicate> search = getSearch(IsEmpty.SearchStrategy.PARALLEL, possibleEndPoints,
+					avoid, TraceSearchSelectionMode.PAPER);
+			if (validateSearch(search, avoid, Collections.emptySet()) != SearchValidationResult.FRESH) {
 				break;
 			}
 			final NestedRun<L, IPredicate> cand = search.getNestedRun();
